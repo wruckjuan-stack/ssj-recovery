@@ -29,10 +29,11 @@ const TEMPLATES = [
   { id: "carrinho_cupom", name: "carrinho_cupom", display: "Urgencia + Cupom", timing: "48h", minH: 36, maxH: 96, lang: "pt_BR", vars: ["primeiro_nome", "cupom", "link_carrinho"], preview: "{{1}}, este e o nosso ultimo chamado!\n\nPreparamos 10% OFF exclusivo para voce: {{2}}\n\nUse o cupom e finalize: {{3}}\n\nValido por 24h!" },
 ];
 
-async function yampiGet(path, params = {}) {
-  const url = new URL("https://api.dooki.com.br/v2/" + CFG.yampiAlias + path);
+async function yampiGet(path, params) {
+  params = params || {};
+  var url = new URL("https://api.dooki.com.br/v2/" + CFG.yampiAlias + path);
   Object.entries(params).forEach(function(e) { url.searchParams.set(e[0], e[1]); });
-  const r = await fetch(url, { headers: { "User-Token": CFG.yampiToken, "User-Secret-Key": CFG.yampiSecret, "Content-Type": "application/json" } });
+  var r = await fetch(url, { headers: { "User-Token": CFG.yampiToken, "User-Secret-Key": CFG.yampiSecret, "Content-Type": "application/json" } });
   if (!r.ok) throw new Error("Yampi " + r.status);
   return r.json();
 }
@@ -174,6 +175,52 @@ app.post("/api/webhook", function(req, res) {
     if (h) { var order = ["pending","sent","delivered","read","failed"]; if (order.indexOf(st.status) > order.indexOf(h.status)) { h.status = st.status; if (st.status === "delivered") DB.stats.totalDelivered++; if (st.status === "read") DB.stats.totalRead++; } }
   }); }); });
   res.sendStatus(200);
+});
+
+app.get("/api/wa-templates", async function(req, res) {
+  try {
+    var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.wabaId + "/message_templates?limit=20", {
+      headers: { Authorization: "Bearer " + CFG.waToken }
+    });
+    var data = await r.json();
+    if (!r.ok) throw new Error((data.error && data.error.message) || "Erro " + r.status);
+    res.json({ ok: true, data: data.data || [] });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+app.post("/api/wa-templates", async function(req, res) {
+  try {
+    var body = {
+      name: req.body.name,
+      language: req.body.language || "pt_BR",
+      category: req.body.category || "MARKETING",
+      components: [
+        { type: "BODY", text: req.body.bodyText }
+      ]
+    };
+    if (req.body.footerText) {
+      body.components.push({ type: "FOOTER", text: req.body.footerText });
+    }
+    var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.wabaId + "/message_templates", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + CFG.waToken, "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    var data = await r.json();
+    if (!r.ok) throw new Error((data.error && data.error.message) || "Erro " + r.status);
+    res.json({ ok: true, id: data.id, status: data.status, name: req.body.name });
+  } catch (e) { res.status(400).json({ ok: false, error: e.message }); }
+});
+
+app.delete("/api/wa-templates/:name", async function(req, res) {
+  try {
+    var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.wabaId + "/message_templates?name=" + req.params.name, {
+      method: "DELETE",
+      headers: { Authorization: "Bearer " + CFG.waToken }
+    });
+    var data = await r.json();
+    res.json({ ok: data.success || false });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
 app.listen(CFG.port, function() { console.log("SSJ Recovery rodando na porta " + CFG.port); });
