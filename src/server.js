@@ -6,6 +6,7 @@ const cron = require("node-cron");
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname + "/public"));
 
 const CFG = {
   yampiAlias: process.env.YAMPI_ALIAS || "",
