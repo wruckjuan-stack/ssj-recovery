@@ -4,64 +4,219 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SSJ Moda Fitness — Painel</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}body{font-family:'DM Sans',sans-serif;background:#0A0A0A;color:#EFEFEF;min-height:100vh}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
-.header{background:#141414;border-bottom:1px solid #242424;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.logo{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#C2185B,#E91E63);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff}
-.badges{display:flex;gap:8px;align-items:center}.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600}
-.badge-ok{background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);color:#25D366}.badge-err{background:rgba(244,67,54,.1);border:1px solid rgba(244,67,54,.3);color:#F44336}
-.badge-auto{background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3);color:#4CAF50}
-.dot{width:6px;height:6px;border-radius:50%;display:inline-block}.dot-ok{background:#25D366;box-shadow:0 0 5px #25D366}.dot-err{background:#F44336;box-shadow:0 0 5px #F44336}
-.dot-pulse{background:#4CAF50;animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.wrap{max-width:1300px;margin:0 auto;padding:20px 20px 48px}.tabs{display:flex;gap:3px;margin-bottom:20px;background:#141414;border-radius:10px;padding:3px;border:1px solid #242424;flex-wrap:wrap}
-.tab{flex:1;padding:11px 10px;border-radius:7px;border:none;background:transparent;color:#999;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;min-width:100px;white-space:nowrap}.tab.active{background:#C2185B;color:#fff}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:20px}
-.stat{background:#1A1A1A;border-radius:12px;border:1px solid #242424;padding:14px 16px;position:relative;overflow:hidden}
-.stat-bar{position:absolute;top:0;left:0;right:0;height:3px}.stat-val{font-size:22px;font-weight:800;letter-spacing:-.02em}.stat-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
-.card{background:#1A1A1A;border-radius:12px;border:1px solid #242424;padding:18px;margin-bottom:14px}.card-title{font-size:14px;font-weight:700;margin-bottom:12px}
-table{width:100%;border-collapse:collapse}th{padding:8px 12px;text-align:left;font-size:9px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #242424}
-td{padding:10px 12px;font-size:12px;border-bottom:1px solid rgba(36,36,36,.1);color:#EFEFEF}tr:hover{background:#1E1E1E}
-.s-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
-.btn{padding:9px 20px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
-.btn-wa{background:linear-gradient(135deg,#128C7E,#25D366);color:#fff}.btn-yp{background:linear-gradient(135deg,#5B4BD5,#6C5CE7);color:#fff}
-.btn-acc{background:linear-gradient(135deg,#C2185B,#E91E63);color:#fff}.btn-ghost{background:transparent;border:1px solid #242424;color:#999}
-.btn-orange{background:linear-gradient(135deg,#E65100,#FF9800);color:#fff}
-.btn-teal{background:linear-gradient(135deg,#00695C,#26A69A);color:#fff}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-select,input[type=text],input[type=number],textarea{width:100%;padding:9px 12px;border-radius:6px;border:1px solid #242424;background:#141414;color:#EFEFEF;font-size:12px;font-family:inherit;outline:none}
-select{appearance:none}textarea{resize:vertical;min-height:80px;line-height:1.5}input::placeholder,textarea::placeholder{color:#444}
-.grid2{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
-.phone{background:#0D0D0D;border-radius:18px;padding:12px;border:2px solid #242424}
-.bubble{background:#005C4B;border-radius:7px 7px 0 7px;padding:8px 10px;font-size:11px;line-height:1.5;color:#E9EDEF;max-width:94%;margin-left:auto;white-space:pre-wrap;word-break:break-word}
-.center{text-align:center;padding:30px 16px;color:#555}.hidden{display:none}
-.tpl-card{background:#111;border:1px solid #242424;border-radius:10px;padding:14px;margin-bottom:10px}
-.tpl-status{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase}
-.tpl-approved{background:rgba(76,175,80,.15);color:#4CAF50}.tpl-pending{background:rgba(255,152,0,.15);color:#FF9800}.tpl-rejected{background:rgba(244,67,54,.15);color:#F44336}
-.form-group{margin-bottom:14px}.form-label{font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;display:block}
-.form-help{font-size:10px;color:#555;margin-top:4px}
-.alert{padding:12px 16px;border-radius:8px;font-size:12px;line-height:1.5;margin-bottom:14px}
-.alert-info{background:rgba(33,150,243,.08);border:1px solid rgba(33,150,243,.25);color:#2196F3}
-.alert-ok{background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.25);color:#4CAF50}
-.alert-warn{background:rgba(255,152,0,.08);border:1px solid rgba(255,152,0,.25);color:#FF9800}
-.alert-pix{background:rgba(255,87,34,.08);border:1px solid rgba(255,87,34,.25);color:#FF5722}
-.alert-recompra{background:rgba(0,150,136,.08);border:1px solid rgba(0,150,136,.25);color:#009688}
-.toggle{position:relative;width:44px;height:24px;display:inline-block;cursor:pointer}
-.toggle input{display:none}
-.toggle-slider{position:absolute;top:0;left:0;right:0;bottom:0;background:#333;border-radius:12px;transition:.3s}
-.toggle-slider:before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#888;border-radius:50%;transition:.3s}
-.toggle input:checked+.toggle-slider{background:rgba(76,175,80,.3)}
-.toggle input:checked+.toggle-slider:before{transform:translateX(20px);background:#4CAF50}
-.interval-card{background:#111;border:1px solid #242424;border-radius:10px;padding:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.interval-info{flex:1;min-width:160px}
-.interval-days{font-size:20px;font-weight:800;color:#009688}.interval-label{font-size:11px;color:#555;margin-top:2px}
+:root {
+  --bg: #F5F6FA;
+  --white: #FFFFFF;
+  --text: #1A1D2E;
+  --text2: #5A5F7A;
+  --text3: #9196AD;
+  --border: #E8EAF0;
+  --border2: #D5D8E3;
+  --pink: #E91E63;
+  --pink-soft: #FCE4EC;
+  --pink-dark: #C2185B;
+  --green: #10B981;
+  --green-soft: #D1FAE5;
+  --blue: #3B82F6;
+  --blue-soft: #DBEAFE;
+  --orange: #F59E0B;
+  --orange-soft: #FEF3C7;
+  --red: #EF4444;
+  --red-soft: #FEE2E2;
+  --teal: #14B8A6;
+  --teal-soft: #CCFBF1;
+  --purple: #8B5CF6;
+  --purple-soft: #EDE9FE;
+  --deep: #FF5722;
+  --deep-soft: #FBE9E7;
+  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.07);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-xs: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0 }
+body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased }
+::-webkit-scrollbar { width: 6px }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px }
+
+.header {
+  background: var(--white); border-bottom: 1px solid var(--border);
+  padding: 16px 28px; display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; box-shadow: var(--shadow);
+  position: sticky; top: 0; z-index: 50;
+}
+.logo {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(135deg, #E91E63, #FF6090);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; color: #fff;
+  box-shadow: 0 2px 8px rgba(233,30,99,.3);
+}
+.badges { display: flex; gap: 8px; align-items: center }
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  background: var(--white); border: 1px solid var(--border);
+}
+.badge-ok { background: var(--green-soft); border-color: #A7F3D0; color: #059669 }
+.badge-err { background: var(--red-soft); border-color: #FECACA; color: var(--red) }
+.badge-auto { background: var(--green-soft); border-color: #A7F3D0; color: #059669 }
+.dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block }
+.dot-ok { background: var(--green); box-shadow: 0 0 6px rgba(16,185,129,.5) }
+.dot-err { background: var(--red); box-shadow: 0 0 6px rgba(239,68,68,.5) }
+.dot-pulse { background: var(--green); animation: pulse 2s infinite }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.wrap { max-width: 1320px; margin: 0 auto; padding: 24px 24px 56px }
+
+.tabs {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--white); border-radius: 16px; padding: 5px;
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+  flex-wrap: wrap; overflow-x: auto;
+}
+.tab {
+  flex: 1; padding: 12px 14px; border-radius: 12px;
+  border: none; background: transparent; color: var(--text3);
+  font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  min-width: 110px; white-space: nowrap; transition: all .2s ease;
+}
+.tab:hover { background: var(--bg); color: var(--text2) }
+.tab.active { background: linear-gradient(135deg, #E91E63, #FF6090); color: #fff; box-shadow: 0 2px 8px rgba(233,30,99,.25) }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-bottom: 24px }
+.stat {
+  background: var(--white); border-radius: var(--radius);
+  border: 1px solid var(--border); padding: 18px 20px;
+  box-shadow: var(--shadow); transition: transform .15s ease, box-shadow .15s ease;
+}
+.stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-md) }
+.stat-icon { font-size: 20px; margin-bottom: 6px }
+.stat-val { font-size: 24px; font-weight: 800; letter-spacing: -.02em }
+.stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; margin-top: 3px; font-weight: 600 }
+
+.card {
+  background: var(--white); border-radius: var(--radius);
+  border: 1px solid var(--border); padding: 22px; margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.card-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; color: var(--text) }
+
+table { width: 100%; border-collapse: collapse }
+th {
+  padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700;
+  color: var(--text3); text-transform: uppercase; letter-spacing: .06em;
+  border-bottom: 2px solid var(--border); background: var(--bg);
+}
+th:first-child { border-radius: 8px 0 0 0 } th:last-child { border-radius: 0 8px 0 0 }
+td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--text) }
+tr { transition: background .15s } tr:hover { background: #F8F9FC }
+
+.s-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+}
+
+.btn {
+  padding: 10px 22px; border-radius: 12px; border: none;
+  font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all .2s ease; box-shadow: var(--shadow);
+}
+.btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md) }
+.btn:active { transform: translateY(0) }
+.btn-wa { background: linear-gradient(135deg, #25D366, #128C7E); color: #fff }
+.btn-yp { background: linear-gradient(135deg, #7C3AED, #8B5CF6); color: #fff }
+.btn-acc { background: linear-gradient(135deg, #E91E63, #FF6090); color: #fff }
+.btn-ghost { background: var(--white); border: 1px solid var(--border); color: var(--text2); box-shadow: none }
+.btn-ghost:hover { background: var(--bg); border-color: var(--border2) }
+.btn-orange { background: linear-gradient(135deg, #F59E0B, #D97706); color: #fff }
+.btn-teal { background: linear-gradient(135deg, #14B8A6, #0D9488); color: #fff }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none }
+
+select, input[type=text], input[type=number], textarea {
+  width: 100%; padding: 10px 14px; border-radius: var(--radius-xs);
+  border: 1.5px solid var(--border); background: var(--white);
+  color: var(--text); font-size: 13px; font-family: inherit; outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+select:focus, input:focus, textarea:focus { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(233,30,99,.1) }
+select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239196AD' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center }
+textarea { resize: vertical; min-height: 80px; line-height: 1.6 }
+input::placeholder, textarea::placeholder { color: var(--text3) }
+
+.grid2 { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start }
+
+.phone { background: #ECE5DD; border-radius: 24px; padding: 14px; border: 3px solid #D5D0C8; box-shadow: var(--shadow-md) }
+.bubble {
+  background: #DCF8C6; border-radius: 10px 10px 0 10px;
+  padding: 10px 12px; font-size: 12px; line-height: 1.6;
+  color: #303030; max-width: 94%; margin-left: auto;
+  white-space: pre-wrap; word-break: break-word;
+  box-shadow: 0 1px 2px rgba(0,0,0,.1);
+}
+
+.center { text-align: center; padding: 36px 16px; color: var(--text3) }
+.hidden { display: none }
+.form-group { margin-bottom: 16px }
+.form-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; display: block }
+.form-help { font-size: 11px; color: var(--text3); margin-top: 5px }
+
+.alert { padding: 14px 18px; border-radius: var(--radius-sm); font-size: 13px; line-height: 1.6; margin-bottom: 16px }
+.alert-info { background: var(--blue-soft); border: 1px solid #93C5FD; color: #1D4ED8 }
+.alert-ok { background: var(--green-soft); border: 1px solid #6EE7B7; color: #047857 }
+.alert-warn { background: var(--orange-soft); border: 1px solid #FCD34D; color: #B45309 }
+.alert-pix { background: var(--deep-soft); border: 1px solid #FFAB91; color: #D84315 }
+.alert-recompra { background: var(--teal-soft); border: 1px solid #5EEAD4; color: #0F766E }
+
+.tpl-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 10px; transition: border-color .2s }
+.tpl-card:hover { border-color: var(--border2) }
+.tpl-status { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase }
+.tpl-approved { background: var(--green-soft); color: #059669 }
+.tpl-pending { background: var(--orange-soft); color: #B45309 }
+.tpl-rejected { background: var(--red-soft); color: var(--red) }
+
+.toggle { position: relative; width: 46px; height: 26px; display: inline-block; cursor: pointer }
+.toggle input { display: none }
+.toggle-slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--border2); border-radius: 13px; transition: .3s }
+.toggle-slider:before { content: ''; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .3s; box-shadow: 0 1px 3px rgba(0,0,0,.15) }
+.toggle input:checked + .toggle-slider { background: var(--green) }
+.toggle input:checked + .toggle-slider:before { transform: translateX(20px) }
+
+.interval-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap }
+.interval-days { font-size: 22px; font-weight: 800; color: var(--teal) }
+.interval-label { font-size: 11px; color: var(--text3); margin-top: 2px }
+
+.cat-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px }
+.cat-pill {
+  padding: 8px 16px; border-radius: 20px;
+  border: 1.5px solid var(--border); background: var(--white);
+  color: var(--text2); font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all .2s ease;
+}
+.cat-pill:hover { border-color: var(--border2); background: var(--bg) }
+.cat-pill.active { border-color: var(--pink); background: var(--pink-soft); color: var(--pink-dark) }
+.cat-pill[data-cat="pix"].active { border-color: var(--deep); background: var(--deep-soft); color: #BF360C }
+.cat-pill[data-cat="recompra"].active { border-color: var(--teal); background: var(--teal-soft); color: #0F766E }
+
+.section-label { display: flex; align-items: center; gap: 10px; margin: 20px 0 12px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em }
+.section-label span { white-space: nowrap }
+.section-label:after { content: ''; flex: 1; height: 1px; background: var(--border) }
+
+@media (max-width: 860px) { .grid2 { grid-template-columns: 1fr } .header { padding: 12px 16px } .wrap { padding: 16px 12px 40px } }
 </style>
 </head>
 <body>
 <header class="header">
-  <div style="display:flex;align-items:center;gap:10px">
+  <div style="display:flex;align-items:center;gap:12px">
     <div class="logo">SSJ</div>
-    <div><div style="font-size:15px;font-weight:700">SSJ Moda Fitness</div><div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.04em">Painel de recuperacao — WhatsApp + Yampi</div></div>
+    <div>
+      <div style="font-size:16px;font-weight:800;color:var(--text)">SSJ Moda Fitness</div>
+      <div style="font-size:11px;color:var(--text3);font-weight:500">Painel de recuperacao — WhatsApp + Yampi</div>
+    </div>
   </div>
   <div class="badges">
     <div id="badge-yampi" class="badge badge-err"><span class="dot dot-err"></span> Yampi</div>
@@ -69,6 +224,7 @@ select{appearance:none}textarea{resize:vertical;min-height:80px;line-height:1.5}
     <div class="badge badge-auto"><span class="dot dot-pulse"></span> Auto: ON</div>
   </div>
 </header>
+
 <div class="wrap">
   <div class="tabs">
     <button class="tab active" onclick="showTab('dash',this)">📊 Dashboard</button>
@@ -80,19 +236,19 @@ select{appearance:none}textarea{resize:vertical;min-height:80px;line-height:1.5}
     <button class="tab" onclick="showTab('auto',this)">⚡ Automacao</button>
   </div>
 
-  <!-- ==================== DASHBOARD ==================== -->
+  <!-- DASHBOARD -->
   <div id="tab-dash">
     <div class="stats" id="stats-grid"></div>
     <div class="card"><div class="card-title">📊 Performance por template</div><div style="overflow-x:auto"><table id="tpl-table"><thead><tr><th>Template</th><th>Enviadas</th><th>Entregues</th><th>Lidas</th><th>Falhas</th><th>Taxa leitura</th></tr></thead><tbody></tbody></table></div></div>
-    <div class="card"><div class="card-title">ℹ️ Status do sistema</div><div id="sys-status" style="font-size:12px;color:#999;line-height:2"></div></div>
+    <div class="card"><div class="card-title">ℹ️ Status do sistema</div><div id="sys-status" style="font-size:13px;color:var(--text2);line-height:2.2"></div></div>
   </div>
 
-  <!-- ==================== CARRINHOS ==================== -->
+  <!-- CARRINHOS -->
   <div id="tab-carts" class="hidden">
     <div class="grid2">
       <div>
         <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
             <div class="card-title" style="margin:0">🛒 Carrinhos abandonados</div>
             <button class="btn btn-yp" onclick="loadCarts()">🔄 Atualizar</button>
           </div>
@@ -106,30 +262,28 @@ select{appearance:none}textarea{resize:vertical;min-height:80px;line-height:1.5}
           </div>
         </div>
       </div>
-      <div style="position:sticky;top:20px">
-        <div style="font-size:10px;font-weight:700;color:#555;margin-bottom:7px;text-align:center;text-transform:uppercase;letter-spacing:.06em">Preview WhatsApp</div>
+      <div style="position:sticky;top:90px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:8px;text-align:center;text-transform:uppercase;letter-spacing:.06em">Preview WhatsApp</div>
         <div class="phone">
-          <div style="width:70px;height:3px;border-radius:3px;background:#242424;margin:0 auto 8px"></div>
-          <div style="padding:6px 8px;background:#1F2C34;border-radius:8px 8px 0 0;display:flex;align-items:center;gap:7px;margin-bottom:1px">
-            <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#C2185B,#E91E63);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff">S</div>
-            <div><div style="font-size:12px;font-weight:600;color:#E9EDEF">SSJ Moda Fitness</div><div style="font-size:9px;color:#25D366">online</div></div>
+          <div style="width:60px;height:3px;border-radius:3px;background:#C8C3BB;margin:0 auto 10px"></div>
+          <div style="padding:8px 10px;background:#075E54;border-radius:12px 12px 0 0;display:flex;align-items:center;gap:8px;margin-bottom:2px">
+            <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#E91E63,#FF6090);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff">S</div>
+            <div><div style="font-size:13px;font-weight:600;color:#fff">SSJ Moda Fitness</div><div style="font-size:10px;color:#25D366">online</div></div>
           </div>
-          <div style="background:#0B141A;border-radius:0 0 8px 8px;padding:8px;min-height:140px"><div class="bubble" id="preview-bubble">Selecione um carrinho...</div></div>
+          <div style="background:#E5DDD5;border-radius:0 0 12px 12px;padding:10px;min-height:150px"><div class="bubble" id="preview-bubble">Selecione um carrinho...</div></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== PIX/BOLETO ==================== -->
+  <!-- PIX/BOLETO -->
   <div id="tab-pix" class="hidden">
-    <div class="alert alert-pix"><strong>💳 Recuperacao de PIX/Boleto expirado</strong> — O sistema verifica a cada 15 minutos se algum pagamento via PIX ou boleto expirou. Quando detecta, dispara automaticamente uma mensagem oferecendo novo link de pagamento.</div>
-
+    <div class="alert alert-pix"><strong>💳 Recuperacao de PIX/Boleto expirado</strong> — O sistema verifica a cada 15 minutos se algum pagamento expirou e dispara automaticamente uma mensagem com novo link.</div>
     <div class="stats" id="pix-stats-grid"></div>
-
     <div class="grid2">
       <div>
         <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
             <div class="card-title" style="margin:0">💳 Pagamentos expirados</div>
             <button class="btn btn-orange" onclick="loadPixCarts()">🔄 Atualizar</button>
           </div>
@@ -142,64 +296,50 @@ select{appearance:none}textarea{resize:vertical;min-height:80px;line-height:1.5}
             <button class="btn btn-orange" id="pix-send-btn" onclick="sendPixManual()">📤 Enviar (0)</button>
           </div>
         </div>
-
-        <div class="card">
-          <div class="card-title">📋 Historico PIX/Boleto</div>
-          <div style="overflow-x:auto"><table id="pix-hist-table"><thead><tr><th>Contato</th><th>Template</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead><tbody></tbody></table></div>
-        </div>
+        <div class="card"><div class="card-title">📋 Historico PIX/Boleto</div><div style="overflow-x:auto"><table id="pix-hist-table"><thead><tr><th>Contato</th><th>Template</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead><tbody></tbody></table></div></div>
       </div>
-      <div style="position:sticky;top:20px">
+      <div style="position:sticky;top:90px">
         <div class="card">
           <div class="card-title">⚡ Como funciona</div>
-          <div style="font-size:12px;color:#999;line-height:1.8">
-            <p>O servidor verifica a cada <strong style="color:#FF5722">15 minutos</strong>:</p>
+          <div style="font-size:13px;color:var(--text2);line-height:1.9">
+            <p>Verifica a cada <strong style="color:var(--deep)">15 minutos</strong>:</p>
             <p style="margin-top:6px">1. Busca carrinhos na Yampi</p>
-            <p>2. Filtra os que tem <code style="background:#222;padding:2px 5px;border-radius:3px;font-size:11px">last_transaction_status</code> de PIX ou boleto expirado</p>
-            <p>3. Dispara template adequado:</p>
-            <div style="margin:8px 0 8px 20px;font-size:11px">
-              <div style="padding:4px 0"><span style="color:#FF5722;font-weight:600">PIX expirado →</span> Template "pix_expirado"</div>
-              <div style="padding:4px 0"><span style="color:#FF9800;font-weight:600">Boleto vencido →</span> Template "boleto_expirado"</div>
-            </div>
-            <p>4. Nunca repete envio para o mesmo carrinho</p>
+            <p>2. Filtra PIX ou boleto expirado</p>
+            <p>3. Dispara template adequado</p>
+            <p>4. Nunca repete envio</p>
           </div>
         </div>
-        <div class="card">
-          <div class="card-title">📜 Log PIX/Boleto</div>
-          <div id="pix-cron-log"><div class="center" style="font-size:12px">Aguardando primeira execucao...</div></div>
-        </div>
+        <div class="card"><div class="card-title">📜 Log PIX/Boleto</div><div id="pix-cron-log"><div class="center">Aguardando primeira execucao...</div></div></div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== RECOMPRA ==================== -->
+  <!-- RECOMPRA -->
   <div id="tab-recompra" class="hidden">
-    <div class="alert alert-recompra"><strong>🔄 Campanhas de recompra</strong> — O sistema identifica clientes que compraram ha 30, 60 ou 90 dias e envia mensagem automatica incentivando nova compra com cupom de fidelidade. Roda diariamente as 10h.</div>
-
+    <div class="alert alert-recompra"><strong>🔄 Campanhas de recompra</strong> — Identifica clientes que compraram ha 30, 60 ou 90 dias e envia mensagem com cupom de fidelidade. Roda diariamente as 10h.</div>
     <div class="stats" id="recompra-stats-grid"></div>
-
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
         <div class="card-title" style="margin:0">⚙️ Configuracao das campanhas</div>
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:11px;color:#999">Automacao</span>
+          <span style="font-size:12px;color:var(--text2);font-weight:600">Automacao</span>
           <label class="toggle"><input type="checkbox" id="recompra-enabled" onchange="saveRecompraConfig()" checked><span class="toggle-slider"></span></label>
         </div>
       </div>
       <div id="recompra-intervals"></div>
     </div>
-
     <div class="grid2" style="grid-template-columns:1fr 1fr">
       <div>
         <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-            <div class="card-title" style="margin:0">📦 Pedidos elegiveis para recompra</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+            <div class="card-title" style="margin:0">📦 Pedidos elegiveis</div>
             <button class="btn btn-teal" onclick="loadRecompraOrders()">🔄 Buscar pedidos</button>
           </div>
           <div style="overflow-x:auto"><table id="recompra-table"><thead><tr><th><input type="checkbox" id="recompra-sel-all" onchange="toggleAllRecompra()"></th><th>Cliente</th><th>Pedido</th><th>Valor</th><th>Dias</th><th>Campanha</th><th>Enviado?</th></tr></thead><tbody></tbody></table></div>
         </div>
         <div class="card">
           <div class="card-title">📤 Disparo manual recompra</div>
-          <div style="display:grid;grid-template-columns:1fr 120px auto;gap:12px;align-items:end">
+          <div style="display:grid;grid-template-columns:1fr 130px auto;gap:12px;align-items:end">
             <div><div class="form-label">Template</div><select id="recompra-tpl-select"></select></div>
             <div><div class="form-label">Cupom</div><input type="text" id="recompra-coupon" placeholder="VOLTESSJ10"></div>
             <button class="btn btn-teal" id="recompra-send-btn" onclick="sendRecompraManual()">📤 Enviar (0)</button>
@@ -207,117 +347,100 @@ select{appearance:none}textarea{resize:vertical;min-height:80px;line-height:1.5}
         </div>
       </div>
       <div>
-        <div class="card">
-          <div class="card-title">📋 Historico de recompra</div>
-          <div style="overflow-x:auto"><table id="recompra-hist-table"><thead><tr><th>Contato</th><th>Template</th><th>Valor pedido</th><th>Status</th><th>Data</th></tr></thead><tbody></tbody></table></div>
-        </div>
-        <div class="card">
-          <div class="card-title">📜 Log campanhas</div>
-          <div id="recompra-cron-log"><div class="center" style="font-size:12px">Aguardando primeira execucao (diario as 10h)...</div></div>
-        </div>
+        <div class="card"><div class="card-title">📋 Historico de recompra</div><div style="overflow-x:auto"><table id="recompra-hist-table"><thead><tr><th>Contato</th><th>Template</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead><tbody></tbody></table></div></div>
+        <div class="card"><div class="card-title">📜 Log campanhas</div><div id="recompra-cron-log"><div class="center">Aguardando primeira execucao (diario as 10h)...</div></div></div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== MENSAGENS / TEMPLATES ==================== -->
+  <!-- MENSAGENS / TEMPLATES -->
   <div id="tab-templates" class="hidden">
-    <div class="alert alert-info"><strong>Como funciona:</strong> Crie suas mensagens aqui e elas serao enviadas automaticamente para aprovacao do Meta. Quando aprovadas, o sistema pode usar para disparar. Use {{1}}, {{2}}, {{3}} para variaveis (nome, cupom, link).</div>
-
+    <div class="alert alert-info"><strong>Como funciona:</strong> Crie suas mensagens aqui e elas serao enviadas para aprovacao do Meta. Use {{1}}, {{2}}, {{3}} para variaveis (nome, cupom, link).</div>
+    <div class="cat-pills">
+      <button class="cat-pill active" data-cat="all" onclick="filterTemplates('all',this)">📋 Todos</button>
+      <button class="cat-pill" data-cat="carrinho" onclick="filterTemplates('carrinho',this)">🛒 Carrinho Abandonado</button>
+      <button class="cat-pill" data-cat="pix" onclick="filterTemplates('pix',this)">💳 PIX / Boleto</button>
+      <button class="cat-pill" data-cat="recompra" onclick="filterTemplates('recompra',this)">🔄 Recompra</button>
+    </div>
     <div class="grid2" style="grid-template-columns:1fr 1fr">
-      <!-- Templates existentes -->
       <div>
         <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
             <div class="card-title" style="margin:0">📋 Templates no Meta</div>
             <button class="btn btn-ghost" onclick="loadWaTemplates()">🔄 Atualizar status</button>
           </div>
-          <div id="wa-templates-list"><div class="center" style="font-size:12px">Clique em Atualizar para ver seus templates</div></div>
+          <div id="wa-templates-list"><div class="center">Clique em Atualizar para ver seus templates</div></div>
         </div>
       </div>
-
-      <!-- Criar novo -->
       <div>
         <div class="card">
           <div class="card-title">➕ Criar novo template</div>
           <div class="form-group">
-            <label class="form-label">Nome do template</label>
-            <input type="text" id="new-tpl-name" placeholder="carrinho_lembrete">
-            <div class="form-help">Apenas letras minusculas, numeros e _ (underline). Sem espacos.</div>
+            <label class="form-label">Tipo de mensagem</label>
+            <select id="new-tpl-type" onchange="onTplTypeChange()">
+              <option value="carrinho">🛒 Carrinho Abandonado</option>
+              <option value="pix">💳 PIX / Boleto</option>
+              <option value="recompra">🔄 Recompra</option>
+            </select>
           </div>
-          <div class="form-group">
-            <label class="form-label">Categoria</label>
-            <select id="new-tpl-cat"><option value="MARKETING">Marketing</option><option value="UTILITY">Utilidade</option></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Texto da mensagem</label>
-            <textarea id="new-tpl-body" rows="6" placeholder="Oi {{1}}, tudo bem? Vi que voce estava escolhendo umas pecas lindas aqui na SSJ Moda Fitness...&#10;&#10;Volte quando quiser: {{2}}"></textarea>
-            <div class="form-help">Use {{1}} para nome, {{2}} para cupom ou link, {{3}} para link. O Meta vai revisar o texto antes de aprovar.</div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Rodape (opcional)</label>
-            <input type="text" id="new-tpl-footer" placeholder="SSJ Moda Fitness">
-          </div>
+          <div class="form-group"><label class="form-label">Nome do template</label><input type="text" id="new-tpl-name" placeholder="carrinho_lembrete"><div class="form-help">Apenas letras minusculas, numeros e _. Sem espacos.</div></div>
+          <div class="form-group"><label class="form-label">Categoria Meta</label><select id="new-tpl-cat"><option value="MARKETING">Marketing</option><option value="UTILITY">Utilidade</option></select></div>
+          <div class="form-group"><label class="form-label">Texto da mensagem</label><textarea id="new-tpl-body" rows="6" placeholder="Oi {{1}}, tudo bem?..."></textarea><div class="form-help" id="tpl-vars-help">Use {{1}} para nome, {{2}} para link do carrinho, {{3}} para cupom.</div></div>
+          <div class="form-group"><label class="form-label">Rodape (opcional)</label><input type="text" id="new-tpl-footer" placeholder="SSJ Moda Fitness"></div>
           <button class="btn btn-acc" id="create-tpl-btn" onclick="createTemplate()">🚀 Enviar para aprovacao do Meta</button>
-          <div id="create-tpl-result" style="margin-top:10px"></div>
+          <div id="create-tpl-result" style="margin-top:12px"></div>
         </div>
-
-        <div class="card">
-          <div class="card-title">📝 Templates sugeridos (copie e cole)</div>
-          <div id="suggested-templates"></div>
-        </div>
+        <div class="card"><div class="card-title">📝 Templates sugeridos</div><div id="suggested-templates"></div></div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== HISTORICO ==================== -->
+  <!-- HISTORICO -->
   <div id="tab-history" class="hidden">
-    <div class="card"><div class="card-title">📋 Historico de envios (todos)</div>
-      <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-ghost hist-filter active" onclick="filterHistory('all',this)">Todos</button>
-        <button class="btn btn-ghost hist-filter" onclick="filterHistory('carrinho',this)">🛒 Carrinhos</button>
-        <button class="btn btn-ghost hist-filter" onclick="filterHistory('pix',this)">💳 PIX/Boleto</button>
-        <button class="btn btn-ghost hist-filter" onclick="filterHistory('recompra',this)">🔄 Recompra</button>
+    <div class="card">
+      <div class="card-title">📋 Historico de envios</div>
+      <div class="cat-pills" style="margin-bottom:14px">
+        <button class="cat-pill active" data-cat="all" onclick="filterHistory('all',this)">📋 Todos</button>
+        <button class="cat-pill" data-cat="carrinho" onclick="filterHistory('carrinho',this)">🛒 Carrinhos</button>
+        <button class="cat-pill" data-cat="pix" onclick="filterHistory('pix',this)">💳 PIX/Boleto</button>
+        <button class="cat-pill" data-cat="recompra" onclick="filterHistory('recompra',this)">🔄 Recompra</button>
       </div>
       <div style="overflow-x:auto"><table id="hist-table"><thead><tr><th>Contato</th><th>Template</th><th>Valor</th><th>Status</th><th>Tipo</th><th>Data</th></tr></thead><tbody></tbody></table></div>
     </div>
   </div>
 
-  <!-- ==================== AUTOMACAO ==================== -->
+  <!-- AUTOMACAO -->
   <div id="tab-auto" class="hidden">
     <div class="card">
       <div class="card-title">⚡ Como funciona</div>
-      <div style="font-size:12px;color:#999;line-height:1.8">
-        <p>O servidor roda 24/7 com <strong style="color:#25D366">3 automacoes</strong>:</p>
-
-        <div style="margin:12px 0;padding:12px;background:#111;border-radius:8px;border:1px solid #242424">
-          <div style="font-weight:700;color:#E91E63;margin-bottom:6px">🛒 Carrinho abandonado (a cada 10 min)</div>
-          <div style="font-size:11px;margin-left:12px">
-            <div style="padding:3px 0"><span style="color:#25D366;font-weight:600">0 a 1.5h →</span> Lembrete Gentil</div>
-            <div style="padding:3px 0"><span style="color:#FF9800;font-weight:600">1.5 a 12h →</span> Apoio + Confianca</div>
-            <div style="padding:3px 0"><span style="color:#C2185B;font-weight:600">12 a 36h →</span> Prova Social</div>
-            <div style="padding:3px 0"><span style="color:#F44336;font-weight:600">36 a 96h →</span> Urgencia + Cupom</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8">
+        <p>O servidor roda 24/7 com <strong style="color:var(--green)">3 automacoes</strong>:</p>
+        <div style="margin:14px 0;padding:14px 18px;background:var(--pink-soft);border-radius:var(--radius-sm);border:1px solid #F8BBD0">
+          <div style="font-weight:700;color:var(--pink-dark);margin-bottom:6px">🛒 Carrinho abandonado — a cada 10 min</div>
+          <div style="font-size:12px;margin-left:12px;color:var(--text2)">
+            <div style="padding:3px 0"><span style="color:var(--green);font-weight:700">0–1.5h →</span> Lembrete Gentil</div>
+            <div style="padding:3px 0"><span style="color:var(--orange);font-weight:700">1.5–12h →</span> Apoio + Confianca</div>
+            <div style="padding:3px 0"><span style="color:var(--pink);font-weight:700">12–36h →</span> Prova Social</div>
+            <div style="padding:3px 0"><span style="color:var(--red);font-weight:700">36–96h →</span> Urgencia + Cupom</div>
           </div>
         </div>
-
-        <div style="margin:12px 0;padding:12px;background:#111;border-radius:8px;border:1px solid #242424">
-          <div style="font-weight:700;color:#FF5722;margin-bottom:6px">💳 PIX/Boleto expirado (a cada 15 min)</div>
-          <div style="font-size:11px;margin-left:12px">
-            <div style="padding:3px 0"><span style="color:#FF5722;font-weight:600">PIX expirado →</span> Mensagem com novo link</div>
-            <div style="padding:3px 0"><span style="color:#FF9800;font-weight:600">Boleto vencido →</span> Mensagem com novo link</div>
+        <div style="margin:14px 0;padding:14px 18px;background:var(--deep-soft);border-radius:var(--radius-sm);border:1px solid #FFAB91">
+          <div style="font-weight:700;color:#BF360C;margin-bottom:6px">💳 PIX/Boleto expirado — a cada 15 min</div>
+          <div style="font-size:12px;margin-left:12px;color:var(--text2)">
+            <div style="padding:3px 0"><span style="color:var(--deep);font-weight:700">PIX expirado →</span> Novo link de pagamento</div>
+            <div style="padding:3px 0"><span style="color:var(--orange);font-weight:700">Boleto vencido →</span> Novo link de pagamento</div>
           </div>
         </div>
-
-        <div style="margin:12px 0;padding:12px;background:#111;border-radius:8px;border:1px solid #242424">
-          <div style="font-weight:700;color:#009688;margin-bottom:6px">🔄 Recompra (diario as 10h)</div>
-          <div style="font-size:11px;margin-left:12px">
-            <div style="padding:3px 0"><span style="color:#26A69A;font-weight:600">30 dias →</span> Cupom 10% OFF</div>
-            <div style="padding:3px 0"><span style="color:#00897B;font-weight:600">60 dias →</span> Cupom 15% OFF</div>
-            <div style="padding:3px 0"><span style="color:#00695C;font-weight:600">90 dias →</span> Cupom 20% OFF</div>
+        <div style="margin:14px 0;padding:14px 18px;background:var(--teal-soft);border-radius:var(--radius-sm);border:1px solid #5EEAD4">
+          <div style="font-weight:700;color:#0F766E;margin-bottom:6px">🔄 Recompra — diario as 10h</div>
+          <div style="font-size:12px;margin-left:12px;color:var(--text2)">
+            <div style="padding:3px 0"><span style="color:var(--teal);font-weight:700">30 dias →</span> Cupom 10% OFF</div>
+            <div style="padding:3px 0"><span style="color:#0D9488;font-weight:700">60 dias →</span> Cupom 15% OFF</div>
+            <div style="padding:3px 0"><span style="color:#0F766E;font-weight:700">90 dias →</span> Cupom 20% OFF</div>
           </div>
         </div>
       </div>
     </div>
-
     <div class="card"><div class="card-title">📜 Log — Carrinhos abandonados</div><div id="cron-log"></div></div>
     <div class="card"><div class="card-title">📜 Log — PIX/Boleto</div><div id="auto-pix-log"></div></div>
     <div class="card"><div class="card-title">📜 Log — Recompra</div><div id="auto-recompra-log"></div></div>
@@ -325,33 +448,30 @@ select{appearance:none}textarea{resize:vertical;min-height:80px;line-height:1.5}
 </div>
 
 <script>
-var STATE={carts:[],templates:[],selected:[],history:[],stats:null,health:null,waTemplates:[],pixCarts:[],pixSelected:[],pixHistory:[],recompraOrders:[],recompraSelected:[],recompraHistory:[],recompraConfig:null,historyFilter:'all'};
-var ST={sent:{l:"Enviado",c:"#2196F3",i:"✓"},delivered:{l:"Entregue",c:"#4CAF50",i:"✓✓"},read:{l:"Lido",c:"#25D366",i:"✓✓"},failed:{l:"Falhou",c:"#F44336",i:"✕"}};
-
+var STATE={carts:[],templates:[],selected:[],history:[],stats:null,health:null,waTemplates:[],pixCarts:[],pixSelected:[],pixHistory:[],recompraOrders:[],recompraSelected:[],recompraHistory:[],recompraConfig:null,historyFilter:'all',tplFilter:'all'};
+var ST={sent:{l:"Enviado",c:"var(--blue)",bg:"var(--blue-soft)",i:"✓"},delivered:{l:"Entregue",c:"var(--green)",bg:"var(--green-soft)",i:"✓✓"},read:{l:"Lido",c:"#059669",bg:"var(--green-soft)",i:"✓✓"},failed:{l:"Falhou",c:"var(--red)",bg:"var(--red-soft)",i:"✕"}};
 var SUGGESTED=[
-  {name:"carrinho_lembrete",body:"Oi {{1}}, tudo bem? Vi que voce estava escolhendo umas pecas lindas aqui na SSJ Moda Fitness e nao finalizou. Seus itens continuam reservados!\n\nVolte quando quiser: {{2}}",desc:"🛒 Lembrete Gentil (30min)"},
-  {name:"carrinho_apoio",body:"Oi {{1}}! Sei que escolher roupa fitness online pode gerar duvidas. Na SSJ, cada peca e pensada para mulheres que valorizam qualidade e conforto de verdade.\n\nSuas pecas continuam esperando: {{2}}",desc:"🛒 Apoio + Confianca (2h)"},
-  {name:"carrinho_social",body:"{{1}}, as pecas que voce escolheu estao entre as mais amadas pelas nossas clientes!\n\nQue tal garantir as suas? {{2}}",desc:"🛒 Prova Social (24h)"},
-  {name:"carrinho_cupom",body:"{{1}}, este e o nosso ultimo chamado!\n\nPreparamos 10% OFF exclusivo para voce: {{2}}\n\nUse o cupom e finalize: {{3}}\n\nValido por 24h!",desc:"🛒 Urgencia + Cupom (48h)"},
-  {name:"pix_expirado",body:"Oi {{1}}! Vi que seu pagamento via PIX expirou, mas nao se preocupe — seus itens ainda estao disponiveis.\n\nGere um novo PIX rapidinho aqui: {{2}}\n\nQualquer duvida, estamos aqui!",desc:"💳 PIX Expirado"},
-  {name:"boleto_expirado",body:"Oi {{1}}! Seu boleto venceu, mas calma — suas pecas favoritas continuam te esperando na SSJ.\n\nClique aqui para gerar um novo pagamento: {{2}}\n\nE se preferir pagar via PIX, e instantaneo!",desc:"💳 Boleto Expirado"},
-  {name:"recompra_30dias",body:"Oi {{1}}! Ja faz um mes que voce comprou com a gente e esperamos que esteja amando suas pecas!\n\nQue tal renovar o look? Use o cupom {{2}} e ganhe 10% OFF na proxima compra.\n\nAcesse: ssjmodafitness.com.br",desc:"🔄 Recompra 30 dias"},
-  {name:"recompra_60dias",body:"{{1}}, sentimos sua falta! Ja faz 2 meses desde sua ultima compra na SSJ.\n\nTemos novidades incriveis e um cupom especial pra voce: {{2}} com 15% OFF!\n\nVem ver: ssjmodafitness.com.br",desc:"🔄 Recompra 60 dias"},
-  {name:"recompra_90dias",body:"{{1}}, faz tempo que nao nos vemos! Preparamos algo especial pra voce voltar:\n\n20% OFF com o cupom {{2}}\n\nSao pecas novas, confortaveis e com a qualidade SSJ que voce ja conhece.\n\nAproveite: ssjmodafitness.com.br",desc:"🔄 Recompra 90 dias"},
+  {name:"carrinho_lembrete",cat:"carrinho",body:"Oi {{1}}, tudo bem? Vi que voce estava escolhendo umas pecas lindas aqui na SSJ Moda Fitness e nao finalizou. Seus itens continuam reservados!\n\nVolte quando quiser: {{2}}",desc:"Lembrete Gentil (30min)"},
+  {name:"carrinho_apoio",cat:"carrinho",body:"Oi {{1}}! Sei que escolher roupa fitness online pode gerar duvidas. Na SSJ, cada peca e pensada para mulheres que valorizam qualidade e conforto de verdade.\n\nSuas pecas continuam esperando: {{2}}",desc:"Apoio + Confianca (2h)"},
+  {name:"carrinho_social",cat:"carrinho",body:"{{1}}, as pecas que voce escolheu estao entre as mais amadas pelas nossas clientes!\n\nQue tal garantir as suas? {{2}}",desc:"Prova Social (24h)"},
+  {name:"carrinho_cupom",cat:"carrinho",body:"{{1}}, este e o nosso ultimo chamado!\n\nPreparamos 10% OFF exclusivo para voce: {{2}}\n\nUse o cupom e finalize: {{3}}\n\nValido por 24h!",desc:"Urgencia + Cupom (48h)"},
+  {name:"pix_expirado",cat:"pix",body:"Oi {{1}}! Vi que seu pagamento via PIX expirou, mas nao se preocupe — seus itens ainda estao disponiveis.\n\nGere um novo PIX rapidinho aqui: {{2}}\n\nQualquer duvida, estamos aqui!",desc:"PIX Expirado"},
+  {name:"boleto_expirado",cat:"pix",body:"Oi {{1}}! Seu boleto venceu, mas calma — suas pecas favoritas continuam te esperando na SSJ.\n\nClique aqui para gerar um novo pagamento: {{2}}\n\nE se preferir pagar via PIX, e instantaneo!",desc:"Boleto Expirado"},
+  {name:"recompra_30dias",cat:"recompra",body:"Oi {{1}}! Ja faz um mes que voce comprou com a gente e esperamos que esteja amando suas pecas!\n\nQue tal renovar o look? Use o cupom {{2}} e ganhe 10% OFF na proxima compra.\n\nAcesse: ssjmodafitness.com.br",desc:"Recompra 30 dias"},
+  {name:"recompra_60dias",cat:"recompra",body:"{{1}}, sentimos sua falta! Ja faz 2 meses desde sua ultima compra na SSJ.\n\nTemos novidades incriveis e um cupom especial pra voce: {{2}} com 15% OFF!\n\nVem ver: ssjmodafitness.com.br",desc:"Recompra 60 dias"},
+  {name:"recompra_90dias",cat:"recompra",body:"{{1}}, faz tempo que nao nos vemos! Preparamos algo especial pra voce voltar:\n\n20% OFF com o cupom {{2}}\n\nSao pecas novas, confortaveis e com a qualidade SSJ que voce ja conhece.\n\nAproveite: ssjmodafitness.com.br",desc:"Recompra 90 dias"},
 ];
+var CAT_LABELS={carrinho:'🛒 Carrinho Abandonado',pix:'💳 PIX / Boleto',recompra:'🔄 Recompra'};
+var CAT_COLORS={carrinho:'var(--pink)',pix:'var(--deep)',recompra:'var(--teal)'};
 
-// ==================== TAB NAVIGATION ====================
 function showTab(id,btn){document.querySelectorAll('[id^=tab-]').forEach(function(el){el.classList.add('hidden')});document.getElementById('tab-'+id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});if(btn)btn.classList.add('active')}
 async function api(p){try{var r=await fetch(p);return await r.json()}catch(e){return null}}
 
-// ==================== REFRESH (existing + new) ====================
 async function refresh(){
   var h=await api('/api/health');var s=await api('/api/stats');var hi=await api('/api/history');
   if(h){STATE.health=h;updateBadges(h)}if(s){STATE.stats=s;updateStats(s);updateTplTable(s);updateCronLog(s)}if(hi&&hi.data){STATE.history=hi.data;updateHistory()}
-  // PIX stats
   var ps=await api('/api/pix/stats');if(ps){updatePixStats(ps);updatePixCronLog(ps.cronLog)}
   var ph=await api('/api/pix/history');if(ph&&ph.data){STATE.pixHistory=ph.data;updatePixHistory()}
-  // Recompra stats
   var rs=await api('/api/recompra/stats');if(rs){updateRecompraStats(rs);updateRecompraCronLog(rs.cronLog);if(rs.config)STATE.recompraConfig=rs.config;renderRecompraConfig()}
   var rh=await api('/api/recompra/history');if(rh&&rh.data){STATE.recompraHistory=rh.data;updateRecompraHistory()}
 }
@@ -360,301 +480,146 @@ function updateBadges(h){
   var yb=document.getElementById('badge-yampi');var wb=document.getElementById('badge-wa');
   yb.className='badge '+(h.yampi.ok?'badge-ok':'badge-err');yb.innerHTML='<span class="dot '+(h.yampi.ok?'dot-ok':'dot-err')+'"></span> Yampi';
   wb.className='badge '+(h.whatsapp.ok?'badge-ok':'badge-err');wb.innerHTML='<span class="dot '+(h.whatsapp.ok?'dot-ok':'dot-err')+'"></span> WhatsApp';
-  var ss=document.getElementById('sys-status');
-  ss.innerHTML='<div style="display:flex;justify-content:space-between"><span>Yampi</span><span style="color:'+(h.yampi.ok?'#4CAF50':'#F44336')+'">'+(h.yampi.ok?'✓ Conectada':'✕ Offline')+'</span></div><div style="display:flex;justify-content:space-between"><span>WhatsApp API</span><span style="color:'+(h.whatsapp.ok?'#4CAF50':'#F44336')+'">'+(h.whatsapp.ok?'✓ Conectado':'✕ Offline')+'</span></div><div style="display:flex;justify-content:space-between"><span>🛒 Auto carrinho</span><span style="color:#4CAF50">✓ A cada 10 min</span></div><div style="display:flex;justify-content:space-between"><span>💳 Auto PIX/Boleto</span><span style="color:#4CAF50">✓ A cada 15 min</span></div><div style="display:flex;justify-content:space-between"><span>🔄 Auto recompra</span><span style="color:#4CAF50">✓ Diario 10h</span></div><div style="display:flex;justify-content:space-between"><span>Uptime</span><span style="color:#555">'+Math.round((h.uptime||0)/60)+' min</span></div>';
+  document.getElementById('sys-status').innerHTML='<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>Yampi</span><span style="color:'+(h.yampi.ok?'var(--green)':'var(--red)')+';font-weight:600">'+(h.yampi.ok?'✓ Conectada':'✕ Offline')+'</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>WhatsApp API</span><span style="color:'+(h.whatsapp.ok?'var(--green)':'var(--red)')+';font-weight:600">'+(h.whatsapp.ok?'✓ Conectado':'✕ Offline')+'</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>🛒 Auto carrinho</span><span style="color:var(--green);font-weight:600">✓ A cada 10 min</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>💳 Auto PIX/Boleto</span><span style="color:var(--green);font-weight:600">✓ A cada 15 min</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span>🔄 Auto recompra</span><span style="color:var(--green);font-weight:600">✓ Diario 10h</span></div><div style="display:flex;justify-content:space-between;padding:4px 0"><span>Uptime</span><span style="color:var(--text3);font-weight:600">'+Math.round((h.uptime||0)/60)+' min</span></div>';
 }
 
 function updateStats(s){
   var g=s.global||{};var td=s.today||{};var carts=STATE.carts;var totalAb=carts.reduce(function(a,c){return a+(c.totalRaw||0)},0);
-  var items=[{v:carts.length,l:'Carrinhos ativos',c:'#6C5CE7'},{v:'R$ '+totalAb.toFixed(2),l:'Valor abandonado',c:'#C2185B'},{v:g.totalSent||0,l:'Total enviadas',c:'#2196F3'},{v:g.totalDelivered||0,l:'Entregues',c:'#4CAF50'},{v:g.totalRead||0,l:'Lidas',c:'#25D366'},{v:g.totalFailed||0,l:'Falhas',c:'#F44336'},{v:td.automated||0,l:'Automaticas hoje',c:'#FF9800'}];
-  var html='';items.forEach(function(x){html+='<div class="stat"><div class="stat-bar" style="background:linear-gradient(90deg,'+x.c+',transparent)"></div><div class="stat-val" style="color:'+x.c+'">'+x.v+'</div><div class="stat-label">'+x.l+'</div></div>'});
+  var items=[{v:carts.length,l:'Carrinhos ativos',c:'var(--purple)',icon:'🛒'},{v:'R$ '+totalAb.toFixed(2),l:'Valor abandonado',c:'var(--pink)',icon:'💰'},{v:g.totalSent||0,l:'Total enviadas',c:'var(--blue)',icon:'📤'},{v:g.totalDelivered||0,l:'Entregues',c:'var(--green)',icon:'✓✓'},{v:g.totalRead||0,l:'Lidas',c:'#059669',icon:'👁'},{v:g.totalFailed||0,l:'Falhas',c:'var(--red)',icon:'✕'},{v:td.automated||0,l:'Automaticas hoje',c:'var(--orange)',icon:'⚡'}];
+  var html='';items.forEach(function(x){html+='<div class="stat"><div class="stat-icon">'+x.icon+'</div><div class="stat-val" style="color:'+x.c+'">'+x.v+'</div><div class="stat-label">'+x.l+'</div></div>'});
   document.getElementById('stats-grid').innerHTML=html;
 }
 
-function updateTplTable(s){if(!s.byTemplate)return;var tb=document.querySelector('#tpl-table tbody');var html='';Object.keys(s.byTemplate).forEach(function(id){var t=s.byTemplate[id];var rate=t.total>0?Math.round((t.read/t.total)*100)+'%':'—';html+='<tr><td style="font-weight:600">'+t.display+'</td><td style="color:#2196F3">'+t.total+'</td><td style="color:#4CAF50">'+t.delivered+'</td><td style="color:#25D366">'+t.read+'</td><td style="color:'+(t.failed>0?'#F44336':'#555')+'">'+t.failed+'</td><td style="color:#25D366;font-weight:600">'+rate+'</td></tr>'});tb.innerHTML=html}
+function updateTplTable(s){if(!s.byTemplate)return;var tb=document.querySelector('#tpl-table tbody');var html='';Object.keys(s.byTemplate).forEach(function(id){var t=s.byTemplate[id];var rate=t.total>0?Math.round((t.read/t.total)*100)+'%':'—';html+='<tr><td style="font-weight:600">'+t.display+'</td><td style="color:var(--blue);font-weight:600">'+t.total+'</td><td style="color:var(--green);font-weight:600">'+t.delivered+'</td><td style="color:#059669;font-weight:600">'+t.read+'</td><td style="color:'+(t.failed>0?'var(--red)':'var(--text3)')+';font-weight:600">'+t.failed+'</td><td style="color:#059669;font-weight:700">'+rate+'</td></tr>'});tb.innerHTML=html}
 
 function updateHistory(){
-  var tb=document.querySelector('#hist-table tbody');
-  // Merge all histories
-  var all=[];
+  var tb=document.querySelector('#hist-table tbody');var all=[];
   STATE.history.forEach(function(h){h._type='carrinho';all.push(h)});
   STATE.pixHistory.forEach(function(h){h._type='pix';all.push(h)});
   STATE.recompraHistory.forEach(function(h){h._type='recompra';all.push(h)});
   all.sort(function(a,b){return new Date(b.sentAt)-new Date(a.sentAt)});
-
-  var filter=STATE.historyFilter;
-  if(filter!=='all')all=all.filter(function(h){return h._type===filter||h.type===filter});
-
+  if(STATE.historyFilter!=='all')all=all.filter(function(h){return h._type===STATE.historyFilter||h.type===STATE.historyFilter});
   var html='';all.slice(0,80).forEach(function(h){
-    var st=ST[h.status]||{l:h.status,c:'#555',i:'?'};
+    var st=ST[h.status]||{l:h.status,c:'var(--text3)',bg:'var(--bg)',i:'?'};
     var typeLabel=h._type==='pix'?'💳 PIX':h._type==='recompra'?'🔄 Recompra':'🛒 Carrinho';
-    var typeColor=h._type==='pix'?'#FF5722':h._type==='recompra'?'#009688':h.automated?'#FF9800':'#2196F3';
-    var val=h.cartValue||h.orderValue||'—';
-    html+='<tr><td style="font-weight:600">'+h.contact+'</td><td style="font-size:11px;color:#999">'+h.template+'</td><td style="color:#C2185B;font-weight:600">'+val+'</td><td><span class="s-badge" style="background:'+st.c+'15;color:'+st.c+'">'+st.i+' '+st.l+'</span></td><td style="font-size:10px;font-weight:600;color:'+typeColor+'">'+typeLabel+'</td><td style="color:#555;font-size:10px">'+new Date(h.sentAt).toLocaleString('pt-BR')+'</td></tr>'
+    var typeColor=h._type==='pix'?'var(--deep)':h._type==='recompra'?'var(--teal)':h.automated?'var(--orange)':'var(--blue)';
+    html+='<tr><td style="font-weight:600">'+h.contact+'</td><td style="font-size:12px;color:var(--text2)">'+h.template+'</td><td style="color:var(--pink);font-weight:700">'+(h.cartValue||h.orderValue||'—')+'</td><td><span class="s-badge" style="background:'+st.bg+';color:'+st.c+'">'+st.i+' '+st.l+'</span></td><td style="font-size:11px;font-weight:600;color:'+typeColor+'">'+typeLabel+'</td><td style="color:var(--text3);font-size:11px">'+new Date(h.sentAt).toLocaleString('pt-BR')+'</td></tr>'
   });
   tb.innerHTML=html||'<tr><td colspan="6" class="center">Nenhum envio ainda</td></tr>';
 }
 
-function filterHistory(type,btn){
-  STATE.historyFilter=type;
-  document.querySelectorAll('.hist-filter').forEach(function(b){b.classList.remove('active');b.style.background='';b.style.color='#999'});
-  if(btn){btn.classList.add('active');btn.style.background='#C2185B';btn.style.color='#fff'}
-  updateHistory();
-}
+function filterHistory(type,btn){STATE.historyFilter=type;btn.closest('.cat-pills').querySelectorAll('.cat-pill').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');updateHistory()}
 
-function updateCronLog(s){var el=document.getElementById('cron-log');if(!s.cronLog||!s.cronLog.length){el.innerHTML='<div class="center" style="font-size:12px">Aguardando primeira execucao...</div>';return}var html='';s.cronLog.forEach(function(l){html+='<div style="font-size:11px;color:#999;padding:6px 0;border-bottom:1px solid rgba(36,36,36,.2)"><span style="color:#555;font-size:10px">'+new Date(l.ts).toLocaleString('pt-BR')+'</span>';if(l.error)html+=' <span style="color:#F44336">Erro: '+l.error+'</span>';else html+=' — '+l.cartsFound+' carrinhos, <span style="color:#25D366;font-weight:600">'+l.sent+' enviado(s)</span>, '+l.skipped+' pulado(s), <span style="color:'+(l.failed>0?'#F44336':'#555')+'">'+l.failed+' falha(s)</span>';html+='</div>'});el.innerHTML=html}
+function updateCronLog(s){var el=document.getElementById('cron-log');if(!s.cronLog||!s.cronLog.length){el.innerHTML='<div class="center">Aguardando primeira execucao...</div>';return}var html='';s.cronLog.forEach(function(l){html+='<div style="font-size:12px;color:var(--text2);padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3);font-size:11px">'+new Date(l.ts).toLocaleString('pt-BR')+'</span>';if(l.error)html+=' <span style="color:var(--red)">Erro: '+l.error+'</span>';else html+=' — '+l.cartsFound+' carrinhos, <span style="color:var(--green);font-weight:600">'+l.sent+' enviado(s)</span>, '+l.skipped+' pulado(s), <span style="color:'+(l.failed>0?'var(--red)':'var(--text3)')+'">'+l.failed+' falha(s)</span>';html+='</div>'});el.innerHTML=html}
 
-// ==================== CARTS (existing) ====================
-async function loadCarts(){var c=await api('/api/carts');var t=await api('/api/templates');if(c&&c.data)STATE.carts=c.data;if(t&&t.data){STATE.templates=t.data;updateTplSelect()}STATE.selected=[];renderCarts();updateStats(STATE.stats||{global:{},today:{}})}
-function updateTplSelect(){var sel=document.getElementById('tpl-select');sel.innerHTML='';STATE.templates.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.textContent=t.display+' ('+t.timing+')';sel.appendChild(o)})}
+// ===== CARTS =====
+async function loadCarts(){var c=await api('/api/carts');var t=await api('/api/templates');if(c&&c.data)STATE.carts=c.data;if(t&&t.data){STATE.templates=t.data;var sel=document.getElementById('tpl-select');sel.innerHTML='';t.data.forEach(function(tp){var o=document.createElement('option');o.value=tp.id;o.textContent=tp.display+' ('+tp.timing+')';sel.appendChild(o)})}STATE.selected=[];renderCarts();updateStats(STATE.stats||{global:{},today:{}})}
 
-function renderCarts(){var tb=document.querySelector('#carts-table tbody');if(!STATE.carts.length){tb.innerHTML='<tr><td colspan="6" class="center">Clique em Atualizar</td></tr>';return}var html='';STATE.carts.forEach(function(c){var checked=STATE.selected.indexOf(c.id)!==-1?'checked':'';var tpl=STATE.templates.find(function(t){return t.id===c.recommended})||{};var timeColor=c.hoursAgo<=2?'#25D366':c.hoursAgo<=24?'#FF9800':'#F44336';html+='<tr onclick="toggleSel('+c.id+')" style="cursor:pointer"><td><input type="checkbox" '+checked+'></td><td><div style="font-weight:600;font-size:12px">'+c.name+'</div><div style="font-size:10px;color:#555;font-family:monospace">+'+c.phone+'</div></td><td style="max-width:140px"><div style="font-size:11px;color:#999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.items+'</div></td><td style="font-weight:700;color:#C2185B;font-size:12px">'+c.total+'</td><td><span style="font-size:11px;font-weight:600;color:'+timeColor+'">'+c.hoursAgo+'h</span></td><td><span style="padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;background:rgba(194,24,91,.12);color:#E91E63">'+(tpl.display||'—')+'</span></td></tr>'});tb.innerHTML=html;updateSendBtn();updatePreview()}
+function renderCarts(){var tb=document.querySelector('#carts-table tbody');if(!STATE.carts.length){tb.innerHTML='<tr><td colspan="6" class="center">Clique em Atualizar</td></tr>';return}var html='';STATE.carts.forEach(function(c){var checked=STATE.selected.indexOf(c.id)!==-1?'checked':'';var tpl=STATE.templates.find(function(t){return t.id===c.recommended})||{};var timeColor=c.hoursAgo<=2?'var(--green)':c.hoursAgo<=24?'var(--orange)':'var(--red)';html+='<tr onclick="toggleSel('+c.id+')" style="cursor:pointer"><td><input type="checkbox" '+checked+'></td><td><div style="font-weight:600">'+c.name+'</div><div style="font-size:11px;color:var(--text3);font-family:monospace">+'+c.phone+'</div></td><td style="max-width:140px"><div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.items+'</div></td><td style="font-weight:700;color:var(--pink)">'+c.total+'</td><td><span style="font-weight:600;color:'+timeColor+'">'+c.hoursAgo+'h</span></td><td><span style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600;background:var(--pink-soft);color:var(--pink-dark)">'+(tpl.display||'—')+'</span></td></tr>'});tb.innerHTML=html;document.getElementById('send-btn').textContent='📤 Enviar ('+STATE.selected.length+')';updatePreview()}
 
 function toggleSel(id){var i=STATE.selected.indexOf(id);if(i===-1)STATE.selected.push(id);else STATE.selected.splice(i,1);renderCarts()}
 function toggleAll(){if(STATE.selected.length===STATE.carts.length)STATE.selected=[];else STATE.selected=STATE.carts.map(function(c){return c.id});renderCarts()}
-function updateSendBtn(){document.getElementById('send-btn').textContent='📤 Enviar ('+STATE.selected.length+')'}
 
 function updatePreview(){var cart=STATE.carts.find(function(c){return STATE.selected.indexOf(c.id)!==-1})||STATE.carts[0];var sel=document.getElementById('tpl-select');var tpl=STATE.templates.find(function(t){return t.id===sel.value});if(!cart||!tpl){document.getElementById('preview-bubble').textContent='Selecione um carrinho...';return}var text=tpl.preview||'';(tpl.vars||[]).forEach(function(v,i){var val='{{'+String(i+1)+'}}';if(v==='primeiro_nome')val=cart.firstName||'Nome';if(v==='link_carrinho')val=cart.simUrl||'https://...';if(v==='cupom')val='VOLTECOMSSJ';text=text.replace('{{'+String(i+1)+'}}',val)});document.getElementById('preview-bubble').textContent=text}
 
-async function sendManual(){if(!STATE.selected.length)return;var tplId=document.getElementById('tpl-select').value;var btn=document.getElementById('send-btn');btn.disabled=true;btn.textContent='⏳ Enviando...';try{var r=await fetch('/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cartIds:STATE.selected,templateId:tplId})});var data=await r.json();if(data.ok)alert('Enviado! '+data.sent+' mensagem(ns)');else alert('Erro: '+(data.error||'falha'));STATE.selected=[];loadCarts();refresh()}catch(e){alert('Erro de conexao')}btn.disabled=false;updateSendBtn()}
+async function sendManual(){if(!STATE.selected.length)return;var tplId=document.getElementById('tpl-select').value;var btn=document.getElementById('send-btn');btn.disabled=true;btn.textContent='⏳ Enviando...';try{var r=await fetch('/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cartIds:STATE.selected,templateId:tplId})});var data=await r.json();if(data.ok)alert('Enviado! '+data.sent+' mensagem(ns)');else alert('Erro: '+(data.error||'falha'));STATE.selected=[];loadCarts();refresh()}catch(e){alert('Erro de conexao')}btn.disabled=false;document.getElementById('send-btn').textContent='📤 Enviar (0)'}
 
-// ==================== PIX/BOLETO (new) ====================
-async function loadPixCarts(){
-  var c=await api('/api/pix/carts');
-  var t=await api('/api/pix/templates');
-  if(c&&c.data)STATE.pixCarts=c.data;
-  if(t&&t.data){
-    var sel=document.getElementById('pix-tpl-select');sel.innerHTML='';
-    t.data.forEach(function(tp){var o=document.createElement('option');o.value=tp.id;o.textContent=tp.display;sel.appendChild(o)});
-  }
-  STATE.pixSelected=[];
-  renderPixCarts();
-}
+// ===== PIX =====
+async function loadPixCarts(){var c=await api('/api/pix/carts');var t=await api('/api/pix/templates');if(c&&c.data)STATE.pixCarts=c.data;if(t&&t.data){var sel=document.getElementById('pix-tpl-select');sel.innerHTML='';t.data.forEach(function(tp){var o=document.createElement('option');o.value=tp.id;o.textContent=tp.display;sel.appendChild(o)})}STATE.pixSelected=[];renderPixCarts()}
 
-function renderPixCarts(){
-  var tb=document.querySelector('#pix-table tbody');
-  if(!STATE.pixCarts.length){tb.innerHTML='<tr><td colspan="6" class="center">Nenhum PIX/boleto expirado encontrado. Clique em Atualizar.</td></tr>';return}
-  var html='';
-  STATE.pixCarts.forEach(function(c){
-    var checked=STATE.pixSelected.indexOf(c.id)!==-1?'checked':'';
-    var sent=c.pixAlreadySent&&c.pixAlreadySent.length>0;
-    var timeColor=c.hoursAgo<=12?'#FF9800':'#F44336';
-    var typeColor=c.paymentType==='PIX'?'#FF5722':'#FF9800';
-    html+='<tr onclick="togglePixSel('+c.id+')" style="cursor:pointer"><td><input type="checkbox" '+checked+'></td><td><div style="font-weight:600;font-size:12px">'+c.name+'</div><div style="font-size:10px;color:#555;font-family:monospace">+'+c.phone+'</div></td><td><span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:'+typeColor+'20;color:'+typeColor+'">'+c.paymentType+'</span></td><td style="font-weight:700;color:#C2185B;font-size:12px">'+c.total+'</td><td><span style="font-size:11px;font-weight:600;color:'+timeColor+'">'+c.hoursAgo+'h</span></td><td>'+(sent?'<span class="s-badge" style="background:#4CAF5015;color:#4CAF50">✓ Enviado</span>':'<span class="s-badge" style="background:#2196F315;color:#2196F3">Pendente</span>')+'</td></tr>';
-  });
-  tb.innerHTML=html;
-  updatePixSendBtn();
-}
+function renderPixCarts(){var tb=document.querySelector('#pix-table tbody');if(!STATE.pixCarts.length){tb.innerHTML='<tr><td colspan="6" class="center">Nenhum PIX/boleto expirado. Clique em Atualizar.</td></tr>';return}var html='';STATE.pixCarts.forEach(function(c){var checked=STATE.pixSelected.indexOf(c.id)!==-1?'checked':'';var sent=c.pixAlreadySent&&c.pixAlreadySent.length>0;var timeColor=c.hoursAgo<=12?'var(--orange)':'var(--red)';var typeColor=c.paymentType==='PIX'?'var(--deep)':'var(--orange)';var typeBg=c.paymentType==='PIX'?'var(--deep-soft)':'var(--orange-soft)';html+='<tr onclick="togglePixSel('+c.id+')" style="cursor:pointer"><td><input type="checkbox" '+checked+'></td><td><div style="font-weight:600">'+c.name+'</div><div style="font-size:11px;color:var(--text3);font-family:monospace">+'+c.phone+'</div></td><td><span style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:'+typeBg+';color:'+typeColor+'">'+c.paymentType+'</span></td><td style="font-weight:700;color:var(--pink)">'+c.total+'</td><td><span style="font-weight:600;color:'+timeColor+'">'+c.hoursAgo+'h</span></td><td>'+(sent?'<span class="s-badge" style="background:var(--green-soft);color:var(--green)">✓ Enviado</span>':'<span class="s-badge" style="background:var(--blue-soft);color:var(--blue)">Pendente</span>')+'</td></tr>'});tb.innerHTML=html;document.getElementById('pix-send-btn').textContent='📤 Enviar ('+STATE.pixSelected.length+')'}
 
 function togglePixSel(id){var i=STATE.pixSelected.indexOf(id);if(i===-1)STATE.pixSelected.push(id);else STATE.pixSelected.splice(i,1);renderPixCarts()}
 function toggleAllPix(){if(STATE.pixSelected.length===STATE.pixCarts.length)STATE.pixSelected=[];else STATE.pixSelected=STATE.pixCarts.map(function(c){return c.id});renderPixCarts()}
-function updatePixSendBtn(){document.getElementById('pix-send-btn').textContent='📤 Enviar ('+STATE.pixSelected.length+')'}
 
-async function sendPixManual(){
-  if(!STATE.pixSelected.length)return;
-  var tplId=document.getElementById('pix-tpl-select').value;
-  var btn=document.getElementById('pix-send-btn');btn.disabled=true;btn.textContent='⏳ Enviando...';
-  try{
-    var r=await fetch('/api/pix/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cartIds:STATE.pixSelected,templateId:tplId})});
-    var data=await r.json();
-    if(data.ok)alert('Enviado! '+data.sent+' mensagem(ns)');else alert('Erro: '+(data.error||'falha'));
-    STATE.pixSelected=[];loadPixCarts();refresh();
-  }catch(e){alert('Erro de conexao')}
-  btn.disabled=false;updatePixSendBtn();
-}
+async function sendPixManual(){if(!STATE.pixSelected.length)return;var tplId=document.getElementById('pix-tpl-select').value;var btn=document.getElementById('pix-send-btn');btn.disabled=true;btn.textContent='⏳ Enviando...';try{var r=await fetch('/api/pix/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cartIds:STATE.pixSelected,templateId:tplId})});var data=await r.json();if(data.ok)alert('Enviado! '+data.sent+' mensagem(ns)');else alert('Erro: '+(data.error||'falha'));STATE.pixSelected=[];loadPixCarts();refresh()}catch(e){alert('Erro de conexao')}btn.disabled=false;document.getElementById('pix-send-btn').textContent='📤 Enviar (0)'}
 
-function updatePixStats(ps){
-  var s=ps.stats||{};
-  var items=[
-    {v:s.totalSent||0,l:'PIX/Boleto enviados',c:'#FF5722'},
-    {v:s.totalFailed||0,l:'Falhas',c:'#F44336'},
-    {v:STATE.pixCarts.length,l:'Expirados ativos',c:'#FF9800'}
-  ];
-  var html='';items.forEach(function(x){html+='<div class="stat"><div class="stat-bar" style="background:linear-gradient(90deg,'+x.c+',transparent)"></div><div class="stat-val" style="color:'+x.c+'">'+x.v+'</div><div class="stat-label">'+x.l+'</div></div>'});
-  document.getElementById('pix-stats-grid').innerHTML=html;
-}
+function updatePixStats(ps){var s=ps.stats||{};var items=[{v:s.totalSent||0,l:'PIX/Boleto enviados',c:'var(--deep)',icon:'📤'},{v:s.totalFailed||0,l:'Falhas',c:'var(--red)',icon:'✕'},{v:STATE.pixCarts.length,l:'Expirados ativos',c:'var(--orange)',icon:'⏳'}];var html='';items.forEach(function(x){html+='<div class="stat"><div class="stat-icon">'+x.icon+'</div><div class="stat-val" style="color:'+x.c+'">'+x.v+'</div><div class="stat-label">'+x.l+'</div></div>'});document.getElementById('pix-stats-grid').innerHTML=html}
 
-function updatePixHistory(){
-  var tb=document.querySelector('#pix-hist-table tbody');
-  if(!STATE.pixHistory.length){tb.innerHTML='<tr><td colspan="5" class="center">Nenhum envio PIX/Boleto ainda</td></tr>';return}
-  var html='';STATE.pixHistory.forEach(function(h){
-    var st=ST[h.status]||{l:h.status,c:'#555',i:'?'};
-    html+='<tr><td style="font-weight:600">'+h.contact+'</td><td style="font-size:11px;color:#999">'+h.template+'</td><td style="color:#C2185B;font-weight:600">'+h.cartValue+'</td><td><span class="s-badge" style="background:'+st.c+'15;color:'+st.c+'">'+st.i+' '+st.l+'</span></td><td style="color:#555;font-size:10px">'+new Date(h.sentAt).toLocaleString('pt-BR')+'</td></tr>';
-  });tb.innerHTML=html;
-}
+function updatePixHistory(){var tb=document.querySelector('#pix-hist-table tbody');if(!STATE.pixHistory.length){tb.innerHTML='<tr><td colspan="5" class="center">Nenhum envio PIX/Boleto ainda</td></tr>';return}var html='';STATE.pixHistory.forEach(function(h){var st=ST[h.status]||{l:h.status,c:'var(--text3)',bg:'var(--bg)',i:'?'};html+='<tr><td style="font-weight:600">'+h.contact+'</td><td style="font-size:12px;color:var(--text2)">'+h.template+'</td><td style="color:var(--pink);font-weight:700">'+h.cartValue+'</td><td><span class="s-badge" style="background:'+st.bg+';color:'+st.c+'">'+st.i+' '+st.l+'</span></td><td style="color:var(--text3);font-size:11px">'+new Date(h.sentAt).toLocaleString('pt-BR')+'</td></tr>'});tb.innerHTML=html}
 
-function updatePixCronLog(log){
-  var el=document.getElementById('pix-cron-log');
-  var el2=document.getElementById('auto-pix-log');
-  if(!log||!log.length){var msg='<div class="center" style="font-size:12px">Aguardando primeira execucao...</div>';el.innerHTML=msg;if(el2)el2.innerHTML=msg;return}
-  var html='';log.forEach(function(l){html+='<div style="font-size:11px;color:#999;padding:6px 0;border-bottom:1px solid rgba(36,36,36,.2)"><span style="color:#555;font-size:10px">'+new Date(l.ts).toLocaleString('pt-BR')+'</span>';if(l.error)html+=' <span style="color:#F44336">Erro: '+l.error+'</span>';else html+=' — '+l.cartsChecked+' verificados, <span style="color:#FF5722;font-weight:600">'+l.sent+' enviado(s)</span>, '+l.skipped+' pulado(s), <span style="color:'+(l.failed>0?'#F44336':'#555')+'">'+l.failed+' falha(s)</span>';html+='</div>'});
-  el.innerHTML=html;if(el2)el2.innerHTML=html;
-}
+function updatePixCronLog(log){var el=document.getElementById('pix-cron-log');var el2=document.getElementById('auto-pix-log');if(!log||!log.length){var msg='<div class="center">Aguardando primeira execucao...</div>';el.innerHTML=msg;if(el2)el2.innerHTML=msg;return}var html='';log.forEach(function(l){html+='<div style="font-size:12px;color:var(--text2);padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3);font-size:11px">'+new Date(l.ts).toLocaleString('pt-BR')+'</span>';if(l.error)html+=' <span style="color:var(--red)">Erro: '+l.error+'</span>';else html+=' — '+l.cartsChecked+' verificados, <span style="color:var(--deep);font-weight:600">'+l.sent+' enviado(s)</span>, '+l.skipped+' pulado(s), <span style="color:'+(l.failed>0?'var(--red)':'var(--text3)')+'">'+l.failed+' falha(s)</span>';html+='</div>'});el.innerHTML=html;if(el2)el2.innerHTML=html}
 
-// ==================== RECOMPRA (new) ====================
-async function loadRecompraOrders(){
-  var c=await api('/api/recompra/orders');
-  var t=await api('/api/recompra/templates');
-  if(c&&c.data)STATE.recompraOrders=c.data;
-  if(t&&t.data){
-    var sel=document.getElementById('recompra-tpl-select');sel.innerHTML='';
-    t.data.forEach(function(tp){var o=document.createElement('option');o.value=tp.id;o.textContent=tp.display+' ('+tp.timing+')';sel.appendChild(o)});
-  }
-  STATE.recompraSelected=[];
-  renderRecompraOrders();
-}
+// ===== RECOMPRA =====
+async function loadRecompraOrders(){var c=await api('/api/recompra/orders');var t=await api('/api/recompra/templates');if(c&&c.data)STATE.recompraOrders=c.data;if(t&&t.data){var sel=document.getElementById('recompra-tpl-select');sel.innerHTML='';t.data.forEach(function(tp){var o=document.createElement('option');o.value=tp.id;o.textContent=tp.display+' ('+tp.timing+')';sel.appendChild(o)})}STATE.recompraSelected=[];renderRecompraOrders()}
 
-function renderRecompraOrders(){
-  var tb=document.querySelector('#recompra-table tbody');
-  if(!STATE.recompraOrders.length){tb.innerHTML='<tr><td colspan="7" class="center">Nenhum pedido elegivel. Clique em Buscar pedidos.</td></tr>';return}
-  var html='';
-  STATE.recompraOrders.forEach(function(o){
-    var checked=STATE.recompraSelected.indexOf(o.id)!==-1?'checked':'';
-    var campColor=o.intervalDays===30?'#26A69A':o.intervalDays===60?'#00897B':'#00695C';
-    html+='<tr onclick="toggleRecompraSel('+o.id+')" style="cursor:pointer"><td><input type="checkbox" '+checked+'></td><td><div style="font-weight:600;font-size:12px">'+o.name+'</div><div style="font-size:10px;color:#555;font-family:monospace">+'+o.phone+'</div></td><td style="font-size:11px;color:#999">#'+o.number+'</td><td style="font-weight:700;color:#C2185B;font-size:12px">'+o.total+'</td><td style="font-weight:600;color:'+campColor+'">'+o.daysAgo+'d</td><td><span style="padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;background:'+campColor+'20;color:'+campColor+'">'+o.intervalDays+' dias</span></td><td>'+(o.alreadySent?'<span class="s-badge" style="background:#4CAF5015;color:#4CAF50">✓ Sim</span>':'<span class="s-badge" style="background:#2196F315;color:#2196F3">Nao</span>')+'</td></tr>';
-  });
-  tb.innerHTML=html;
-  updateRecompraSendBtn();
-}
+function renderRecompraOrders(){var tb=document.querySelector('#recompra-table tbody');if(!STATE.recompraOrders.length){tb.innerHTML='<tr><td colspan="7" class="center">Nenhum pedido elegivel. Clique em Buscar pedidos.</td></tr>';return}var html='';STATE.recompraOrders.forEach(function(o){var checked=STATE.recompraSelected.indexOf(o.id)!==-1?'checked':'';var campColor=o.intervalDays===30?'var(--teal)':o.intervalDays===60?'#0D9488':'#0F766E';html+='<tr onclick="toggleRecompraSel('+o.id+')" style="cursor:pointer"><td><input type="checkbox" '+checked+'></td><td><div style="font-weight:600">'+o.name+'</div><div style="font-size:11px;color:var(--text3);font-family:monospace">+'+o.phone+'</div></td><td style="color:var(--text2)">#'+o.number+'</td><td style="font-weight:700;color:var(--pink)">'+o.total+'</td><td style="font-weight:600;color:'+campColor+'">'+o.daysAgo+'d</td><td><span style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600;background:var(--teal-soft);color:'+campColor+'">'+o.intervalDays+' dias</span></td><td>'+(o.alreadySent?'<span class="s-badge" style="background:var(--green-soft);color:var(--green)">✓ Sim</span>':'<span class="s-badge" style="background:var(--blue-soft);color:var(--blue)">Nao</span>')+'</td></tr>'});tb.innerHTML=html;document.getElementById('recompra-send-btn').textContent='📤 Enviar ('+STATE.recompraSelected.length+')'}
 
 function toggleRecompraSel(id){var i=STATE.recompraSelected.indexOf(id);if(i===-1)STATE.recompraSelected.push(id);else STATE.recompraSelected.splice(i,1);renderRecompraOrders()}
 function toggleAllRecompra(){if(STATE.recompraSelected.length===STATE.recompraOrders.length)STATE.recompraSelected=[];else STATE.recompraSelected=STATE.recompraOrders.map(function(o){return o.id});renderRecompraOrders()}
-function updateRecompraSendBtn(){document.getElementById('recompra-send-btn').textContent='📤 Enviar ('+STATE.recompraSelected.length+')'}
 
-async function sendRecompraManual(){
-  if(!STATE.recompraSelected.length)return;
-  var tplId=document.getElementById('recompra-tpl-select').value;
-  var coupon=document.getElementById('recompra-coupon').value.trim()||undefined;
-  // Determine interval from first selected order
-  var firstOrder=STATE.recompraOrders.find(function(o){return STATE.recompraSelected.indexOf(o.id)!==-1});
-  var intervalDays=firstOrder?firstOrder.intervalDays:30;
-  var btn=document.getElementById('recompra-send-btn');btn.disabled=true;btn.textContent='⏳ Enviando...';
-  try{
-    var r=await fetch('/api/recompra/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderIds:STATE.recompraSelected,templateId:tplId,coupon:coupon,intervalDays:intervalDays})});
-    var data=await r.json();
-    if(data.ok)alert('Enviado! '+data.sent+' mensagem(ns)');else alert('Erro: '+(data.error||'falha'));
-    STATE.recompraSelected=[];loadRecompraOrders();refresh();
-  }catch(e){alert('Erro de conexao')}
-  btn.disabled=false;updateRecompraSendBtn();
-}
+async function sendRecompraManual(){if(!STATE.recompraSelected.length)return;var tplId=document.getElementById('recompra-tpl-select').value;var coupon=document.getElementById('recompra-coupon').value.trim()||undefined;var firstOrder=STATE.recompraOrders.find(function(o){return STATE.recompraSelected.indexOf(o.id)!==-1});var intervalDays=firstOrder?firstOrder.intervalDays:30;var btn=document.getElementById('recompra-send-btn');btn.disabled=true;btn.textContent='⏳ Enviando...';try{var r=await fetch('/api/recompra/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderIds:STATE.recompraSelected,templateId:tplId,coupon:coupon,intervalDays:intervalDays})});var data=await r.json();if(data.ok)alert('Enviado! '+data.sent+' mensagem(ns)');else alert('Erro: '+(data.error||'falha'));STATE.recompraSelected=[];loadRecompraOrders();refresh()}catch(e){alert('Erro de conexao')}btn.disabled=false;document.getElementById('recompra-send-btn').textContent='📤 Enviar (0)'}
 
-function updateRecompraStats(rs){
-  var s=rs.stats||{};
-  var items=[
-    {v:s.totalSent||0,l:'Recompra enviadas',c:'#009688'},
-    {v:s.totalFailed||0,l:'Falhas',c:'#F44336'},
-    {v:STATE.recompraOrders.length,l:'Pedidos elegiveis',c:'#26A69A'}
-  ];
-  var html='';items.forEach(function(x){html+='<div class="stat"><div class="stat-bar" style="background:linear-gradient(90deg,'+x.c+',transparent)"></div><div class="stat-val" style="color:'+x.c+'">'+x.v+'</div><div class="stat-label">'+x.l+'</div></div>'});
-  document.getElementById('recompra-stats-grid').innerHTML=html;
-}
+function updateRecompraStats(rs){var s=rs.stats||{};var items=[{v:s.totalSent||0,l:'Recompra enviadas',c:'var(--teal)',icon:'📤'},{v:s.totalFailed||0,l:'Falhas',c:'var(--red)',icon:'✕'},{v:STATE.recompraOrders.length,l:'Pedidos elegiveis',c:'#0D9488',icon:'📦'}];var html='';items.forEach(function(x){html+='<div class="stat"><div class="stat-icon">'+x.icon+'</div><div class="stat-val" style="color:'+x.c+'">'+x.v+'</div><div class="stat-label">'+x.l+'</div></div>'});document.getElementById('recompra-stats-grid').innerHTML=html}
 
-function updateRecompraHistory(){
-  var tb=document.querySelector('#recompra-hist-table tbody');
-  if(!STATE.recompraHistory.length){tb.innerHTML='<tr><td colspan="5" class="center">Nenhum envio de recompra ainda</td></tr>';return}
-  var html='';STATE.recompraHistory.forEach(function(h){
-    var st=ST[h.status]||{l:h.status,c:'#555',i:'?'};
-    html+='<tr><td style="font-weight:600">'+h.contact+'</td><td style="font-size:11px;color:#999">'+h.template+'</td><td style="color:#C2185B;font-weight:600">'+h.orderValue+'</td><td><span class="s-badge" style="background:'+st.c+'15;color:'+st.c+'">'+st.i+' '+st.l+'</span></td><td style="color:#555;font-size:10px">'+new Date(h.sentAt).toLocaleString('pt-BR')+'</td></tr>';
-  });tb.innerHTML=html;
-}
+function updateRecompraHistory(){var tb=document.querySelector('#recompra-hist-table tbody');if(!STATE.recompraHistory.length){tb.innerHTML='<tr><td colspan="5" class="center">Nenhum envio de recompra ainda</td></tr>';return}var html='';STATE.recompraHistory.forEach(function(h){var st=ST[h.status]||{l:h.status,c:'var(--text3)',bg:'var(--bg)',i:'?'};html+='<tr><td style="font-weight:600">'+h.contact+'</td><td style="font-size:12px;color:var(--text2)">'+h.template+'</td><td style="color:var(--pink);font-weight:700">'+h.orderValue+'</td><td><span class="s-badge" style="background:'+st.bg+';color:'+st.c+'">'+st.i+' '+st.l+'</span></td><td style="color:var(--text3);font-size:11px">'+new Date(h.sentAt).toLocaleString('pt-BR')+'</td></tr>'});tb.innerHTML=html}
 
-function updateRecompraCronLog(log){
-  var el=document.getElementById('recompra-cron-log');
-  var el2=document.getElementById('auto-recompra-log');
-  if(!log||!log.length){var msg='<div class="center" style="font-size:12px">Aguardando primeira execucao (diario as 10h)...</div>';el.innerHTML=msg;if(el2)el2.innerHTML=msg;return}
-  var html='';log.forEach(function(l){html+='<div style="font-size:11px;color:#999;padding:6px 0;border-bottom:1px solid rgba(36,36,36,.2)"><span style="color:#555;font-size:10px">'+new Date(l.ts).toLocaleString('pt-BR')+'</span>';if(l.error)html+=' <span style="color:#F44336">Erro: '+l.error+'</span>';else if(l.disabled)html+=' <span style="color:#FF9800">Automacao desabilitada</span>';else html+=' — <span style="color:#009688;font-weight:600">'+l.sent+' enviado(s)</span>, '+l.skipped+' pulado(s), <span style="color:'+(l.failed>0?'#F44336':'#555')+'">'+l.failed+' falha(s)</span>';html+='</div>'});
-  el.innerHTML=html;if(el2)el2.innerHTML=html;
-}
+function updateRecompraCronLog(log){var el=document.getElementById('recompra-cron-log');var el2=document.getElementById('auto-recompra-log');if(!log||!log.length){var msg='<div class="center">Aguardando primeira execucao (diario as 10h)...</div>';el.innerHTML=msg;if(el2)el2.innerHTML=msg;return}var html='';log.forEach(function(l){html+='<div style="font-size:12px;color:var(--text2);padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3);font-size:11px">'+new Date(l.ts).toLocaleString('pt-BR')+'</span>';if(l.error)html+=' <span style="color:var(--red)">Erro: '+l.error+'</span>';else if(l.disabled)html+=' <span style="color:var(--orange)">Automacao desabilitada</span>';else html+=' — <span style="color:var(--teal);font-weight:600">'+l.sent+' enviado(s)</span>, '+l.skipped+' pulado(s), <span style="color:'+(l.failed>0?'var(--red)':'var(--text3)')+'">'+l.failed+' falha(s)</span>';html+='</div>'});el.innerHTML=html;if(el2)el2.innerHTML=html}
 
-function renderRecompraConfig(){
-  var cfg=STATE.recompraConfig;
-  if(!cfg)return;
-  document.getElementById('recompra-enabled').checked=cfg.enabled;
-  var el=document.getElementById('recompra-intervals');
-  var html='';
-  cfg.intervals.forEach(function(iv){
-    html+='<div class="interval-card"><div class="interval-info"><div class="interval-days">'+iv.days+' dias</div><div class="interval-label">Template: '+iv.templateId+'</div></div><div style="display:flex;align-items:center;gap:12px"><div><div class="form-label" style="margin-bottom:4px">Cupom</div><input type="text" style="width:130px" id="coupon-'+iv.days+'" value="'+iv.coupon+'" onchange="updateIntervalCoupon('+iv.days+',this.value)"></div><label class="toggle"><input type="checkbox" '+(iv.enabled?'checked':'')+' onchange="toggleInterval('+iv.days+',this.checked)"><span class="toggle-slider"></span></label></div></div>';
+function renderRecompraConfig(){var cfg=STATE.recompraConfig;if(!cfg)return;document.getElementById('recompra-enabled').checked=cfg.enabled;var el=document.getElementById('recompra-intervals');var html='';cfg.intervals.forEach(function(iv){html+='<div class="interval-card"><div><div class="interval-days">'+iv.days+' dias</div><div class="interval-label">Template: '+iv.templateId+'</div></div><div style="display:flex;align-items:center;gap:12px"><div><div class="form-label" style="margin-bottom:4px">Cupom</div><input type="text" style="width:140px" id="coupon-'+iv.days+'" value="'+iv.coupon+'" onchange="updateIntervalCoupon('+iv.days+',this.value)"></div><label class="toggle"><input type="checkbox" '+(iv.enabled?'checked':'')+' onchange="toggleInterval('+iv.days+',this.checked)"><span class="toggle-slider"></span></label></div></div>'});el.innerHTML=html}
+function toggleInterval(days,enabled){var iv=STATE.recompraConfig.intervals.find(function(i){return i.days===days});if(iv)iv.enabled=enabled;saveRecompraConfig()}
+function updateIntervalCoupon(days,coupon){var iv=STATE.recompraConfig.intervals.find(function(i){return i.days===days});if(iv)iv.coupon=coupon;saveRecompraConfig()}
+async function saveRecompraConfig(){try{await fetch('/api/recompra/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:document.getElementById('recompra-enabled').checked,intervals:STATE.recompraConfig.intervals})})}catch(e){}}
+
+// ===== TEMPLATES (with category filters) =====
+function filterTemplates(cat,btn){STATE.tplFilter=cat;document.querySelectorAll('#tab-templates .cat-pill').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');renderWaTemplatesFiltered();renderSuggested()}
+function categorizeTemplate(name){name=(name||'').toLowerCase();if(name.indexOf('pix')!==-1||name.indexOf('boleto')!==-1)return 'pix';if(name.indexOf('recompra')!==-1||name.indexOf('fidelidade')!==-1)return 'recompra';return 'carrinho'}
+
+async function loadWaTemplates(){var el=document.getElementById('wa-templates-list');el.innerHTML='<div class="center">Carregando...</div>';var r=await api('/api/wa-templates');if(!r||!r.ok){el.innerHTML='<div class="center" style="color:var(--red)">Erro: '+(r?r.error:'sem conexao')+'</div>';return}STATE.waTemplates=r.data||[];renderWaTemplatesFiltered()}
+
+function renderWaTemplatesFiltered(){
+  var el=document.getElementById('wa-templates-list');
+  if(!STATE.waTemplates.length){el.innerHTML='<div class="center">Nenhum template criado ainda. Crie um ao lado!</div>';return}
+  var filter=STATE.tplFilter;var grouped={carrinho:[],pix:[],recompra:[]};
+  STATE.waTemplates.forEach(function(t){grouped[categorizeTemplate(t.name)].push(t)});
+  var html='';var cats=filter==='all'?['carrinho','pix','recompra']:[filter];
+  cats.forEach(function(cat){
+    var items=grouped[cat];if(!items||!items.length)return;
+    html+='<div class="section-label" style="color:'+CAT_COLORS[cat]+'"><span>'+CAT_LABELS[cat]+' ('+items.length+')</span></div>';
+    items.forEach(function(t){
+      var sc=t.status==='APPROVED'?'tpl-approved':t.status==='REJECTED'?'tpl-rejected':'tpl-pending';
+      var sl=t.status==='APPROVED'?'Aprovado':t.status==='REJECTED'?'Rejeitado':'Pendente';
+      var body='';if(t.components)t.components.forEach(function(c){if(c.type==='BODY')body=c.text});
+      html+='<div class="tpl-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:700;font-size:13px">'+t.name+'</div><span class="tpl-status '+sc+'">'+sl+'</span></div><div style="font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">'+body+'</div><div style="margin-top:8px;font-size:11px;color:var(--text3)">Idioma: '+(t.language||'pt_BR')+' · Categoria: '+(t.category||'—')+'</div></div>'
+    })
   });
-  el.innerHTML=html;
-}
-
-function toggleInterval(days,enabled){
-  var iv=STATE.recompraConfig.intervals.find(function(i){return i.days===days});
-  if(iv)iv.enabled=enabled;
-  saveRecompraConfig();
-}
-
-function updateIntervalCoupon(days,coupon){
-  var iv=STATE.recompraConfig.intervals.find(function(i){return i.days===days});
-  if(iv)iv.coupon=coupon;
-  saveRecompraConfig();
-}
-
-async function saveRecompraConfig(){
-  var cfg={
-    enabled:document.getElementById('recompra-enabled').checked,
-    intervals:STATE.recompraConfig.intervals
-  };
-  try{
-    await fetch('/api/recompra/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});
-  }catch(e){console.error('Erro ao salvar config:',e)}
-}
-
-// ==================== WA TEMPLATES (existing) ====================
-async function loadWaTemplates(){
-  var el=document.getElementById('wa-templates-list');el.innerHTML='<div class="center" style="font-size:12px">Carregando...</div>';
-  var r=await api('/api/wa-templates');
-  if(!r||!r.ok){el.innerHTML='<div class="center" style="font-size:12px;color:#F44336">Erro ao carregar: '+(r?r.error:'sem conexao')+'</div>';return}
-  STATE.waTemplates=r.data||[];
-  if(!STATE.waTemplates.length){el.innerHTML='<div class="center" style="font-size:12px">Nenhum template criado ainda. Crie um ao lado!</div>';return}
-  var html='';
-  STATE.waTemplates.forEach(function(t){
-    var statusClass=t.status==='APPROVED'?'tpl-approved':t.status==='REJECTED'?'tpl-rejected':'tpl-pending';
-    var statusLabel=t.status==='APPROVED'?'Aprovado':t.status==='REJECTED'?'Rejeitado':'Pendente';
-    var bodyText='';if(t.components)t.components.forEach(function(c){if(c.type==='BODY')bodyText=c.text});
-    html+='<div class="tpl-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:700;font-size:13px">'+t.name+'</div><span class="tpl-status '+statusClass+'">'+statusLabel+'</span></div><div style="font-size:11px;color:#999;line-height:1.5;white-space:pre-wrap">'+bodyText+'</div><div style="margin-top:8px;font-size:10px;color:#555">Idioma: '+(t.language||'pt_BR')+' | Categoria: '+(t.category||'—')+'</div></div>';
-  });
+  if(!html)html='<div class="center">Nenhum template nesta categoria.</div>';
   el.innerHTML=html;
 }
 
 async function createTemplate(){
-  var name=document.getElementById('new-tpl-name').value.trim();
-  var body=document.getElementById('new-tpl-body').value.trim();
-  var cat=document.getElementById('new-tpl-cat').value;
-  var footer=document.getElementById('new-tpl-footer').value.trim();
-  var result=document.getElementById('create-tpl-result');
+  var name=document.getElementById('new-tpl-name').value.trim();var body=document.getElementById('new-tpl-body').value.trim();var cat=document.getElementById('new-tpl-cat').value;var footer=document.getElementById('new-tpl-footer').value.trim();var result=document.getElementById('create-tpl-result');
   if(!name){result.innerHTML='<div class="alert alert-warn">Preencha o nome do template</div>';return}
   if(!body){result.innerHTML='<div class="alert alert-warn">Preencha o texto da mensagem</div>';return}
-  if(!/^[a-z0-9_]+$/.test(name)){result.innerHTML='<div class="alert alert-warn">Nome deve ter apenas letras minusculas, numeros e _ (sem espacos ou acentos)</div>';return}
+  if(!/^[a-z0-9_]+$/.test(name)){result.innerHTML='<div class="alert alert-warn">Nome deve ter apenas letras minusculas, numeros e _</div>';return}
   var btn=document.getElementById('create-tpl-btn');btn.disabled=true;btn.textContent='⏳ Enviando...';
-  try{
-    var r=await fetch('/api/wa-templates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,bodyText:body,category:cat,footerText:footer||undefined,language:'pt_BR'})});
-    var data=await r.json();
-    if(data.ok){result.innerHTML='<div class="alert alert-ok"><strong>Template "'+name+'" enviado para aprovacao!</strong> Status: '+(data.status||'PENDING')+'. O Meta geralmente aprova em algumas horas. Clique em "Atualizar status" para verificar.</div>';document.getElementById('new-tpl-name').value='';document.getElementById('new-tpl-body').value='';document.getElementById('new-tpl-footer').value='';loadWaTemplates()}
-    else{result.innerHTML='<div class="alert alert-warn">Erro: '+data.error+'</div>'}
-  }catch(e){result.innerHTML='<div class="alert alert-warn">Erro de conexao</div>'}
+  try{var r=await fetch('/api/wa-templates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,bodyText:body,category:cat,footerText:footer||undefined,language:'pt_BR'})});var data=await r.json();
+  if(data.ok){result.innerHTML='<div class="alert alert-ok"><strong>Template "'+name+'" enviado para aprovacao!</strong> O Meta geralmente aprova em algumas horas.</div>';document.getElementById('new-tpl-name').value='';document.getElementById('new-tpl-body').value='';document.getElementById('new-tpl-footer').value='';loadWaTemplates()}
+  else{result.innerHTML='<div class="alert alert-warn">Erro: '+data.error+'</div>'}}catch(e){result.innerHTML='<div class="alert alert-warn">Erro de conexao</div>'}
   btn.disabled=false;btn.textContent='🚀 Enviar para aprovacao do Meta';
 }
 
 function renderSuggested(){
-  var html='';
-  SUGGESTED.forEach(function(s){
-    html+='<div class="tpl-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-weight:700;font-size:12px">'+s.desc+'</div><button class="btn btn-ghost" style="padding:4px 10px;font-size:10px" onclick="useSuggested(\''+s.name+'\')">Usar este</button></div><div style="font-size:11px;color:#999;line-height:1.5;white-space:pre-wrap">'+s.body+'</div><div style="margin-top:6px;font-size:10px;color:#555">Nome: '+s.name+'</div></div>';
-  });
-  document.getElementById('suggested-templates').innerHTML=html;
+  var filter=STATE.tplFilter;var html='';
+  if(filter==='all'){
+    ['carrinho','pix','recompra'].forEach(function(cat){
+      var items=SUGGESTED.filter(function(s){return s.cat===cat});if(!items.length)return;
+      html+='<div class="section-label" style="color:'+CAT_COLORS[cat]+'"><span>'+CAT_LABELS[cat]+'</span></div>';
+      items.forEach(function(s){html+=sugCard(s)});
+    });
+  }else{
+    SUGGESTED.filter(function(s){return s.cat===filter}).forEach(function(s){html+=sugCard(s)});
+  }
+  document.getElementById('suggested-templates').innerHTML=html||'<div class="center">Nenhum template sugerido nesta categoria.</div>';
 }
 
-function useSuggested(name){
-  var s=SUGGESTED.find(function(x){return x.name===name});
-  if(!s)return;
-  document.getElementById('new-tpl-name').value=s.name;
-  document.getElementById('new-tpl-body').value=s.body;
-  document.getElementById('new-tpl-footer').value='SSJ Moda Fitness';
-  document.getElementById('create-tpl-result').innerHTML='<div class="alert alert-info">Template preenchido! Revise o texto e clique em "Enviar para aprovacao".</div>';
-  showTab('templates',document.querySelectorAll('.tab')[4]);
-}
+function sugCard(s){return '<div class="tpl-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-weight:700;font-size:13px">'+s.desc+'</div><button class="btn btn-ghost" style="padding:6px 14px;font-size:11px;border-radius:20px" onclick="useSuggested(\''+s.name+'\')">Usar este</button></div><div style="font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">'+s.body+'</div><div style="margin-top:8px;font-size:11px;color:var(--text3)">Nome: <code style="background:var(--bg);padding:2px 6px;border-radius:4px">'+s.name+'</code></div></div>'}
 
-// ==================== INIT ====================
+function onTplTypeChange(){var t=document.getElementById('new-tpl-type').value;var h=document.getElementById('tpl-vars-help');if(t==='carrinho')h.textContent='Use {{1}} para nome, {{2}} para link do carrinho, {{3}} para cupom.';else if(t==='pix')h.textContent='Use {{1}} para nome, {{2}} para link de pagamento.';else h.textContent='Use {{1}} para nome, {{2}} para cupom.'}
+
+function useSuggested(name){var s=SUGGESTED.find(function(x){return x.name===name});if(!s)return;document.getElementById('new-tpl-name').value=s.name;document.getElementById('new-tpl-body').value=s.body;document.getElementById('new-tpl-footer').value='SSJ Moda Fitness';document.getElementById('new-tpl-type').value=s.cat;onTplTypeChange();document.getElementById('create-tpl-result').innerHTML='<div class="alert alert-info">Template preenchido! Revise o texto e clique em "Enviar para aprovacao".</div>';showTab('templates',document.querySelectorAll('.tab')[4])}
+
+// ===== INIT =====
 document.getElementById('tpl-select').addEventListener('change',updatePreview);
 refresh();loadCarts();renderSuggested();
 setInterval(refresh,30000);setInterval(loadCarts,60000);
