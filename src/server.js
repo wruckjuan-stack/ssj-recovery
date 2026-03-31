@@ -364,13 +364,13 @@ async function sendWA(phone, templateName, params, allTemplates, buttonUrl) {
 
   // Button URL parameter (dynamic URL suffix) — SÓ se template tem botão
   if (tpl.hasButton) {
-    var urlParam = buttonUrl || "cart";
+    // CRITICAL: remover espaços da URL — Yampi gera utm_campaign= &force... com espaço
+    var urlParam = (buttonUrl || "cart").replace(/ /g, "");
     components.push({ type: "button", sub_type: "url", index: 0, parameters: [{ type: "text", text: String(urlParam) }] });
   }
 
   var payload = { messaging_product: "whatsapp", to: phone, type: "template", template: { name: tpl.name, language: { code: tpl.lang }, components: components } };
-  console.log("[SEND-WA] " + phone + " tpl=" + tpl.name + " body_params=" + (params ? params.length : 0) + " btn=" + (tpl.hasButton ? "yes" : "no") + " url_suffix=" + (buttonUrl ? buttonUrl.substring(0, 50) + "..." : "none"));
-  console.log("[SEND-WA] Payload completo:", JSON.stringify(payload, null, 2));
+  console.log("[SEND-WA] " + phone + " tpl=" + tpl.name + " body_params=" + (params ? params.length : 0) + " btn=" + (tpl.hasButton ? "yes" : "no"));
 
   var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId + "/messages", {
     method: "POST",
