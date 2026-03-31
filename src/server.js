@@ -1780,32 +1780,31 @@ app.post("/api/meta/scorecard", async function(req, res) {
 app.get("/api/meta/real-revenue", async function(req, res) {
   try {
     var days = parseInt(req.query.days) || 7;
-    var fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - days);
-    var fromStr = fromDate.toISOString().slice(0, 10);
-    var toStr = new Date().toISOString().slice(0, 10);
+    var cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    var cutoffTs = cutoff.getTime();
 
-    // Call Yampi directly WITHOUT include=customer (that causes 500 with date filters)
-    var allOrders = [];
-    var page = 1;
-    var hasMore = true;
-    while (hasMore && page <= 10) {
-      var data = await yampiGet("/orders", {
-        "q[created_at][from]": fromStr,
-        "q[created_at][to]": toStr,
-        limit: "50",
-        page: String(page),
-        orderBy: "created_at",
-        sortedBy: "desc"
-      });
-      var orders = data.data || [];
-      allOrders = allOrders.concat(orders);
-      hasMore = orders.length === 50;
-      page++;
+    // Fetch more orders without date filter (date filter causes Yampi 500)
+    // Use yampiGet directly to avoid include=customer overhead
+    var allRaw = [];
+    for (var pg = 1; pg <= 4; pg++) {
+      try {
+        var data = await yampiGet("/orders", { limit: "50", page: String(pg), orderBy: "created_at", sortedBy: "desc" });
+        var batch = data.data || [];
+        allRaw = allRaw.concat(batch);
+        if (batch.length < 50) break;
+      } catch (e) { break; }
     }
 
+    // Filter by date locally
+    var recentOrders = allRaw.filter(function(o) {
+      var created = (o.created_at && o.created_at.date) || o.created_at || null;
+      if (!created) return false;
+      return new Date(created).getTime() >= cutoffTs;
+    });
+
     var paidStatuses = ["paid", "invoiced", "shipped", "delivered", "complete", "completed", "pago", "enviado", "entregue"];
-    var paidOrders = allOrders.filter(function(o) {
+    var paidOrders = recentOrders.filter(function(o) {
       var s = "";
       if (o.status && o.status.data) s = (o.status.data.alias || o.status.data.name || "").toLowerCase();
       else if (o.status_alias) s = (o.status_alias || "").toLowerCase();
@@ -1820,8 +1819,8 @@ app.get("/api/meta/real-revenue", async function(req, res) {
       ok: true,
       totalOrders: paidOrders.length,
       totalRevenue: Math.round(totalRevenue * 100) / 100,
-      totalAllOrders: allOrders.length,
-      conversionRate: allOrders.length > 0 ? Math.round((paidOrders.length / allOrders.length) * 100) : 0
+      totalAllOrders: recentOrders.length,
+      conversionRate: recentOrders.length > 0 ? Math.round((paidOrders.length / recentOrders.length) * 100) : 0
     });
   } catch (e) {
     console.error("[REAL-REVENUE] Erro:", e.message);
