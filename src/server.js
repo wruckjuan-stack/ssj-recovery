@@ -169,15 +169,19 @@ async function sendWA(phone, templateName, params, allTemplates, buttonUrl) {
     components.push({ type: "body", parameters: params.map(function(p) { return { type: "text", text: String(p) }; }) });
   }
 
-  // Button URL parameter (dynamic URL)
-  if (tpl.hasButton && buttonUrl) {
-    components.push({ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: String(buttonUrl) }] });
+  // Button URL parameter (dynamic URL) - always send if template has button
+  if (tpl.hasButton) {
+    var urlParam = buttonUrl || "cart";
+    components.push({ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: String(urlParam) }] });
   }
+
+  var payload = { messaging_product: "whatsapp", to: phone, type: "template", template: { name: tpl.name, language: { code: tpl.lang }, components: components } };
+  console.log("[SEND-WA] " + phone + " template=" + tpl.name + " components=" + JSON.stringify(components));
 
   var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId + "/messages", {
     method: "POST",
     headers: { Authorization: "Bearer " + CFG.waToken, "Content-Type": "application/json" },
-    body: JSON.stringify({ messaging_product: "whatsapp", to: phone, type: "template", template: { name: tpl.name, language: { code: tpl.lang }, components: components } })
+    body: JSON.stringify(payload)
   });
   var data = await r.json();
   if (!r.ok) throw new Error((data.error && data.error.message) || "WA " + r.status);
@@ -969,3 +973,7 @@ app.delete("/api/wa-templates/:name", async function(req, res) {
 });
 
 app.listen(CFG.port, function() { console.log("SSJ Recovery rodando na porta " + CFG.port); });
+
+// Prevent crashes from unhandled errors
+process.on("uncaughtException", function(err) { console.error("[CRASH-PREVENTED] uncaughtException:", err.message); });
+process.on("unhandledRejection", function(err) { console.error("[CRASH-PREVENTED] unhandledRejection:", err && err.message ? err.message : err); });
