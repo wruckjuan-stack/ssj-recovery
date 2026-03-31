@@ -1383,6 +1383,34 @@ app.delete("/api/wa-templates/:name", async function(req, res) {
 
 // ===================== META ADS + IA =====================
 
+// Shared helper: deduplicate Meta action types (purchase vs offsite_conversion.fb_pixel_purchase are the SAME event)
+function parseMetaActions(c) {
+  var purchases = 0, purchaseValue = 0, addToCart = 0, initiateCheckout = 0, viewContent = 0;
+  // Meta returns the same conversion under multiple action_types (e.g. "purchase" AND "offsite_conversion.fb_pixel_purchase")
+  // To avoid double counting, collect ALL values by action_type first, then pick the best one
+  var actionMap = {};
+  if (c.actions) {
+    c.actions.forEach(function(a) {
+      actionMap[a.action_type] = (actionMap[a.action_type] || 0) + (parseInt(a.value) || 0);
+    });
+  }
+  // Prefer offsite_conversion (pixel-specific), fallback to generic
+  purchases = actionMap["offsite_conversion.fb_pixel_purchase"] || actionMap["purchase"] || 0;
+  addToCart = actionMap["offsite_conversion.fb_pixel_add_to_cart"] || actionMap["add_to_cart"] || 0;
+  initiateCheckout = actionMap["offsite_conversion.fb_pixel_initiate_checkout"] || actionMap["initiate_checkout"] || 0;
+  viewContent = actionMap["offsite_conversion.fb_pixel_view_content"] || actionMap["view_content"] || 0;
+
+  var valueMap = {};
+  if (c.action_values) {
+    c.action_values.forEach(function(a) {
+      valueMap[a.action_type] = (valueMap[a.action_type] || 0) + (parseFloat(a.value) || 0);
+    });
+  }
+  purchaseValue = valueMap["offsite_conversion.fb_pixel_purchase"] || valueMap["purchase"] || 0;
+
+  return { purchases: purchases, purchaseValue: purchaseValue, addToCart: addToCart, initiateCheckout: initiateCheckout, viewContent: viewContent };
+}
+
 async function fetchMetaCampaigns() {
   if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("META_AD_ACCOUNT_ID ou META_ADS_TOKEN nao configurado");
   var fields = "campaign_name,campaign_id,impressions,clicks,spend,cpc,cpm,ctr,actions,action_values,reach,frequency";
@@ -1391,24 +1419,18 @@ async function fetchMetaCampaigns() {
   var data = await r.json();
   if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta Ads API erro " + r.status);
   var campaigns = (data.data || []).map(function(c) {
-    var purchases = 0, purchaseValue = 0;
-    if (c.actions) {
-      c.actions.forEach(function(a) { if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchases += parseInt(a.value) || 0; });
-    }
-    if (c.action_values) {
-      c.action_values.forEach(function(a) { if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchaseValue += parseFloat(a.value) || 0; });
-    }
+    var act = parseMetaActions(c);
     var spend = parseFloat(c.spend) || 0;
-    var roas = spend > 0 ? (purchaseValue / spend) : 0;
+    var roas = spend > 0 ? (act.purchaseValue / spend) : 0;
     return {
       id: c.campaign_id, name: c.campaign_name,
       impressions: parseInt(c.impressions) || 0, clicks: parseInt(c.clicks) || 0,
       reach: parseInt(c.reach) || 0, frequency: parseFloat(c.frequency) || 0,
       spend: spend, cpc: parseFloat(c.cpc) || 0,
       cpm: parseFloat(c.cpm) || 0, ctr: parseFloat(c.ctr) || 0,
-      purchases: purchases, purchaseValue: purchaseValue,
+      purchases: act.purchases, purchaseValue: act.purchaseValue,
       roas: Math.round(roas * 100) / 100,
-      cpa: purchases > 0 ? Math.round((spend / purchases) * 100) / 100 : 0
+      cpa: act.purchases > 0 ? Math.round((spend / act.purchases) * 100) / 100 : 0
     };
   });
   return campaigns;
@@ -1485,6 +1507,8 @@ Seja direto, prático e use números. Fale como um gestor de tráfego experiente
       if (!r.ok) {
         console.error("[IA-REPORT] Erro com " + models[mi] + ":", r.status, JSON.stringify(data).substring(0, 300));
         lastError = (data.error && data.error.message) || "API erro " + r.status;
+        iaErrorLog.unshift({ ts: new Date().toISOString(), type: "report", model: models[mi], status: r.status, error: lastError });
+        if (iaErrorLog.length > 20) iaErrorLog.length = 20;
         continue;
       }
       var text = "";
@@ -1647,23 +1671,38 @@ app.post("/api/meta/alert", async function(req, res) {
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-// ===================== META ADS: EXTENDED ENDPOINTS =====================
+// In-memory error log for IA debugging
+var iaErrorLog = [];
 
-function parseMetaActions(c) {
-  var purchases = 0, purchaseValue = 0, addToCart = 0, initiateCheckout = 0, viewContent = 0;
-  if (c.actions) {
-    c.actions.forEach(function(a) {
-      if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchases += parseInt(a.value) || 0;
-      if (a.action_type === "add_to_cart" || a.action_type === "offsite_conversion.fb_pixel_add_to_cart") addToCart += parseInt(a.value) || 0;
-      if (a.action_type === "initiate_checkout" || a.action_type === "offsite_conversion.fb_pixel_initiate_checkout") initiateCheckout += parseInt(a.value) || 0;
-      if (a.action_type === "view_content" || a.action_type === "offsite_conversion.fb_pixel_view_content") viewContent += parseInt(a.value) || 0;
-    });
+// IA Diagnostic endpoint — test Anthropic API connection
+app.get("/api/meta/ia-test", async function(req, res) {
+  if (!CFG.anthropicKey) return res.json({ ok: false, error: "ANTHROPIC_API_KEY não configurada", key_prefix: "não definida" });
+  var keyPrefix = CFG.anthropicKey.substring(0, 10) + "...";
+  var results = [];
+  var models = ["claude-sonnet-4-6", "claude-opus-4-6"];
+  for (var i = 0; i < models.length; i++) {
+    try {
+      var r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": CFG.anthropicKey, "anthropic-version": "2023-06-01" },
+        body: JSON.stringify({ model: models[i], max_tokens: 50, messages: [{ role: "user", content: "Responda apenas: OK" }] })
+      });
+      var data = await r.json();
+      if (r.ok) {
+        var txt = "";
+        if (data.content) data.content.forEach(function(b) { if (b.type === "text") txt += b.text; });
+        results.push({ model: models[i], ok: true, response: txt.substring(0, 100) });
+      } else {
+        results.push({ model: models[i], ok: false, status: r.status, error: data.error ? data.error.message : JSON.stringify(data).substring(0, 200) });
+      }
+    } catch (e) {
+      results.push({ model: models[i], ok: false, error: "Network/fetch error: " + e.message });
+    }
   }
-  if (c.action_values) {
-    c.action_values.forEach(function(a) { if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchaseValue += parseFloat(a.value) || 0; });
-  }
-  return { purchases: purchases, purchaseValue: purchaseValue, addToCart: addToCart, initiateCheckout: initiateCheckout, viewContent: viewContent };
-}
+  res.json({ ok: true, key_prefix: keyPrefix, results: results, recentErrors: iaErrorLog.slice(0, 5) });
+});
+
+// ===================== META ADS: EXTENDED ENDPOINTS =====================
 
 // Campaigns by period with funnel data
 app.get("/api/meta/campaigns-period", async function(req, res) {
@@ -1807,6 +1846,8 @@ app.post("/api/meta/chat", async function(req, res) {
         if (!r.ok) {
           console.error("[IA-CHAT] Erro " + models[mi] + ":", r.status, JSON.stringify(data).substring(0, 300));
           lastErr = (data.error && data.error.message) || "API erro " + r.status;
+          iaErrorLog.unshift({ ts: new Date().toISOString(), type: "chat", model: models[mi], status: r.status, error: lastErr });
+          if (iaErrorLog.length > 20) iaErrorLog.length = 20;
           continue;
         }
         var text = "";
@@ -1820,6 +1861,34 @@ app.post("/api/meta/chat", async function(req, res) {
     console.error("[IA-CHAT] Erro final:", e.message);
     res.status(500).json({ ok: false, error: e.message });
   }
+});
+
+// IA diagnostic endpoint — shows error in dashboard instead of needing Railway logs
+app.get("/api/meta/ia-test", async function(req, res) {
+  if (!CFG.anthropicKey) return res.json({ ok: false, error: "ANTHROPIC_API_KEY não configurada", key_preview: "vazio" });
+  var keyPreview = CFG.anthropicKey.substring(0, 10) + "..." + CFG.anthropicKey.substring(CFG.anthropicKey.length - 4);
+  var models = ["claude-opus-4-6", "claude-sonnet-4-6"];
+  var results = [];
+  for (var i = 0; i < models.length; i++) {
+    try {
+      var r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": CFG.anthropicKey, "anthropic-version": "2023-06-01" },
+        body: JSON.stringify({ model: models[i], max_tokens: 50, messages: [{ role: "user", content: "Diga apenas: OK" }] })
+      });
+      var data = await r.json();
+      if (r.ok) {
+        var txt = "";
+        if (data.content) data.content.forEach(function(b) { if (b.type === "text") txt += b.text; });
+        results.push({ model: models[i], ok: true, response: txt });
+      } else {
+        results.push({ model: models[i], ok: false, status: r.status, error: data.error ? data.error.message : JSON.stringify(data).substring(0, 200) });
+      }
+    } catch (e) {
+      results.push({ model: models[i], ok: false, error: "Network/fetch error: " + e.message });
+    }
+  }
+  res.json({ ok: results.some(function(r) { return r.ok; }), key_preview: keyPreview, results: results });
 });
 
 // ===================== START SERVER =====================
