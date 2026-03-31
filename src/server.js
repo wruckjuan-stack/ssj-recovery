@@ -330,6 +330,12 @@ async function fetchOrders(params) {
     var ddd = (cust.phone && cust.phone.area_code) || (cust.spreadsheet && cust.spreadsheet.data && cust.spreadsheet.data.phone_code) || "";
     var created = (order.created_at && order.created_at.date) || order.created_at || null;
     var daysAgo = created ? Math.round((Date.now() - new Date(created).getTime()) / 86400000) : 0;
+    var hoursAgo = created ? Math.round((Date.now() - new Date(created).getTime()) / 3600000) : 0;
+    // Extrair status
+    var statusAlias = order.status && order.status.data ? order.status.data.alias : (order.status_alias || "");
+    var statusLabel = order.status && order.status.data ? order.status.data.name : (order.status_label || "");
+    // Checkout URL pra recompra/PIX
+    var checkoutUrl = order.checkout_url || order.simulate_url || order.unauth_simulate_url || "";
     return {
       id: order.id,
       number: order.number || order.id,
@@ -339,11 +345,13 @@ async function fetchOrders(params) {
       phone: formatPhone(ph, ddd),
       total: order.value_total_formated || "R$ " + (order.value_total || 0).toFixed(2),
       totalRaw: order.value_total || 0,
-      status: order.status && order.status.data ? order.status.data.alias : (order.status_alias || ""),
-      statusLabel: order.status && order.status.data ? order.status.data.name : (order.status_label || ""),
+      status: statusAlias,
+      statusLabel: statusLabel,
       createdAt: created,
       daysAgo: daysAgo,
-      customerId: cust.id || null
+      hoursAgo: hoursAgo,
+      customerId: cust.id || null,
+      simUrl: checkoutUrl
     };
   });
 }
@@ -589,68 +597,79 @@ cron.schedule("*/10 * * * *", async function() {
 cron.schedule("*/15 * * * *", async function() {
   console.log("[AUTO-PIX] " + new Date().toISOString() + " Verificando PIX/boleto...");
   try {
-    var carts = await fetchCarts();
+    // Buscar pedidos recentes (últimos 4 dias)
+    var fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - 4);
+    var orders = await fetchOrders({
+      "q[created_at][from]": fromDate.toISOString().slice(0, 10),
+      limit: "50"
+    });
+
     var sent = 0, skipped = 0, failed = 0;
 
-    // LOG: mostrar TODOS os status encontrados pra mapear
+    // LOG: mostrar TODOS os status encontrados
     var statusSet = {};
-    carts.forEach(function(c) {
-      var s = String(c.lastTxStatus || "null");
+    orders.forEach(function(o) {
+      var s = (o.status || "sem_status").toLowerCase();
       statusSet[s] = (statusSet[s] || 0) + 1;
     });
-    console.log("[AUTO-PIX] Status encontrados na Yampi:", JSON.stringify(statusSet));
+    console.log("[AUTO-PIX] Status encontrados nos pedidos:", JSON.stringify(statusSet));
 
-    for (var i = 0; i < carts.length; i++) {
-      var cart = carts[i];
-      if (!cart.phone || cart.phone.length < 12) { skipped++; continue; }
+    // Filtrar pedidos com pagamento cancelado/recusado/expirado
+    var pixStatuses = [
+      "cancelled", "canceled", "cancelado",
+      "refused", "recusado", "expired", "expirado",
+      "waiting_payment", "awaiting_payment",
+      "not_paid", "payment_error", "payment_failed",
+      "pending", "pendente"
+    ];
 
-      var txStatus = String(cart.lastTxStatus || "").toLowerCase();
+    for (var i = 0; i < orders.length; i++) {
+      var order = orders[i];
+      if (!order.phone || order.phone.length < 12) { skipped++; continue; }
 
-      // Filtro ampliado: aceitar qualquer status que indica pagamento não concluído
+      var orderStatus = (order.status || "").toLowerCase();
+
+      // Verificar se é status de PIX/boleto não pago
       var isPixBoleto = false;
-      var pixBoletoStatuses = [
-        "pix_expired", "expired", "timeout", "refused",
-        "waiting_payment", "boleto_expired",
-        "cancelled", "canceled", "awaiting_payment",
-        "pending", "pendente", "not_paid", "overdue",
-        "payment_error", "payment_failed"
-      ];
-      for (var s = 0; s < pixBoletoStatuses.length; s++) {
-        if (txStatus === pixBoletoStatuses[s]) { isPixBoleto = true; break; }
+      for (var s = 0; s < pixStatuses.length; s++) {
+        if (orderStatus === pixStatuses[s]) { isPixBoleto = true; break; }
       }
-      // Fallback: check substrings
+      // Fallback: substrings
       if (!isPixBoleto) {
-        if (txStatus.indexOf("expir") !== -1 || txStatus.indexOf("cancel") !== -1 ||
-            txStatus.indexOf("recus") !== -1 || txStatus.indexOf("venc") !== -1 ||
-            txStatus.indexOf("pending") !== -1 || txStatus.indexOf("waiting") !== -1) {
+        if (orderStatus.indexOf("cancel") !== -1 || orderStatus.indexOf("recus") !== -1 ||
+            orderStatus.indexOf("expir") !== -1 || orderStatus.indexOf("pending") !== -1 ||
+            orderStatus.indexOf("waiting") !== -1) {
           isPixBoleto = true;
         }
       }
 
       if (!isPixBoleto) { skipped++; continue; }
 
-      // Escolher template baseado na idade do carrinho
-      var pixTpl = PIX_TEMPLATES.find(function(t) { return cart.hoursAgo >= t.minH && cart.hoursAgo < t.maxH; });
+      // Escolher template PIX baseado na idade do pedido
+      var pixTpl = PIX_TEMPLATES.find(function(t) { return order.hoursAgo >= t.minH && order.hoursAgo < t.maxH; });
       if (!pixTpl) pixTpl = PIX_TEMPLATES[PIX_TEMPLATES.length - 1]; // fallback: ultimo
 
-      // Verifica no PostgreSQL se já foi enviado
-      var alreadySent = await wasPixSent(cart.id, pixTpl.id);
+      // Verifica no PostgreSQL se já foi enviado (usando order.id como cart_id)
+      var alreadySent = await wasPixSent(order.id, pixTpl.id);
       if (alreadySent) { skipped++; continue; }
 
       try {
         var allTpls = TEMPLATES.concat(PIX_TEMPLATES).concat(RECOMPRA_TEMPLATES);
-        var msgId = await sendWA(cart.phone, pixTpl.name, buildPixParams(pixTpl, cart), allTpls, getCartUrl(cart));
-        await recordPix(cart, pixTpl, "sent", msgId);
+        var urlSuffix = getCartUrl(order); // usa simUrl do pedido
+        var msgId = await sendWA(order.phone, pixTpl.name, buildPixParams(pixTpl, order), allTpls, urlSuffix);
+        // Registrar como PIX sent (reutiliza cart_id field pro order.id)
+        await recordPix({ id: order.id, phone: order.phone, name: order.name, total: order.total }, pixTpl, "sent", msgId);
         sent++;
         await new Promise(function(r) { setTimeout(r, 250); });
       } catch (e) {
-        console.error("[AUTO-PIX] Falha " + cart.name + ": " + e.message);
-        await recordPix(cart, pixTpl, "failed", null);
+        console.error("[AUTO-PIX] Falha " + order.name + " (" + order.phone + "): " + e.message);
+        await recordPix({ id: order.id, phone: order.phone, name: order.name, total: order.total }, pixTpl, "failed", null);
         failed++;
       }
     }
 
-    pixCronLog.unshift({ ts: new Date().toISOString(), cartsChecked: carts.length, sent: sent, skipped: skipped, failed: failed });
+    pixCronLog.unshift({ ts: new Date().toISOString(), ordersChecked: orders.length, sent: sent, skipped: skipped, failed: failed });
     if (pixCronLog.length > 100) pixCronLog.length = 100;
     console.log("[AUTO-PIX] " + sent + " enviado(s), " + skipped + " pulado(s), " + failed + " falha(s)");
   } catch (e) {
