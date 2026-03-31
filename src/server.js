@@ -56,10 +56,10 @@ const DB = {
 // ===================== TEMPLATES =====================
 
 const TEMPLATES = [
-  { id: "mensagem_1_lembrete_15min", name: "mensagem_1_lembrete_15min", display: "Lembrete 15min", timing: "15min", minH: 0, maxH: 0.5, lang: "pt_BR", vars: ["primeiro_nome", "link_carrinho"], preview: "Oiii, tudo bem {{1}}? Aqui e a equipe SSJ Moda Fitness.\n\nNotei que voce estava escolhendo algumas pecas aqui na SSJ e nao finalizou. Sem pressa, suas escolhas continuam reservadas.\nNosso tecido e poliamida premium com zero transparencia, pensado para mulheres que nao abrem mao de conforto e seguranca no vestir.\n\nQuando quiser finalizar: {{2}}\nEstamos a disposicao!" },
-  { id: "mensagem_2_confianca_2h", name: "mensagem_2_confianca_2h", display: "Confianca 2h", timing: "2h", minH: 0.5, maxH: 12, lang: "pt_BR", vars: ["primeiro_nome", "link_carrinho"], preview: "Ola, aqui e a equipe SSJ Moda Fitness, {{1}}.\n\nSabemos que comprar moda fitness online pode gerar duvidas, principalmente sobre caimento e tecido.\nPor isso, na SSJ voce tem troca gratis e facil, sem burocracia. Se nao vestir como esperava, resolvemos rapidinho.\n\nSuas pecas em poliamida premium continuam esperando por voce: {{2}}\nQualquer duvida, estamos aqui!" },
-  { id: "mensagem_3_social_24h", name: "mensagem_3_social_24h", display: "Social 24h", timing: "24h", minH: 12, maxH: 36, lang: "pt_BR", vars: ["primeiro_nome", "link_carrinho"], preview: "Ola, tudo bem {{1}}? Aqui e a Jessica da SSJ Moda Fitness.\n\nAs pecas que voce selecionou estao entre as favoritas das nossas clientes.\nMulheres como voce escolhem a SSJ pela qualidade do tecido que nao marca, nao transparece e dura por muito tempo, mesmo com uso diario.\n\nSuas escolhas ainda estao disponiveis: {{2}}\nEsperamos voce de volta!" },
-  { id: "mensagem_4_cupom_48h", name: "mensagem_4_cupom_48h", display: "Cupom 48h", timing: "48h", minH: 36, maxH: 96, lang: "pt_BR", vars: ["primeiro_nome", "link_carrinho"], preview: "Ola {{1}}, aqui e a equipe SSJ Moda Fitness.\nSeparamos um mimo exclusivo pra voce finalizar sua compra: use o cupom VOLTECOMSSJ e ganhe 10% OFF.\nPoliamida premium, zero transparencia e troca gratis — voce compra com total seguranca.\nGaranta suas pecas agora: {{2}}\nEssa condicao e valida por 24h!" },
+  { id: "lembrete_15min_v2", name: "lembrete_15min_v2", display: "Lembrete 15min", timing: "15min", minH: 0, maxH: 0.5, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Ver minhas pecas", preview: "Oiii, tudo bem {{1}}? 😊 Aqui e a equipe SSJ Moda Fitness.\n\nNotei que voce estava escolhendo algumas pecas aqui na SSJ e nao finalizou 🛒\n\nSem pressa — suas escolhas continuam reservadas! ✨\n\nNosso tecido e poliamida premium com zero transparencia, pensado para mulheres que nao abrem mao de conforto e seguranca no vestir 💖\n\nEstamos a disposicao!" },
+  { id: "confianca_2h_v2", name: "confianca_2h_v2", display: "Confianca 2h", timing: "2h", minH: 0.5, maxH: 12, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Garantir minhas pecas", preview: "Ola, aqui e a equipe SSJ Moda Fitness, {{1}} 👋\n\nSabemos que comprar moda fitness online pode gerar duvidas — principalmente sobre caimento e tecido 🤔\n\nPor isso, na SSJ voce tem troca gratis e facil, sem burocracia ✅ Se nao vestir como esperava, resolvemos rapidinho!\n\nSuas pecas em poliamida premium continuam esperando por voce 💜\n\nQualquer duvida, estamos aqui!" },
+  { id: "social_24h_v2", name: "social_24h_v2", display: "Social 24h", timing: "24h", minH: 12, maxH: 36, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Aproveitar agora", preview: "Ola, tudo bem {{1}}? Aqui e a Jessica da SSJ Moda Fitness 💕\n\nAs pecas que voce selecionou estao entre as favoritas das nossas clientes! ⭐\n\nMulheres como voce escolhem a SSJ pela qualidade do tecido que nao marca, nao transparece e dura por muito tempo — mesmo com uso diario 👏\n\nSuas escolhas ainda estao disponiveis!\n\nEsperamos voce de volta 🥰" },
+  { id: "cupom_48h_v2", name: "cupom_48h_v2", display: "Cupom 48h", timing: "48h", minH: 36, maxH: 96, lang: "pt_BR", vars: ["primeiro_nome", "cupom"], hasButton: true, buttonText: "Usar meu cupom", preview: "Ola {{1}}, aqui e a equipe SSJ Moda Fitness 🎁\n\nSeparamos um mimo exclusivo pra voce finalizar sua compra!\n\nUse o cupom {{2}} e ganhe 10% OFF 🔥\n\nPoliamida premium, zero transparencia e troca gratis — voce compra com total seguranca ✅\n\nEssa condicao e valida por 24h! ⏳" },
 ];
 
 // PIX/Boleto recovery templates
@@ -157,14 +157,27 @@ async function fetchOrders(params) {
 
 // ===================== WHATSAPP SEND =====================
 
-async function sendWA(phone, templateName, params, allTemplates) {
+async function sendWA(phone, templateName, params, allTemplates, buttonUrl) {
   var searchIn = allTemplates || TEMPLATES;
   var tpl = searchIn.find(function(t) { return t.name === templateName; });
   if (!tpl) throw new Error("Template nao encontrado: " + templateName);
+
+  var components = [];
+
+  // Body parameters (name, cupom, etc)
+  if (params && params.length > 0) {
+    components.push({ type: "body", parameters: params.map(function(p) { return { type: "text", text: String(p) }; }) });
+  }
+
+  // Button URL parameter (dynamic URL)
+  if (tpl.hasButton && buttonUrl) {
+    components.push({ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: String(buttonUrl) }] });
+  }
+
   var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId + "/messages", {
     method: "POST",
     headers: { Authorization: "Bearer " + CFG.waToken, "Content-Type": "application/json" },
-    body: JSON.stringify({ messaging_product: "whatsapp", to: phone, type: "template", template: { name: tpl.name, language: { code: tpl.lang }, components: [{ type: "body", parameters: params.map(function(p) { return { type: "text", text: String(p) }; }) }] } })
+    body: JSON.stringify({ messaging_product: "whatsapp", to: phone, type: "template", template: { name: tpl.name, language: { code: tpl.lang }, components: components } })
   });
   var data = await r.json();
   if (!r.ok) throw new Error((data.error && data.error.message) || "WA " + r.status);
@@ -174,10 +187,13 @@ async function sendWA(phone, templateName, params, allTemplates) {
 function buildParams(tpl, cart) {
   return tpl.vars.map(function(v) {
     if (v === "primeiro_nome") return cart.firstName;
-    if (v === "link_carrinho") return cart.simUrl;
     if (v === "cupom") return CFG.coupon;
     return "";
   });
+}
+
+function getCartUrl(cart) {
+  return cart.simUrl || "";
 }
 
 function buildPixParams(tpl, cart) {
@@ -251,7 +267,7 @@ cron.schedule("*/10 * * * *", async function() {
       if (!tpl) { skipped++; continue; }
       if (DB.sentMap[cart.id] && DB.sentMap[cart.id].indexOf(tpl.id) !== -1) { skipped++; continue; }
       try {
-        var msgId = await sendWA(cart.phone, tpl.name, buildParams(tpl, cart));
+        var msgId = await sendWA(cart.phone, tpl.name, buildParams(tpl, cart), null, getCartUrl(cart));
         record(cart, tpl, "sent", msgId, true);
         sent++;
         await new Promise(function(r) { setTimeout(r, 250); });
@@ -416,7 +432,7 @@ app.post("/api/send", async function(req, res) {
     if (!cart) { results.push({ cartId: cartIds[i], ok: false, error: "Nao encontrado" }); continue; }
     if (!cart.phone) { results.push({ cartId: cartIds[i], ok: false, error: "Sem telefone" }); continue; }
     if (DB.sentMap[cartIds[i]] && DB.sentMap[cartIds[i]].indexOf(templateId) !== -1) { results.push({ cartId: cartIds[i], ok: false, error: "Ja enviado" }); continue; }
-    try { var msgId = await sendWA(cart.phone, tpl.name, buildParams(tpl, cart)); record(cart, tpl, "sent", msgId, false); results.push({ cartId: cartIds[i], ok: true, contact: cart.name }); }
+    try { var msgId = await sendWA(cart.phone, tpl.name, buildParams(tpl, cart), null, getCartUrl(cart)); record(cart, tpl, "sent", msgId, false); results.push({ cartId: cartIds[i], ok: true, contact: cart.name }); }
     catch (e) { record(cart, tpl, "failed", null, false); results.push({ cartId: cartIds[i], ok: false, error: e.message }); }
   }
   res.json({ ok: true, sent: results.filter(function(r) { return r.ok; }).length, failed: results.filter(function(r) { return !r.ok; }).length, results: results });
@@ -821,6 +837,18 @@ app.post("/api/wa-templates", async function(req, res) {
     };
     if (req.body.footerText) {
       body.components.push({ type: "FOOTER", text: req.body.footerText });
+    }
+    // Add CTA button if provided
+    if (req.body.buttonText && req.body.buttonUrl) {
+      body.components.push({
+        type: "BUTTONS",
+        buttons: [{
+          type: "URL",
+          text: req.body.buttonText,
+          url: req.body.buttonUrl,
+          example: [req.body.buttonUrlExample || "https://ssjmodafitness.com.br"]
+        }]
+      });
     }
     var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.wabaId + "/message_templates", {
       method: "POST",
