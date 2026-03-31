@@ -14,8 +14,8 @@
 .badge-auto{background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3);color:#4CAF50}
 .dot{width:6px;height:6px;border-radius:50%;display:inline-block}.dot-ok{background:#25D366;box-shadow:0 0 5px #25D366}.dot-err{background:#F44336;box-shadow:0 0 5px #F44336}
 .dot-pulse{background:#4CAF50;animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.wrap{max-width:1300px;margin:0 auto;padding:20px 20px 48px}.tabs{display:flex;gap:3px;margin-bottom:20px;background:#141414;border-radius:10px;padding:3px;border:1px solid #242424}
-.tab{flex:1;padding:11px 16px;border-radius:7px;border:none;background:transparent;color:#999;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}.tab.active{background:#C2185B;color:#fff}
+.wrap{max-width:1300px;margin:0 auto;padding:20px 20px 48px}.tabs{display:flex;gap:3px;margin-bottom:20px;background:#141414;border-radius:10px;padding:3px;border:1px solid #242424;flex-wrap:wrap}
+.tab{flex:1;padding:11px 10px;border-radius:7px;border:none;background:transparent;color:#999;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;min-width:100px;white-space:nowrap}.tab.active{background:#C2185B;color:#fff}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:20px}
 .stat{background:#1A1A1A;border-radius:12px;border:1px solid #242424;padding:14px 16px;position:relative;overflow:hidden}
 .stat-bar{position:absolute;top:0;left:0;right:0;height:3px}.stat-val{font-size:22px;font-weight:800;letter-spacing:-.02em}.stat-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
@@ -26,8 +26,10 @@ td{padding:10px 12px;font-size:12px;border-bottom:1px solid rgba(36,36,36,.1);co
 .btn{padding:9px 20px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
 .btn-wa{background:linear-gradient(135deg,#128C7E,#25D366);color:#fff}.btn-yp{background:linear-gradient(135deg,#5B4BD5,#6C5CE7);color:#fff}
 .btn-acc{background:linear-gradient(135deg,#C2185B,#E91E63);color:#fff}.btn-ghost{background:transparent;border:1px solid #242424;color:#999}
+.btn-orange{background:linear-gradient(135deg,#E65100,#FF9800);color:#fff}
+.btn-teal{background:linear-gradient(135deg,#00695C,#26A69A);color:#fff}
 .btn:disabled{opacity:.5;cursor:not-allowed}
-select,input[type=text],textarea{width:100%;padding:9px 12px;border-radius:6px;border:1px solid #242424;background:#141414;color:#EFEFEF;font-size:12px;font-family:inherit;outline:none}
+select,input[type=text],input[type=number],textarea{width:100%;padding:9px 12px;border-radius:6px;border:1px solid #242424;background:#141414;color:#EFEFEF;font-size:12px;font-family:inherit;outline:none}
 select{appearance:none}textarea{resize:vertical;min-height:80px;line-height:1.5}input::placeholder,textarea::placeholder{color:#444}
 .grid2{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
 .phone{background:#0D0D0D;border-radius:18px;padding:12px;border:2px solid #242424}
@@ -42,6 +44,17 @@ select{appearance:none}textarea{resize:vertical;min-height:80px;line-height:1.5}
 .alert-info{background:rgba(33,150,243,.08);border:1px solid rgba(33,150,243,.25);color:#2196F3}
 .alert-ok{background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.25);color:#4CAF50}
 .alert-warn{background:rgba(255,152,0,.08);border:1px solid rgba(255,152,0,.25);color:#FF9800}
+.alert-pix{background:rgba(255,87,34,.08);border:1px solid rgba(255,87,34,.25);color:#FF5722}
+.alert-recompra{background:rgba(0,150,136,.08);border:1px solid rgba(0,150,136,.25);color:#009688}
+.toggle{position:relative;width:44px;height:24px;display:inline-block;cursor:pointer}
+.toggle input{display:none}
+.toggle-slider{position:absolute;top:0;left:0;right:0;bottom:0;background:#333;border-radius:12px;transition:.3s}
+.toggle-slider:before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#888;border-radius:50%;transition:.3s}
+.toggle input:checked+.toggle-slider{background:rgba(76,175,80,.3)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(20px);background:#4CAF50}
+.interval-card{background:#111;border:1px solid #242424;border-radius:10px;padding:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.interval-info{flex:1;min-width:160px}
+.interval-days{font-size:20px;font-weight:800;color:#009688}.interval-label{font-size:11px;color:#555;margin-top:2px}
 </style>
 </head>
 <body>
@@ -60,19 +73,21 @@ select{appearance:none}textarea{resize:vertical;min-height:80px;line-height:1.5}
   <div class="tabs">
     <button class="tab active" onclick="showTab('dash',this)">📊 Dashboard</button>
     <button class="tab" onclick="showTab('carts',this)">🛒 Carrinhos</button>
+    <button class="tab" onclick="showTab('pix',this)">💳 PIX/Boleto</button>
+    <button class="tab" onclick="showTab('recompra',this)">🔄 Recompra</button>
     <button class="tab" onclick="showTab('templates',this)">💬 Mensagens</button>
     <button class="tab" onclick="showTab('history',this)">📋 Historico</button>
     <button class="tab" onclick="showTab('auto',this)">⚡ Automacao</button>
   </div>
 
-  <!-- DASHBOARD -->
+  <!-- ==================== DASHBOARD ==================== -->
   <div id="tab-dash">
     <div class="stats" id="stats-grid"></div>
     <div class="card"><div class="card-title">📊 Performance por template</div><div style="overflow-x:auto"><table id="tpl-table"><thead><tr><th>Template</th><th>Enviadas</th><th>Entregues</th><th>Lidas</th><th>Falhas</th><th>Taxa leitura</th></tr></thead><tbody></tbody></table></div></div>
     <div class="card"><div class="card-title">ℹ️ Status do sistema</div><div id="sys-status" style="font-size:12px;color:#999;line-height:2"></div></div>
   </div>
 
-  <!-- CARRINHOS -->
+  <!-- ==================== CARRINHOS ==================== -->
   <div id="tab-carts" class="hidden">
     <div class="grid2">
       <div>
@@ -105,7 +120,106 @@ select{appearance:none}textarea{resize:vertical;min-height:80px;line-height:1.5}
     </div>
   </div>
 
-  <!-- MENSAGENS / TEMPLATES -->
+  <!-- ==================== PIX/BOLETO ==================== -->
+  <div id="tab-pix" class="hidden">
+    <div class="alert alert-pix"><strong>💳 Recuperacao de PIX/Boleto expirado</strong> — O sistema verifica a cada 15 minutos se algum pagamento via PIX ou boleto expirou. Quando detecta, dispara automaticamente uma mensagem oferecendo novo link de pagamento.</div>
+
+    <div class="stats" id="pix-stats-grid"></div>
+
+    <div class="grid2">
+      <div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div class="card-title" style="margin:0">💳 Pagamentos expirados</div>
+            <button class="btn btn-orange" onclick="loadPixCarts()">🔄 Atualizar</button>
+          </div>
+          <div style="overflow-x:auto"><table id="pix-table"><thead><tr><th><input type="checkbox" id="pix-sel-all" onchange="toggleAllPix()"></th><th>Cliente</th><th>Tipo</th><th>Valor</th><th>Tempo</th><th>Status envio</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📤 Disparo manual PIX/Boleto</div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end">
+            <div><div class="form-label">Template</div><select id="pix-tpl-select"></select></div>
+            <button class="btn btn-orange" id="pix-send-btn" onclick="sendPixManual()">📤 Enviar (0)</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📋 Historico PIX/Boleto</div>
+          <div style="overflow-x:auto"><table id="pix-hist-table"><thead><tr><th>Contato</th><th>Template</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </div>
+      <div style="position:sticky;top:20px">
+        <div class="card">
+          <div class="card-title">⚡ Como funciona</div>
+          <div style="font-size:12px;color:#999;line-height:1.8">
+            <p>O servidor verifica a cada <strong style="color:#FF5722">15 minutos</strong>:</p>
+            <p style="margin-top:6px">1. Busca carrinhos na Yampi</p>
+            <p>2. Filtra os que tem <code style="background:#222;padding:2px 5px;border-radius:3px;font-size:11px">last_transaction_status</code> de PIX ou boleto expirado</p>
+            <p>3. Dispara template adequado:</p>
+            <div style="margin:8px 0 8px 20px;font-size:11px">
+              <div style="padding:4px 0"><span style="color:#FF5722;font-weight:600">PIX expirado →</span> Template "pix_expirado"</div>
+              <div style="padding:4px 0"><span style="color:#FF9800;font-weight:600">Boleto vencido →</span> Template "boleto_expirado"</div>
+            </div>
+            <p>4. Nunca repete envio para o mesmo carrinho</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">📜 Log PIX/Boleto</div>
+          <div id="pix-cron-log"><div class="center" style="font-size:12px">Aguardando primeira execucao...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== RECOMPRA ==================== -->
+  <div id="tab-recompra" class="hidden">
+    <div class="alert alert-recompra"><strong>🔄 Campanhas de recompra</strong> — O sistema identifica clientes que compraram ha 30, 60 ou 90 dias e envia mensagem automatica incentivando nova compra com cupom de fidelidade. Roda diariamente as 10h.</div>
+
+    <div class="stats" id="recompra-stats-grid"></div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div class="card-title" style="margin:0">⚙️ Configuracao das campanhas</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:#999">Automacao</span>
+          <label class="toggle"><input type="checkbox" id="recompra-enabled" onchange="saveRecompraConfig()" checked><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <div id="recompra-intervals"></div>
+    </div>
+
+    <div class="grid2" style="grid-template-columns:1fr 1fr">
+      <div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div class="card-title" style="margin:0">📦 Pedidos elegiveis para recompra</div>
+            <button class="btn btn-teal" onclick="loadRecompraOrders()">🔄 Buscar pedidos</button>
+          </div>
+          <div style="overflow-x:auto"><table id="recompra-table"><thead><tr><th><input type="checkbox" id="recompra-sel-all" onchange="toggleAllRecompra()"></th><th>Cliente</th><th>Pedido</th><th>Valor</th><th>Dias</th><th>Campanha</th><th>Enviado?</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📤 Disparo manual recompra</div>
+          <div style="display:grid;grid-template-columns:1fr 120px auto;gap:12px;align-items:end">
+            <div><div class="form-label">Template</div><select id="recompra-tpl-select"></select></div>
+            <div><div class="form-label">Cupom</div><input type="text" id="recompra-coupon" placeholder="VOLTESSJ10"></div>
+            <button class="btn btn-teal" id="recompra-send-btn" onclick="sendRecompraManual()">📤 Enviar (0)</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-title">📋 Historico de recompra</div>
+          <div style="overflow-x:auto"><table id="recompra-hist-table"><thead><tr><th>Contato</th><th>Template</th><th>Valor pedido</th><th>Status</th><th>Data</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📜 Log campanhas</div>
+          <div id="recompra-cron-log"><div class="center" style="font-size:12px">Aguardando primeira execucao (diario as 10h)...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MENSAGENS / TEMPLATES ==================== -->
   <div id="tab-templates" class="hidden">
     <div class="alert alert-info"><strong>Como funciona:</strong> Crie suas mensagens aqui e elas serao enviadas automaticamente para aprovacao do Meta. Quando aprovadas, o sistema pode usar para disparar. Use {{1}}, {{2}}, {{3}} para variaveis (nome, cupom, link).</div>
 
@@ -155,51 +269,91 @@ select{appearance:none}textarea{resize:vertical;min-height:80px;line-height:1.5}
     </div>
   </div>
 
-  <!-- HISTORICO -->
+  <!-- ==================== HISTORICO ==================== -->
   <div id="tab-history" class="hidden">
-    <div class="card"><div class="card-title">📋 Historico de envios</div><div style="overflow-x:auto"><table id="hist-table"><thead><tr><th>Contato</th><th>Template</th><th>Valor</th><th>Status</th><th>Tipo</th><th>Data</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="card"><div class="card-title">📋 Historico de envios (todos)</div>
+      <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost hist-filter active" onclick="filterHistory('all',this)">Todos</button>
+        <button class="btn btn-ghost hist-filter" onclick="filterHistory('carrinho',this)">🛒 Carrinhos</button>
+        <button class="btn btn-ghost hist-filter" onclick="filterHistory('pix',this)">💳 PIX/Boleto</button>
+        <button class="btn btn-ghost hist-filter" onclick="filterHistory('recompra',this)">🔄 Recompra</button>
+      </div>
+      <div style="overflow-x:auto"><table id="hist-table"><thead><tr><th>Contato</th><th>Template</th><th>Valor</th><th>Status</th><th>Tipo</th><th>Data</th></tr></thead><tbody></tbody></table></div>
+    </div>
   </div>
 
-  <!-- AUTOMACAO -->
+  <!-- ==================== AUTOMACAO ==================== -->
   <div id="tab-auto" class="hidden">
     <div class="card">
       <div class="card-title">⚡ Como funciona</div>
       <div style="font-size:12px;color:#999;line-height:1.8">
-        <p>O servidor roda 24/7 e a cada <strong style="color:#25D366">10 minutos</strong>:</p>
-        <p>1. Busca carrinhos abandonados na Yampi</p>
-        <p>2. Calcula o tempo de abandono</p>
-        <p>3. Decide o template ideal:</p>
-        <div style="margin:8px 0 8px 20px;font-size:11px">
-          <div style="padding:4px 0"><span style="color:#25D366;font-weight:600">0 a 1.5h →</span> Lembrete Gentil</div>
-          <div style="padding:4px 0"><span style="color:#FF9800;font-weight:600">1.5 a 12h →</span> Apoio + Confianca</div>
-          <div style="padding:4px 0"><span style="color:#C2185B;font-weight:600">12 a 36h →</span> Prova Social</div>
-          <div style="padding:4px 0"><span style="color:#F44336;font-weight:600">36 a 96h →</span> Urgencia + Cupom</div>
+        <p>O servidor roda 24/7 com <strong style="color:#25D366">3 automacoes</strong>:</p>
+
+        <div style="margin:12px 0;padding:12px;background:#111;border-radius:8px;border:1px solid #242424">
+          <div style="font-weight:700;color:#E91E63;margin-bottom:6px">🛒 Carrinho abandonado (a cada 10 min)</div>
+          <div style="font-size:11px;margin-left:12px">
+            <div style="padding:3px 0"><span style="color:#25D366;font-weight:600">0 a 1.5h →</span> Lembrete Gentil</div>
+            <div style="padding:3px 0"><span style="color:#FF9800;font-weight:600">1.5 a 12h →</span> Apoio + Confianca</div>
+            <div style="padding:3px 0"><span style="color:#C2185B;font-weight:600">12 a 36h →</span> Prova Social</div>
+            <div style="padding:3px 0"><span style="color:#F44336;font-weight:600">36 a 96h →</span> Urgencia + Cupom</div>
+          </div>
         </div>
-        <p>4. Nunca repete o mesmo template para o mesmo carrinho</p>
-        <p>5. Dispara via WhatsApp Cloud API</p>
+
+        <div style="margin:12px 0;padding:12px;background:#111;border-radius:8px;border:1px solid #242424">
+          <div style="font-weight:700;color:#FF5722;margin-bottom:6px">💳 PIX/Boleto expirado (a cada 15 min)</div>
+          <div style="font-size:11px;margin-left:12px">
+            <div style="padding:3px 0"><span style="color:#FF5722;font-weight:600">PIX expirado →</span> Mensagem com novo link</div>
+            <div style="padding:3px 0"><span style="color:#FF9800;font-weight:600">Boleto vencido →</span> Mensagem com novo link</div>
+          </div>
+        </div>
+
+        <div style="margin:12px 0;padding:12px;background:#111;border-radius:8px;border:1px solid #242424">
+          <div style="font-weight:700;color:#009688;margin-bottom:6px">🔄 Recompra (diario as 10h)</div>
+          <div style="font-size:11px;margin-left:12px">
+            <div style="padding:3px 0"><span style="color:#26A69A;font-weight:600">30 dias →</span> Cupom 10% OFF</div>
+            <div style="padding:3px 0"><span style="color:#00897B;font-weight:600">60 dias →</span> Cupom 15% OFF</div>
+            <div style="padding:3px 0"><span style="color:#00695C;font-weight:600">90 dias →</span> Cupom 20% OFF</div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="card"><div class="card-title">📜 Log das execucoes</div><div id="cron-log"></div></div>
+
+    <div class="card"><div class="card-title">📜 Log — Carrinhos abandonados</div><div id="cron-log"></div></div>
+    <div class="card"><div class="card-title">📜 Log — PIX/Boleto</div><div id="auto-pix-log"></div></div>
+    <div class="card"><div class="card-title">📜 Log — Recompra</div><div id="auto-recompra-log"></div></div>
   </div>
 </div>
 
 <script>
-var STATE={carts:[],templates:[],selected:[],history:[],stats:null,health:null,waTemplates:[]};
+var STATE={carts:[],templates:[],selected:[],history:[],stats:null,health:null,waTemplates:[],pixCarts:[],pixSelected:[],pixHistory:[],recompraOrders:[],recompraSelected:[],recompraHistory:[],recompraConfig:null,historyFilter:'all'};
 var ST={sent:{l:"Enviado",c:"#2196F3",i:"✓"},delivered:{l:"Entregue",c:"#4CAF50",i:"✓✓"},read:{l:"Lido",c:"#25D366",i:"✓✓"},failed:{l:"Falhou",c:"#F44336",i:"✕"}};
 
 var SUGGESTED=[
-  {name:"carrinho_lembrete",body:"Oi {{1}}, tudo bem? Vi que voce estava escolhendo umas pecas lindas aqui na SSJ Moda Fitness e nao finalizou. Seus itens continuam reservados!\n\nVolte quando quiser: {{2}}",desc:"Lembrete Gentil (30min)"},
-  {name:"carrinho_apoio",body:"Oi {{1}}! Sei que escolher roupa fitness online pode gerar duvidas. Na SSJ, cada peca e pensada para mulheres que valorizam qualidade e conforto de verdade.\n\nSuas pecas continuam esperando: {{2}}",desc:"Apoio + Confianca (2h)"},
-  {name:"carrinho_social",body:"{{1}}, as pecas que voce escolheu estao entre as mais amadas pelas nossas clientes!\n\nQue tal garantir as suas? {{2}}",desc:"Prova Social (24h)"},
-  {name:"carrinho_cupom",body:"{{1}}, este e o nosso ultimo chamado!\n\nPreparamos 10% OFF exclusivo para voce: {{2}}\n\nUse o cupom e finalize: {{3}}\n\nValido por 24h!",desc:"Urgencia + Cupom (48h)"}
+  {name:"carrinho_lembrete",body:"Oi {{1}}, tudo bem? Vi que voce estava escolhendo umas pecas lindas aqui na SSJ Moda Fitness e nao finalizou. Seus itens continuam reservados!\n\nVolte quando quiser: {{2}}",desc:"🛒 Lembrete Gentil (30min)"},
+  {name:"carrinho_apoio",body:"Oi {{1}}! Sei que escolher roupa fitness online pode gerar duvidas. Na SSJ, cada peca e pensada para mulheres que valorizam qualidade e conforto de verdade.\n\nSuas pecas continuam esperando: {{2}}",desc:"🛒 Apoio + Confianca (2h)"},
+  {name:"carrinho_social",body:"{{1}}, as pecas que voce escolheu estao entre as mais amadas pelas nossas clientes!\n\nQue tal garantir as suas? {{2}}",desc:"🛒 Prova Social (24h)"},
+  {name:"carrinho_cupom",body:"{{1}}, este e o nosso ultimo chamado!\n\nPreparamos 10% OFF exclusivo para voce: {{2}}\n\nUse o cupom e finalize: {{3}}\n\nValido por 24h!",desc:"🛒 Urgencia + Cupom (48h)"},
+  {name:"pix_expirado",body:"Oi {{1}}! Vi que seu pagamento via PIX expirou, mas nao se preocupe — seus itens ainda estao disponiveis.\n\nGere um novo PIX rapidinho aqui: {{2}}\n\nQualquer duvida, estamos aqui!",desc:"💳 PIX Expirado"},
+  {name:"boleto_expirado",body:"Oi {{1}}! Seu boleto venceu, mas calma — suas pecas favoritas continuam te esperando na SSJ.\n\nClique aqui para gerar um novo pagamento: {{2}}\n\nE se preferir pagar via PIX, e instantaneo!",desc:"💳 Boleto Expirado"},
+  {name:"recompra_30dias",body:"Oi {{1}}! Ja faz um mes que voce comprou com a gente e esperamos que esteja amando suas pecas!\n\nQue tal renovar o look? Use o cupom {{2}} e ganhe 10% OFF na proxima compra.\n\nAcesse: ssjmodafitness.com.br",desc:"🔄 Recompra 30 dias"},
+  {name:"recompra_60dias",body:"{{1}}, sentimos sua falta! Ja faz 2 meses desde sua ultima compra na SSJ.\n\nTemos novidades incriveis e um cupom especial pra voce: {{2}} com 15% OFF!\n\nVem ver: ssjmodafitness.com.br",desc:"🔄 Recompra 60 dias"},
+  {name:"recompra_90dias",body:"{{1}}, faz tempo que nao nos vemos! Preparamos algo especial pra voce voltar:\n\n20% OFF com o cupom {{2}}\n\nSao pecas novas, confortaveis e com a qualidade SSJ que voce ja conhece.\n\nAproveite: ssjmodafitness.com.br",desc:"🔄 Recompra 90 dias"},
 ];
 
+// ==================== TAB NAVIGATION ====================
 function showTab(id,btn){document.querySelectorAll('[id^=tab-]').forEach(function(el){el.classList.add('hidden')});document.getElementById('tab-'+id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});if(btn)btn.classList.add('active')}
 async function api(p){try{var r=await fetch(p);return await r.json()}catch(e){return null}}
 
+// ==================== REFRESH (existing + new) ====================
 async function refresh(){
   var h=await api('/api/health');var s=await api('/api/stats');var hi=await api('/api/history');
   if(h){STATE.health=h;updateBadges(h)}if(s){STATE.stats=s;updateStats(s);updateTplTable(s);updateCronLog(s)}if(hi&&hi.data){STATE.history=hi.data;updateHistory()}
+  // PIX stats
+  var ps=await api('/api/pix/stats');if(ps){updatePixStats(ps);updatePixCronLog(ps.cronLog)}
+  var ph=await api('/api/pix/history');if(ph&&ph.data){STATE.pixHistory=ph.data;updatePixHistory()}
+  // Recompra stats
+  var rs=await api('/api/recompra/stats');if(rs){updateRecompraStats(rs);updateRecompraCronLog(rs.cronLog);if(rs.config)STATE.recompraConfig=rs.config;renderRecompraConfig()}
+  var rh=await api('/api/recompra/history');if(rh&&rh.data){STATE.recompraHistory=rh.data;updateRecompraHistory()}
 }
 
 function updateBadges(h){
@@ -207,7 +361,7 @@ function updateBadges(h){
   yb.className='badge '+(h.yampi.ok?'badge-ok':'badge-err');yb.innerHTML='<span class="dot '+(h.yampi.ok?'dot-ok':'dot-err')+'"></span> Yampi';
   wb.className='badge '+(h.whatsapp.ok?'badge-ok':'badge-err');wb.innerHTML='<span class="dot '+(h.whatsapp.ok?'dot-ok':'dot-err')+'"></span> WhatsApp';
   var ss=document.getElementById('sys-status');
-  ss.innerHTML='<div style="display:flex;justify-content:space-between"><span>Yampi</span><span style="color:'+(h.yampi.ok?'#4CAF50':'#F44336')+'">'+(h.yampi.ok?'✓ Conectada':'✕ Offline')+'</span></div><div style="display:flex;justify-content:space-between"><span>WhatsApp API</span><span style="color:'+(h.whatsapp.ok?'#4CAF50':'#F44336')+'">'+(h.whatsapp.ok?'✓ Conectado':'✕ Offline')+'</span></div><div style="display:flex;justify-content:space-between"><span>Automacao</span><span style="color:#4CAF50">✓ A cada 10 min</span></div><div style="display:flex;justify-content:space-between"><span>Uptime</span><span style="color:#555">'+Math.round((h.uptime||0)/60)+' min</span></div>';
+  ss.innerHTML='<div style="display:flex;justify-content:space-between"><span>Yampi</span><span style="color:'+(h.yampi.ok?'#4CAF50':'#F44336')+'">'+(h.yampi.ok?'✓ Conectada':'✕ Offline')+'</span></div><div style="display:flex;justify-content:space-between"><span>WhatsApp API</span><span style="color:'+(h.whatsapp.ok?'#4CAF50':'#F44336')+'">'+(h.whatsapp.ok?'✓ Conectado':'✕ Offline')+'</span></div><div style="display:flex;justify-content:space-between"><span>🛒 Auto carrinho</span><span style="color:#4CAF50">✓ A cada 10 min</span></div><div style="display:flex;justify-content:space-between"><span>💳 Auto PIX/Boleto</span><span style="color:#4CAF50">✓ A cada 15 min</span></div><div style="display:flex;justify-content:space-between"><span>🔄 Auto recompra</span><span style="color:#4CAF50">✓ Diario 10h</span></div><div style="display:flex;justify-content:space-between"><span>Uptime</span><span style="color:#555">'+Math.round((h.uptime||0)/60)+' min</span></div>';
 }
 
 function updateStats(s){
@@ -219,10 +373,38 @@ function updateStats(s){
 
 function updateTplTable(s){if(!s.byTemplate)return;var tb=document.querySelector('#tpl-table tbody');var html='';Object.keys(s.byTemplate).forEach(function(id){var t=s.byTemplate[id];var rate=t.total>0?Math.round((t.read/t.total)*100)+'%':'—';html+='<tr><td style="font-weight:600">'+t.display+'</td><td style="color:#2196F3">'+t.total+'</td><td style="color:#4CAF50">'+t.delivered+'</td><td style="color:#25D366">'+t.read+'</td><td style="color:'+(t.failed>0?'#F44336':'#555')+'">'+t.failed+'</td><td style="color:#25D366;font-weight:600">'+rate+'</td></tr>'});tb.innerHTML=html}
 
-function updateHistory(){var tb=document.querySelector('#hist-table tbody');var html='';STATE.history.forEach(function(h){var st=ST[h.status]||{l:h.status,c:'#555',i:'?'};html+='<tr><td style="font-weight:600">'+h.contact+'</td><td style="font-size:11px;color:#999">'+h.template+'</td><td style="color:#C2185B;font-weight:600">'+h.cartValue+'</td><td><span class="s-badge" style="background:'+st.c+'15;color:'+st.c+'">'+st.i+' '+st.l+'</span></td><td style="font-size:10px;font-weight:600;color:'+(h.automated?'#FF9800':'#2196F3')+'">'+(h.automated?'⚡ Auto':'👤 Manual')+'</td><td style="color:#555;font-size:10px">'+new Date(h.sentAt).toLocaleString('pt-BR')+'</td></tr>'});tb.innerHTML=html||'<tr><td colspan="6" class="center">Nenhum envio ainda</td></tr>'}
+function updateHistory(){
+  var tb=document.querySelector('#hist-table tbody');
+  // Merge all histories
+  var all=[];
+  STATE.history.forEach(function(h){h._type='carrinho';all.push(h)});
+  STATE.pixHistory.forEach(function(h){h._type='pix';all.push(h)});
+  STATE.recompraHistory.forEach(function(h){h._type='recompra';all.push(h)});
+  all.sort(function(a,b){return new Date(b.sentAt)-new Date(a.sentAt)});
+
+  var filter=STATE.historyFilter;
+  if(filter!=='all')all=all.filter(function(h){return h._type===filter||h.type===filter});
+
+  var html='';all.slice(0,80).forEach(function(h){
+    var st=ST[h.status]||{l:h.status,c:'#555',i:'?'};
+    var typeLabel=h._type==='pix'?'💳 PIX':h._type==='recompra'?'🔄 Recompra':'🛒 Carrinho';
+    var typeColor=h._type==='pix'?'#FF5722':h._type==='recompra'?'#009688':h.automated?'#FF9800':'#2196F3';
+    var val=h.cartValue||h.orderValue||'—';
+    html+='<tr><td style="font-weight:600">'+h.contact+'</td><td style="font-size:11px;color:#999">'+h.template+'</td><td style="color:#C2185B;font-weight:600">'+val+'</td><td><span class="s-badge" style="background:'+st.c+'15;color:'+st.c+'">'+st.i+' '+st.l+'</span></td><td style="font-size:10px;font-weight:600;color:'+typeColor+'">'+typeLabel+'</td><td style="color:#555;font-size:10px">'+new Date(h.sentAt).toLocaleString('pt-BR')+'</td></tr>'
+  });
+  tb.innerHTML=html||'<tr><td colspan="6" class="center">Nenhum envio ainda</td></tr>';
+}
+
+function filterHistory(type,btn){
+  STATE.historyFilter=type;
+  document.querySelectorAll('.hist-filter').forEach(function(b){b.classList.remove('active');b.style.background='';b.style.color='#999'});
+  if(btn){btn.classList.add('active');btn.style.background='#C2185B';btn.style.color='#fff'}
+  updateHistory();
+}
 
 function updateCronLog(s){var el=document.getElementById('cron-log');if(!s.cronLog||!s.cronLog.length){el.innerHTML='<div class="center" style="font-size:12px">Aguardando primeira execucao...</div>';return}var html='';s.cronLog.forEach(function(l){html+='<div style="font-size:11px;color:#999;padding:6px 0;border-bottom:1px solid rgba(36,36,36,.2)"><span style="color:#555;font-size:10px">'+new Date(l.ts).toLocaleString('pt-BR')+'</span>';if(l.error)html+=' <span style="color:#F44336">Erro: '+l.error+'</span>';else html+=' — '+l.cartsFound+' carrinhos, <span style="color:#25D366;font-weight:600">'+l.sent+' enviado(s)</span>, '+l.skipped+' pulado(s), <span style="color:'+(l.failed>0?'#F44336':'#555')+'">'+l.failed+' falha(s)</span>';html+='</div>'});el.innerHTML=html}
 
+// ==================== CARTS (existing) ====================
 async function loadCarts(){var c=await api('/api/carts');var t=await api('/api/templates');if(c&&c.data)STATE.carts=c.data;if(t&&t.data){STATE.templates=t.data;updateTplSelect()}STATE.selected=[];renderCarts();updateStats(STATE.stats||{global:{},today:{}})}
 function updateTplSelect(){var sel=document.getElementById('tpl-select');sel.innerHTML='';STATE.templates.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.textContent=t.display+' ('+t.timing+')';sel.appendChild(o)})}
 
@@ -236,6 +418,189 @@ function updatePreview(){var cart=STATE.carts.find(function(c){return STATE.sele
 
 async function sendManual(){if(!STATE.selected.length)return;var tplId=document.getElementById('tpl-select').value;var btn=document.getElementById('send-btn');btn.disabled=true;btn.textContent='⏳ Enviando...';try{var r=await fetch('/api/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cartIds:STATE.selected,templateId:tplId})});var data=await r.json();if(data.ok)alert('Enviado! '+data.sent+' mensagem(ns)');else alert('Erro: '+(data.error||'falha'));STATE.selected=[];loadCarts();refresh()}catch(e){alert('Erro de conexao')}btn.disabled=false;updateSendBtn()}
 
+// ==================== PIX/BOLETO (new) ====================
+async function loadPixCarts(){
+  var c=await api('/api/pix/carts');
+  var t=await api('/api/pix/templates');
+  if(c&&c.data)STATE.pixCarts=c.data;
+  if(t&&t.data){
+    var sel=document.getElementById('pix-tpl-select');sel.innerHTML='';
+    t.data.forEach(function(tp){var o=document.createElement('option');o.value=tp.id;o.textContent=tp.display;sel.appendChild(o)});
+  }
+  STATE.pixSelected=[];
+  renderPixCarts();
+}
+
+function renderPixCarts(){
+  var tb=document.querySelector('#pix-table tbody');
+  if(!STATE.pixCarts.length){tb.innerHTML='<tr><td colspan="6" class="center">Nenhum PIX/boleto expirado encontrado. Clique em Atualizar.</td></tr>';return}
+  var html='';
+  STATE.pixCarts.forEach(function(c){
+    var checked=STATE.pixSelected.indexOf(c.id)!==-1?'checked':'';
+    var sent=c.pixAlreadySent&&c.pixAlreadySent.length>0;
+    var timeColor=c.hoursAgo<=12?'#FF9800':'#F44336';
+    var typeColor=c.paymentType==='PIX'?'#FF5722':'#FF9800';
+    html+='<tr onclick="togglePixSel('+c.id+')" style="cursor:pointer"><td><input type="checkbox" '+checked+'></td><td><div style="font-weight:600;font-size:12px">'+c.name+'</div><div style="font-size:10px;color:#555;font-family:monospace">+'+c.phone+'</div></td><td><span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;background:'+typeColor+'20;color:'+typeColor+'">'+c.paymentType+'</span></td><td style="font-weight:700;color:#C2185B;font-size:12px">'+c.total+'</td><td><span style="font-size:11px;font-weight:600;color:'+timeColor+'">'+c.hoursAgo+'h</span></td><td>'+(sent?'<span class="s-badge" style="background:#4CAF5015;color:#4CAF50">✓ Enviado</span>':'<span class="s-badge" style="background:#2196F315;color:#2196F3">Pendente</span>')+'</td></tr>';
+  });
+  tb.innerHTML=html;
+  updatePixSendBtn();
+}
+
+function togglePixSel(id){var i=STATE.pixSelected.indexOf(id);if(i===-1)STATE.pixSelected.push(id);else STATE.pixSelected.splice(i,1);renderPixCarts()}
+function toggleAllPix(){if(STATE.pixSelected.length===STATE.pixCarts.length)STATE.pixSelected=[];else STATE.pixSelected=STATE.pixCarts.map(function(c){return c.id});renderPixCarts()}
+function updatePixSendBtn(){document.getElementById('pix-send-btn').textContent='📤 Enviar ('+STATE.pixSelected.length+')'}
+
+async function sendPixManual(){
+  if(!STATE.pixSelected.length)return;
+  var tplId=document.getElementById('pix-tpl-select').value;
+  var btn=document.getElementById('pix-send-btn');btn.disabled=true;btn.textContent='⏳ Enviando...';
+  try{
+    var r=await fetch('/api/pix/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cartIds:STATE.pixSelected,templateId:tplId})});
+    var data=await r.json();
+    if(data.ok)alert('Enviado! '+data.sent+' mensagem(ns)');else alert('Erro: '+(data.error||'falha'));
+    STATE.pixSelected=[];loadPixCarts();refresh();
+  }catch(e){alert('Erro de conexao')}
+  btn.disabled=false;updatePixSendBtn();
+}
+
+function updatePixStats(ps){
+  var s=ps.stats||{};
+  var items=[
+    {v:s.totalSent||0,l:'PIX/Boleto enviados',c:'#FF5722'},
+    {v:s.totalFailed||0,l:'Falhas',c:'#F44336'},
+    {v:STATE.pixCarts.length,l:'Expirados ativos',c:'#FF9800'}
+  ];
+  var html='';items.forEach(function(x){html+='<div class="stat"><div class="stat-bar" style="background:linear-gradient(90deg,'+x.c+',transparent)"></div><div class="stat-val" style="color:'+x.c+'">'+x.v+'</div><div class="stat-label">'+x.l+'</div></div>'});
+  document.getElementById('pix-stats-grid').innerHTML=html;
+}
+
+function updatePixHistory(){
+  var tb=document.querySelector('#pix-hist-table tbody');
+  if(!STATE.pixHistory.length){tb.innerHTML='<tr><td colspan="5" class="center">Nenhum envio PIX/Boleto ainda</td></tr>';return}
+  var html='';STATE.pixHistory.forEach(function(h){
+    var st=ST[h.status]||{l:h.status,c:'#555',i:'?'};
+    html+='<tr><td style="font-weight:600">'+h.contact+'</td><td style="font-size:11px;color:#999">'+h.template+'</td><td style="color:#C2185B;font-weight:600">'+h.cartValue+'</td><td><span class="s-badge" style="background:'+st.c+'15;color:'+st.c+'">'+st.i+' '+st.l+'</span></td><td style="color:#555;font-size:10px">'+new Date(h.sentAt).toLocaleString('pt-BR')+'</td></tr>';
+  });tb.innerHTML=html;
+}
+
+function updatePixCronLog(log){
+  var el=document.getElementById('pix-cron-log');
+  var el2=document.getElementById('auto-pix-log');
+  if(!log||!log.length){var msg='<div class="center" style="font-size:12px">Aguardando primeira execucao...</div>';el.innerHTML=msg;if(el2)el2.innerHTML=msg;return}
+  var html='';log.forEach(function(l){html+='<div style="font-size:11px;color:#999;padding:6px 0;border-bottom:1px solid rgba(36,36,36,.2)"><span style="color:#555;font-size:10px">'+new Date(l.ts).toLocaleString('pt-BR')+'</span>';if(l.error)html+=' <span style="color:#F44336">Erro: '+l.error+'</span>';else html+=' — '+l.cartsChecked+' verificados, <span style="color:#FF5722;font-weight:600">'+l.sent+' enviado(s)</span>, '+l.skipped+' pulado(s), <span style="color:'+(l.failed>0?'#F44336':'#555')+'">'+l.failed+' falha(s)</span>';html+='</div>'});
+  el.innerHTML=html;if(el2)el2.innerHTML=html;
+}
+
+// ==================== RECOMPRA (new) ====================
+async function loadRecompraOrders(){
+  var c=await api('/api/recompra/orders');
+  var t=await api('/api/recompra/templates');
+  if(c&&c.data)STATE.recompraOrders=c.data;
+  if(t&&t.data){
+    var sel=document.getElementById('recompra-tpl-select');sel.innerHTML='';
+    t.data.forEach(function(tp){var o=document.createElement('option');o.value=tp.id;o.textContent=tp.display+' ('+tp.timing+')';sel.appendChild(o)});
+  }
+  STATE.recompraSelected=[];
+  renderRecompraOrders();
+}
+
+function renderRecompraOrders(){
+  var tb=document.querySelector('#recompra-table tbody');
+  if(!STATE.recompraOrders.length){tb.innerHTML='<tr><td colspan="7" class="center">Nenhum pedido elegivel. Clique em Buscar pedidos.</td></tr>';return}
+  var html='';
+  STATE.recompraOrders.forEach(function(o){
+    var checked=STATE.recompraSelected.indexOf(o.id)!==-1?'checked':'';
+    var campColor=o.intervalDays===30?'#26A69A':o.intervalDays===60?'#00897B':'#00695C';
+    html+='<tr onclick="toggleRecompraSel('+o.id+')" style="cursor:pointer"><td><input type="checkbox" '+checked+'></td><td><div style="font-weight:600;font-size:12px">'+o.name+'</div><div style="font-size:10px;color:#555;font-family:monospace">+'+o.phone+'</div></td><td style="font-size:11px;color:#999">#'+o.number+'</td><td style="font-weight:700;color:#C2185B;font-size:12px">'+o.total+'</td><td style="font-weight:600;color:'+campColor+'">'+o.daysAgo+'d</td><td><span style="padding:2px 6px;border-radius:4px;font-size:9px;font-weight:600;background:'+campColor+'20;color:'+campColor+'">'+o.intervalDays+' dias</span></td><td>'+(o.alreadySent?'<span class="s-badge" style="background:#4CAF5015;color:#4CAF50">✓ Sim</span>':'<span class="s-badge" style="background:#2196F315;color:#2196F3">Nao</span>')+'</td></tr>';
+  });
+  tb.innerHTML=html;
+  updateRecompraSendBtn();
+}
+
+function toggleRecompraSel(id){var i=STATE.recompraSelected.indexOf(id);if(i===-1)STATE.recompraSelected.push(id);else STATE.recompraSelected.splice(i,1);renderRecompraOrders()}
+function toggleAllRecompra(){if(STATE.recompraSelected.length===STATE.recompraOrders.length)STATE.recompraSelected=[];else STATE.recompraSelected=STATE.recompraOrders.map(function(o){return o.id});renderRecompraOrders()}
+function updateRecompraSendBtn(){document.getElementById('recompra-send-btn').textContent='📤 Enviar ('+STATE.recompraSelected.length+')'}
+
+async function sendRecompraManual(){
+  if(!STATE.recompraSelected.length)return;
+  var tplId=document.getElementById('recompra-tpl-select').value;
+  var coupon=document.getElementById('recompra-coupon').value.trim()||undefined;
+  // Determine interval from first selected order
+  var firstOrder=STATE.recompraOrders.find(function(o){return STATE.recompraSelected.indexOf(o.id)!==-1});
+  var intervalDays=firstOrder?firstOrder.intervalDays:30;
+  var btn=document.getElementById('recompra-send-btn');btn.disabled=true;btn.textContent='⏳ Enviando...';
+  try{
+    var r=await fetch('/api/recompra/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderIds:STATE.recompraSelected,templateId:tplId,coupon:coupon,intervalDays:intervalDays})});
+    var data=await r.json();
+    if(data.ok)alert('Enviado! '+data.sent+' mensagem(ns)');else alert('Erro: '+(data.error||'falha'));
+    STATE.recompraSelected=[];loadRecompraOrders();refresh();
+  }catch(e){alert('Erro de conexao')}
+  btn.disabled=false;updateRecompraSendBtn();
+}
+
+function updateRecompraStats(rs){
+  var s=rs.stats||{};
+  var items=[
+    {v:s.totalSent||0,l:'Recompra enviadas',c:'#009688'},
+    {v:s.totalFailed||0,l:'Falhas',c:'#F44336'},
+    {v:STATE.recompraOrders.length,l:'Pedidos elegiveis',c:'#26A69A'}
+  ];
+  var html='';items.forEach(function(x){html+='<div class="stat"><div class="stat-bar" style="background:linear-gradient(90deg,'+x.c+',transparent)"></div><div class="stat-val" style="color:'+x.c+'">'+x.v+'</div><div class="stat-label">'+x.l+'</div></div>'});
+  document.getElementById('recompra-stats-grid').innerHTML=html;
+}
+
+function updateRecompraHistory(){
+  var tb=document.querySelector('#recompra-hist-table tbody');
+  if(!STATE.recompraHistory.length){tb.innerHTML='<tr><td colspan="5" class="center">Nenhum envio de recompra ainda</td></tr>';return}
+  var html='';STATE.recompraHistory.forEach(function(h){
+    var st=ST[h.status]||{l:h.status,c:'#555',i:'?'};
+    html+='<tr><td style="font-weight:600">'+h.contact+'</td><td style="font-size:11px;color:#999">'+h.template+'</td><td style="color:#C2185B;font-weight:600">'+h.orderValue+'</td><td><span class="s-badge" style="background:'+st.c+'15;color:'+st.c+'">'+st.i+' '+st.l+'</span></td><td style="color:#555;font-size:10px">'+new Date(h.sentAt).toLocaleString('pt-BR')+'</td></tr>';
+  });tb.innerHTML=html;
+}
+
+function updateRecompraCronLog(log){
+  var el=document.getElementById('recompra-cron-log');
+  var el2=document.getElementById('auto-recompra-log');
+  if(!log||!log.length){var msg='<div class="center" style="font-size:12px">Aguardando primeira execucao (diario as 10h)...</div>';el.innerHTML=msg;if(el2)el2.innerHTML=msg;return}
+  var html='';log.forEach(function(l){html+='<div style="font-size:11px;color:#999;padding:6px 0;border-bottom:1px solid rgba(36,36,36,.2)"><span style="color:#555;font-size:10px">'+new Date(l.ts).toLocaleString('pt-BR')+'</span>';if(l.error)html+=' <span style="color:#F44336">Erro: '+l.error+'</span>';else if(l.disabled)html+=' <span style="color:#FF9800">Automacao desabilitada</span>';else html+=' — <span style="color:#009688;font-weight:600">'+l.sent+' enviado(s)</span>, '+l.skipped+' pulado(s), <span style="color:'+(l.failed>0?'#F44336':'#555')+'">'+l.failed+' falha(s)</span>';html+='</div>'});
+  el.innerHTML=html;if(el2)el2.innerHTML=html;
+}
+
+function renderRecompraConfig(){
+  var cfg=STATE.recompraConfig;
+  if(!cfg)return;
+  document.getElementById('recompra-enabled').checked=cfg.enabled;
+  var el=document.getElementById('recompra-intervals');
+  var html='';
+  cfg.intervals.forEach(function(iv){
+    html+='<div class="interval-card"><div class="interval-info"><div class="interval-days">'+iv.days+' dias</div><div class="interval-label">Template: '+iv.templateId+'</div></div><div style="display:flex;align-items:center;gap:12px"><div><div class="form-label" style="margin-bottom:4px">Cupom</div><input type="text" style="width:130px" id="coupon-'+iv.days+'" value="'+iv.coupon+'" onchange="updateIntervalCoupon('+iv.days+',this.value)"></div><label class="toggle"><input type="checkbox" '+(iv.enabled?'checked':'')+' onchange="toggleInterval('+iv.days+',this.checked)"><span class="toggle-slider"></span></label></div></div>';
+  });
+  el.innerHTML=html;
+}
+
+function toggleInterval(days,enabled){
+  var iv=STATE.recompraConfig.intervals.find(function(i){return i.days===days});
+  if(iv)iv.enabled=enabled;
+  saveRecompraConfig();
+}
+
+function updateIntervalCoupon(days,coupon){
+  var iv=STATE.recompraConfig.intervals.find(function(i){return i.days===days});
+  if(iv)iv.coupon=coupon;
+  saveRecompraConfig();
+}
+
+async function saveRecompraConfig(){
+  var cfg={
+    enabled:document.getElementById('recompra-enabled').checked,
+    intervals:STATE.recompraConfig.intervals
+  };
+  try{
+    await fetch('/api/recompra/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});
+  }catch(e){console.error('Erro ao salvar config:',e)}
+}
+
+// ==================== WA TEMPLATES (existing) ====================
 async function loadWaTemplates(){
   var el=document.getElementById('wa-templates-list');el.innerHTML='<div class="center" style="font-size:12px">Carregando...</div>';
   var r=await api('/api/wa-templates');
@@ -286,9 +651,10 @@ function useSuggested(name){
   document.getElementById('new-tpl-body').value=s.body;
   document.getElementById('new-tpl-footer').value='SSJ Moda Fitness';
   document.getElementById('create-tpl-result').innerHTML='<div class="alert alert-info">Template preenchido! Revise o texto e clique em "Enviar para aprovacao".</div>';
-  showTab('templates',document.querySelectorAll('.tab')[2]);
+  showTab('templates',document.querySelectorAll('.tab')[4]);
 }
 
+// ==================== INIT ====================
 document.getElementById('tpl-select').addEventListener('change',updatePreview);
 refresh();loadCarts();renderSuggested();
 setInterval(refresh,30000);setInterval(loadCarts,60000);
