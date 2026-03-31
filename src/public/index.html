@@ -460,6 +460,7 @@ input::placeholder, textarea::placeholder { color: var(--text3) }
             </select>
           </div>
           <div class="form-group"><label class="form-label">Nome do template</label><input type="text" id="new-tpl-name" placeholder="carrinho_lembrete"><div class="form-help">Apenas letras minusculas, numeros e _. Sem espacos.</div></div>
+          <div class="form-group"><label class="form-label">Tempo de envio</label><input type="text" id="new-tpl-timing" placeholder="30min, 2h, 24h, 48h..."><div class="form-help">Quando disparar apos o abandono. Ex: 30min, 1h, 2h, 6h, 12h, 24h, 48h.</div></div>
           <div class="form-group"><label class="form-label">Categoria Meta</label><select id="new-tpl-cat"><option value="MARKETING">Marketing</option><option value="UTILITY">Utilidade</option></select></div>
           <div class="form-group"><label class="form-label">Texto da mensagem</label><textarea id="new-tpl-body" rows="6" placeholder="Oi {{1}}, tudo bem?..."></textarea><div class="form-help" id="tpl-vars-help">Use {{1}} para nome, {{2}} para link do carrinho, {{3}} para cupom.</div></div>
           <div class="form-group"><label class="form-label">Rodape (opcional)</label><input type="text" id="new-tpl-footer" placeholder="SSJ Moda Fitness"></div>
@@ -524,18 +525,18 @@ input::placeholder, textarea::placeholder { color: var(--text3) }
 </div>
 
 <script>
-var STATE={carts:[],templates:[],selected:[],history:[],stats:null,health:null,waTemplates:[],pixCarts:[],pixSelected:[],pixHistory:[],recompraOrders:[],recompraSelected:[],recompraHistory:[],recompraConfig:null,historyFilter:'all',tplFilter:'all'};
+var STATE={carts:[],templates:[],selected:[],history:[],stats:null,health:null,waTemplates:[],pixCarts:[],pixSelected:[],pixHistory:[],recompraOrders:[],recompraSelected:[],recompraHistory:[],recompraConfig:null,historyFilter:'all',tplFilter:'all',templateMeta:{}};
 var ST={sent:{l:"Enviado",c:"var(--blue)",bg:"var(--blue-soft)",i:"✓"},delivered:{l:"Entregue",c:"var(--green)",bg:"var(--green-soft)",i:"✓✓"},read:{l:"Lido",c:"#059669",bg:"var(--green-soft)",i:"✓✓"},failed:{l:"Falhou",c:"var(--red)",bg:"var(--red-soft)",i:"✕"}};
 var SUGGESTED=[
-  {name:"carrinho_lembrete",cat:"carrinho",body:"Oi {{1}}, tudo bem? Vi que voce estava escolhendo umas pecas lindas aqui na SSJ Moda Fitness e nao finalizou. Seus itens continuam reservados!\n\nVolte quando quiser: {{2}}",desc:"Lembrete Gentil (30min)"},
-  {name:"carrinho_apoio",cat:"carrinho",body:"Oi {{1}}! Sei que escolher roupa fitness online pode gerar duvidas. Na SSJ, cada peca e pensada para mulheres que valorizam qualidade e conforto de verdade.\n\nSuas pecas continuam esperando: {{2}}",desc:"Apoio + Confianca (2h)"},
-  {name:"carrinho_social",cat:"carrinho",body:"{{1}}, as pecas que voce escolheu estao entre as mais amadas pelas nossas clientes!\n\nQue tal garantir as suas? {{2}}",desc:"Prova Social (24h)"},
-  {name:"carrinho_cupom",cat:"carrinho",body:"{{1}}, este e o nosso ultimo chamado!\n\nPreparamos 10% OFF exclusivo para voce: {{2}}\n\nUse o cupom e finalize: {{3}}\n\nValido por 24h!",desc:"Urgencia + Cupom (48h)"},
-  {name:"pix_expirado",cat:"pix",body:"Oi {{1}}! Vi que seu pagamento via PIX expirou, mas nao se preocupe — seus itens ainda estao disponiveis.\n\nGere um novo PIX rapidinho aqui: {{2}}\n\nQualquer duvida, estamos aqui!",desc:"PIX Expirado"},
-  {name:"boleto_expirado",cat:"pix",body:"Oi {{1}}! Seu boleto venceu, mas calma — suas pecas favoritas continuam te esperando na SSJ.\n\nClique aqui para gerar um novo pagamento: {{2}}\n\nE se preferir pagar via PIX, e instantaneo!",desc:"Boleto Expirado"},
-  {name:"recompra_30dias",cat:"recompra",body:"Oi {{1}}! Ja faz um mes que voce comprou com a gente e esperamos que esteja amando suas pecas!\n\nQue tal renovar o look? Use o cupom {{2}} e ganhe 10% OFF na proxima compra.\n\nAcesse: ssjmodafitness.com.br",desc:"Recompra 30 dias"},
-  {name:"recompra_60dias",cat:"recompra",body:"{{1}}, sentimos sua falta! Ja faz 2 meses desde sua ultima compra na SSJ.\n\nTemos novidades incriveis e um cupom especial pra voce: {{2}} com 15% OFF!\n\nVem ver: ssjmodafitness.com.br",desc:"Recompra 60 dias"},
-  {name:"recompra_90dias",cat:"recompra",body:"{{1}}, faz tempo que nao nos vemos! Preparamos algo especial pra voce voltar:\n\n20% OFF com o cupom {{2}}\n\nSao pecas novas, confortaveis e com a qualidade SSJ que voce ja conhece.\n\nAproveite: ssjmodafitness.com.br",desc:"Recompra 90 dias"},
+  {name:"carrinho_lembrete",cat:"carrinho",timing:"30min",body:"Oi {{1}}, tudo bem? Vi que voce estava escolhendo umas pecas lindas aqui na SSJ Moda Fitness e nao finalizou. Seus itens continuam reservados!\n\nVolte quando quiser: {{2}}",desc:"Lembrete Gentil (30min)"},
+  {name:"carrinho_apoio",cat:"carrinho",timing:"2h",body:"Oi {{1}}! Sei que escolher roupa fitness online pode gerar duvidas. Na SSJ, cada peca e pensada para mulheres que valorizam qualidade e conforto de verdade.\n\nSuas pecas continuam esperando: {{2}}",desc:"Apoio + Confianca (2h)"},
+  {name:"carrinho_social",cat:"carrinho",timing:"24h",body:"{{1}}, as pecas que voce escolheu estao entre as mais amadas pelas nossas clientes!\n\nQue tal garantir as suas? {{2}}",desc:"Prova Social (24h)"},
+  {name:"carrinho_cupom",cat:"carrinho",timing:"48h",body:"{{1}}, este e o nosso ultimo chamado!\n\nPreparamos 10% OFF exclusivo para voce: {{2}}\n\nUse o cupom e finalize: {{3}}\n\nValido por 24h!",desc:"Urgencia + Cupom (48h)"},
+  {name:"pix_expirado",cat:"pix",timing:"apos expirar",body:"Oi {{1}}! Vi que seu pagamento via PIX expirou, mas nao se preocupe — seus itens ainda estao disponiveis.\n\nGere um novo PIX rapidinho aqui: {{2}}\n\nQualquer duvida, estamos aqui!",desc:"PIX Expirado"},
+  {name:"boleto_expirado",cat:"pix",timing:"apos expirar",body:"Oi {{1}}! Seu boleto venceu, mas calma — suas pecas favoritas continuam te esperando na SSJ.\n\nClique aqui para gerar um novo pagamento: {{2}}\n\nE se preferir pagar via PIX, e instantaneo!",desc:"Boleto Expirado"},
+  {name:"recompra_30dias",cat:"recompra",timing:"30 dias",body:"Oi {{1}}! Ja faz um mes que voce comprou com a gente e esperamos que esteja amando suas pecas!\n\nQue tal renovar o look? Use o cupom {{2}} e ganhe 10% OFF na proxima compra.\n\nAcesse: ssjmodafitness.com.br",desc:"Recompra 30 dias"},
+  {name:"recompra_60dias",cat:"recompra",timing:"60 dias",body:"{{1}}, sentimos sua falta! Ja faz 2 meses desde sua ultima compra na SSJ.\n\nTemos novidades incriveis e um cupom especial pra voce: {{2}} com 15% OFF!\n\nVem ver: ssjmodafitness.com.br",desc:"Recompra 60 dias"},
+  {name:"recompra_90dias",cat:"recompra",timing:"90 dias",body:"{{1}}, faz tempo que nao nos vemos! Preparamos algo especial pra voce voltar:\n\n20% OFF com o cupom {{2}}\n\nSao pecas novas, confortaveis e com a qualidade SSJ que voce ja conhece.\n\nAproveite: ssjmodafitness.com.br",desc:"Recompra 90 dias"},
 ];
 var CAT_LABELS={carrinho:'🛒 Carrinho Abandonado',pix:'💳 PIX / Boleto',recompra:'🔄 Recompra'};
 var CAT_COLORS={carrinho:'var(--pink)',pix:'var(--deep)',recompra:'var(--teal)'};
@@ -641,7 +642,7 @@ async function saveRecompraConfig(){try{await fetch('/api/recompra/config',{meth
 function filterTemplates(cat,btn){STATE.tplFilter=cat;document.querySelectorAll('#tab-templates .cat-pill').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');renderWaTemplatesFiltered();renderSuggested()}
 function categorizeTemplate(name){name=(name||'').toLowerCase();if(name.indexOf('pix')!==-1||name.indexOf('boleto')!==-1)return 'pix';if(name.indexOf('recompra')!==-1||name.indexOf('fidelidade')!==-1)return 'recompra';return 'carrinho'}
 
-async function loadWaTemplates(){var el=document.getElementById('wa-templates-list');el.innerHTML='<div class="center">Carregando...</div>';var r=await api('/api/wa-templates');if(!r||!r.ok){el.innerHTML='<div class="center" style="color:var(--red)">Erro: '+(r?r.error:'sem conexao')+'</div>';return}STATE.waTemplates=r.data||[];renderWaTemplatesFiltered()}
+async function loadWaTemplates(){var el=document.getElementById('wa-templates-list');el.innerHTML='<div class="center">Carregando...</div>';var r=await api('/api/wa-templates');var m=await api('/api/template-meta');if(m&&m.ok)STATE.templateMeta=m.data||{};if(!r||!r.ok){el.innerHTML='<div class="center" style="color:var(--red)">Erro: '+(r?r.error:'sem conexao')+'</div>';return}STATE.waTemplates=r.data||[];renderWaTemplatesFiltered()}
 
 function renderWaTemplatesFiltered(){
   var el=document.getElementById('wa-templates-list');
@@ -656,7 +657,9 @@ function renderWaTemplatesFiltered(){
       var sc=t.status==='APPROVED'?'tpl-approved':t.status==='REJECTED'?'tpl-rejected':'tpl-pending';
       var sl=t.status==='APPROVED'?'Aprovado':t.status==='REJECTED'?'Rejeitado':'Pendente';
       var body='';if(t.components)t.components.forEach(function(c){if(c.type==='BODY')body=c.text});
-      html+='<div class="tpl-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:700;font-size:13px">'+t.name+'</div><span class="tpl-status '+sc+'">'+sl+'</span></div><div style="font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">'+body+'</div><div style="margin-top:8px;font-size:11px;color:var(--text3)">Idioma: '+(t.language||'pt_BR')+' · Categoria: '+(t.category||'—')+'</div></div>'
+      var meta=STATE.templateMeta[t.name];
+      var timingHtml=meta&&meta.timing?' · <span style="color:var(--pink);font-weight:600">⏱ '+meta.timing+'</span>':'';
+      html+='<div class="tpl-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:700;font-size:13px">'+t.name+'</div><span class="tpl-status '+sc+'">'+sl+'</span></div><div style="font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">'+body+'</div><div style="margin-top:8px;font-size:11px;color:var(--text3)">Idioma: '+(t.language||'pt_BR')+' · Categoria: '+(t.category||'—')+timingHtml+'</div></div>'
     })
   });
   if(!html)html='<div class="center">Nenhum template nesta categoria.</div>';
@@ -664,13 +667,13 @@ function renderWaTemplatesFiltered(){
 }
 
 async function createTemplate(){
-  var name=document.getElementById('new-tpl-name').value.trim();var body=document.getElementById('new-tpl-body').value.trim();var cat=document.getElementById('new-tpl-cat').value;var footer=document.getElementById('new-tpl-footer').value.trim();var result=document.getElementById('create-tpl-result');
+  var name=document.getElementById('new-tpl-name').value.trim();var body=document.getElementById('new-tpl-body').value.trim();var cat=document.getElementById('new-tpl-cat').value;var footer=document.getElementById('new-tpl-footer').value.trim();var timing=document.getElementById('new-tpl-timing').value.trim();var tplType=document.getElementById('new-tpl-type').value;var result=document.getElementById('create-tpl-result');
   if(!name){result.innerHTML='<div class="alert alert-warn">Preencha o nome do template</div>';return}
   if(!body){result.innerHTML='<div class="alert alert-warn">Preencha o texto da mensagem</div>';return}
   if(!/^[a-z0-9_]+$/.test(name)){result.innerHTML='<div class="alert alert-warn">Nome deve ter apenas letras minusculas, numeros e _</div>';return}
   var btn=document.getElementById('create-tpl-btn');btn.disabled=true;btn.textContent='⏳ Enviando...';
-  try{var r=await fetch('/api/wa-templates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,bodyText:body,category:cat,footerText:footer||undefined,language:'pt_BR'})});var data=await r.json();
-  if(data.ok){result.innerHTML='<div class="alert alert-ok"><strong>Template "'+name+'" enviado para aprovacao!</strong> O Meta geralmente aprova em algumas horas.</div>';document.getElementById('new-tpl-name').value='';document.getElementById('new-tpl-body').value='';document.getElementById('new-tpl-footer').value='';loadWaTemplates()}
+  try{var r=await fetch('/api/wa-templates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,bodyText:body,category:cat,footerText:footer||undefined,language:'pt_BR',timing:timing||undefined,tplType:tplType||undefined})});var data=await r.json();
+  if(data.ok){result.innerHTML='<div class="alert alert-ok"><strong>Template "'+name+'" enviado para aprovacao!</strong> Tempo de envio: '+(timing||'nao definido')+'. O Meta geralmente aprova em algumas horas.</div>';document.getElementById('new-tpl-name').value='';document.getElementById('new-tpl-body').value='';document.getElementById('new-tpl-footer').value='';document.getElementById('new-tpl-timing').value='';loadWaTemplates()}
   else{result.innerHTML='<div class="alert alert-warn">Erro: '+data.error+'</div>'}}catch(e){result.innerHTML='<div class="alert alert-warn">Erro de conexao</div>'}
   btn.disabled=false;btn.textContent='🚀 Enviar para aprovacao do Meta';
 }
@@ -689,11 +692,11 @@ function renderSuggested(){
   document.getElementById('suggested-templates').innerHTML=html||'<div class="center">Nenhum template sugerido nesta categoria.</div>';
 }
 
-function sugCard(s){return '<div class="tpl-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-weight:700;font-size:13px">'+s.desc+'</div><button class="btn btn-ghost" style="padding:6px 14px;font-size:11px;border-radius:20px" onclick="useSuggested(\''+s.name+'\')">Usar este</button></div><div style="font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">'+s.body+'</div><div style="margin-top:8px;font-size:11px;color:var(--text3)">Nome: <code style="background:var(--bg);padding:2px 6px;border-radius:4px">'+s.name+'</code></div></div>'}
+function sugCard(s){return '<div class="tpl-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-weight:700;font-size:13px">'+s.desc+'</div><button class="btn btn-ghost" style="padding:6px 14px;font-size:11px;border-radius:20px" onclick="useSuggested(\''+s.name+'\')">Usar este</button></div><div style="font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">'+s.body+'</div><div style="margin-top:8px;font-size:11px;color:var(--text3)">Nome: <code style="background:var(--bg);padding:2px 6px;border-radius:4px">'+s.name+'</code>'+(s.timing?' · Tempo: <span style="color:var(--pink);font-weight:600">'+s.timing+'</span>':'')+'</div></div>'}
 
 function onTplTypeChange(){var t=document.getElementById('new-tpl-type').value;var h=document.getElementById('tpl-vars-help');if(t==='carrinho')h.textContent='Use {{1}} para nome, {{2}} para link do carrinho, {{3}} para cupom.';else if(t==='pix')h.textContent='Use {{1}} para nome, {{2}} para link de pagamento.';else h.textContent='Use {{1}} para nome, {{2}} para cupom.'}
 
-function useSuggested(name){var s=SUGGESTED.find(function(x){return x.name===name});if(!s)return;document.getElementById('new-tpl-name').value=s.name;document.getElementById('new-tpl-body').value=s.body;document.getElementById('new-tpl-footer').value='SSJ Moda Fitness';document.getElementById('new-tpl-type').value=s.cat;onTplTypeChange();document.getElementById('create-tpl-result').innerHTML='<div class="alert alert-info">Template preenchido! Revise o texto e clique em "Enviar para aprovacao".</div>';showTab('templates',document.querySelectorAll('.tab')[5])}
+function useSuggested(name){var s=SUGGESTED.find(function(x){return x.name===name});if(!s)return;document.getElementById('new-tpl-name').value=s.name;document.getElementById('new-tpl-body').value=s.body;document.getElementById('new-tpl-footer').value='SSJ Moda Fitness';document.getElementById('new-tpl-type').value=s.cat;document.getElementById('new-tpl-timing').value=s.timing||'';onTplTypeChange();document.getElementById('create-tpl-result').innerHTML='<div class="alert alert-info">Template preenchido! Revise o texto e clique em "Enviar para aprovacao".</div>';showTab('templates',document.querySelectorAll('.tab')[5])}
 
 // ===== INBOX =====
 var activeChat=null;
