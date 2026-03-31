@@ -1462,29 +1462,43 @@ Gere o relatório no seguinte formato:
 
 Seja direto, prático e use números. Fale como um gestor de tráfego experiente.`;
 
-  var r = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": CFG.anthropicKey,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model: "claude-opus-4-6",
-      max_tokens: 2000,
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
-  var data = await r.json();
-  if (!r.ok) {
-    console.error("[IA-REPORT] API erro:", r.status, JSON.stringify(data).substring(0, 500));
-    throw new Error((data.error && data.error.message) || "Anthropic API erro " + r.status);
+  // Try Opus first, fallback to Sonnet
+  var models = ["claude-opus-4-6", "claude-sonnet-4-6"];
+  var lastError = null;
+  for (var mi = 0; mi < models.length; mi++) {
+    try {
+      console.log("[IA-REPORT] Tentando modelo: " + models[mi]);
+      var r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": CFG.anthropicKey,
+          "anthropic-version": "2023-06-01"
+        },
+        body: JSON.stringify({
+          model: models[mi],
+          max_tokens: 2000,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      var data = await r.json();
+      if (!r.ok) {
+        console.error("[IA-REPORT] Erro com " + models[mi] + ":", r.status, JSON.stringify(data).substring(0, 300));
+        lastError = (data.error && data.error.message) || "API erro " + r.status;
+        continue;
+      }
+      var text = "";
+      if (data.content) {
+        data.content.forEach(function(block) { if (block.type === "text") text += block.text; });
+      }
+      console.log("[IA-REPORT] Sucesso com " + models[mi]);
+      return text;
+    } catch (e) {
+      console.error("[IA-REPORT] Exception com " + models[mi] + ":", e.message);
+      lastError = e.message;
+    }
   }
-  var text = "";
-  if (data.content) {
-    data.content.forEach(function(block) { if (block.type === "text") text += block.text; });
-  }
-  return text;
+  throw new Error(lastError || "Todos os modelos falharam");
 }
 
 async function sendAlertWA(text) {
@@ -1586,10 +1600,10 @@ app.post("/api/meta/report", async function(req, res) {
       campaigns = await fetchMetaCampaigns();
     }
     if (campaigns.length === 0) return res.json({ ok: false, error: "Nenhuma campanha encontrada" });
-    var campaignId = req.body.campaignId || null;
-    if (campaignId && campaignId !== "all") {
-      var filtered = campaigns.filter(function(c) { return c.id === campaignId; });
-      if (filtered.length > 0) campaigns = filtered;
+    var cid = req.body.campaignId;
+    if (cid && cid !== "all") {
+      var f = campaigns.filter(function(c) { return c.id === cid; });
+      if (f.length > 0) campaigns = f;
     }
     var report = await generateIAReport(campaigns);
     var today = new Date().toISOString().slice(0, 10);
@@ -1635,105 +1649,133 @@ app.post("/api/meta/alert", async function(req, res) {
 
 // ===================== META ADS: EXTENDED ENDPOINTS =====================
 
-// Campaigns by custom period with funnel data
+function parseMetaActions(c) {
+  var purchases = 0, purchaseValue = 0, addToCart = 0, initiateCheckout = 0, viewContent = 0;
+  if (c.actions) {
+    c.actions.forEach(function(a) {
+      if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchases += parseInt(a.value) || 0;
+      if (a.action_type === "add_to_cart" || a.action_type === "offsite_conversion.fb_pixel_add_to_cart") addToCart += parseInt(a.value) || 0;
+      if (a.action_type === "initiate_checkout" || a.action_type === "offsite_conversion.fb_pixel_initiate_checkout") initiateCheckout += parseInt(a.value) || 0;
+      if (a.action_type === "view_content" || a.action_type === "offsite_conversion.fb_pixel_view_content") viewContent += parseInt(a.value) || 0;
+    });
+  }
+  if (c.action_values) {
+    c.action_values.forEach(function(a) { if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchaseValue += parseFloat(a.value) || 0; });
+  }
+  return { purchases: purchases, purchaseValue: purchaseValue, addToCart: addToCart, initiateCheckout: initiateCheckout, viewContent: viewContent };
+}
+
+// Campaigns by period with funnel data
 app.get("/api/meta/campaigns-period", async function(req, res) {
   try {
     if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("META_AD_ACCOUNT_ID ou META_ADS_TOKEN nao configurado");
     var preset = req.query.preset || "last_7d";
-    var validPresets = ["today", "yesterday", "last_3d", "last_7d", "last_14d", "last_28d", "last_30d", "this_month", "last_month"];
+    var validPresets = ["today","yesterday","last_3d","last_7d","last_14d","last_28d","last_30d","this_month","last_month"];
     if (validPresets.indexOf(preset) === -1) preset = "last_7d";
     var fields = "campaign_name,campaign_id,impressions,clicks,spend,cpc,cpm,ctr,actions,action_values,reach,frequency";
     var url = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&level=campaign&date_preset=" + preset + "&limit=50&access_token=" + CFG.metaAdsToken;
     var r = await fetch(url);
     var data = await r.json();
-    if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta Ads API erro " + r.status);
+    if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta API erro " + r.status);
     var campaigns = (data.data || []).map(function(c) {
-      var purchases = 0, purchaseValue = 0, addToCart = 0, initiateCheckout = 0, viewContent = 0;
-      if (c.actions) {
-        c.actions.forEach(function(a) {
-          if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchases += parseInt(a.value) || 0;
-          if (a.action_type === "add_to_cart" || a.action_type === "offsite_conversion.fb_pixel_add_to_cart") addToCart += parseInt(a.value) || 0;
-          if (a.action_type === "initiate_checkout" || a.action_type === "offsite_conversion.fb_pixel_initiate_checkout") initiateCheckout += parseInt(a.value) || 0;
-          if (a.action_type === "view_content" || a.action_type === "offsite_conversion.fb_pixel_view_content") viewContent += parseInt(a.value) || 0;
-        });
-      }
-      if (c.action_values) {
-        c.action_values.forEach(function(a) { if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchaseValue += parseFloat(a.value) || 0; });
-      }
+      var act = parseMetaActions(c);
       var spend = parseFloat(c.spend) || 0;
       return {
         id: c.campaign_id, name: c.campaign_name,
-        impressions: parseInt(c.impressions) || 0, clicks: parseInt(c.clicks) || 0,
-        reach: parseInt(c.reach) || 0, frequency: parseFloat(c.frequency) || 0,
-        spend: spend, cpc: parseFloat(c.cpc) || 0, cpm: parseFloat(c.cpm) || 0, ctr: parseFloat(c.ctr) || 0,
-        purchases: purchases, purchaseValue: purchaseValue,
-        roas: spend > 0 ? Math.round((purchaseValue / spend) * 100) / 100 : 0,
-        cpa: purchases > 0 ? Math.round((spend / purchases) * 100) / 100 : 0,
-        addToCart: addToCart, initiateCheckout: initiateCheckout, viewContent: viewContent
+        impressions: parseInt(c.impressions)||0, clicks: parseInt(c.clicks)||0,
+        reach: parseInt(c.reach)||0, frequency: parseFloat(c.frequency)||0,
+        spend: spend, cpc: parseFloat(c.cpc)||0, cpm: parseFloat(c.cpm)||0, ctr: parseFloat(c.ctr)||0,
+        purchases: act.purchases, purchaseValue: act.purchaseValue,
+        roas: spend > 0 ? Math.round((act.purchaseValue/spend)*100)/100 : 0,
+        cpa: act.purchases > 0 ? Math.round((spend/act.purchases)*100)/100 : 0,
+        addToCart: act.addToCart, initiateCheckout: act.initiateCheckout, viewContent: act.viewContent
       };
     });
-    var s = { totalSpend:0, totalRevenue:0, totalPurchases:0, totalImpressions:0, totalClicks:0, totalReach:0, totalAddToCart:0, totalInitiateCheckout:0, totalViewContent:0 };
+    var s = { totalSpend:0,totalRevenue:0,totalPurchases:0,totalImpressions:0,totalClicks:0,totalReach:0,totalAddToCart:0,totalInitiateCheckout:0,totalViewContent:0 };
     campaigns.forEach(function(c) {
-      s.totalSpend += c.spend; s.totalRevenue += c.purchaseValue; s.totalPurchases += c.purchases;
-      s.totalImpressions += c.impressions; s.totalClicks += c.clicks; s.totalReach += c.reach;
-      s.totalAddToCart += c.addToCart; s.totalInitiateCheckout += c.initiateCheckout; s.totalViewContent += c.viewContent;
+      s.totalSpend+=c.spend; s.totalRevenue+=c.purchaseValue; s.totalPurchases+=c.purchases;
+      s.totalImpressions+=c.impressions; s.totalClicks+=c.clicks; s.totalReach+=c.reach;
+      s.totalAddToCart+=c.addToCart; s.totalInitiateCheckout+=c.initiateCheckout; s.totalViewContent+=c.viewContent;
     });
     res.json({
       ok: true, preset: preset, data: campaigns,
       summary: {
-        totalSpend: Math.round(s.totalSpend*100)/100, totalRevenue: Math.round(s.totalRevenue*100)/100,
-        totalPurchases: s.totalPurchases, totalImpressions: s.totalImpressions, totalClicks: s.totalClicks,
-        totalReach: s.totalReach, totalAddToCart: s.totalAddToCart, totalInitiateCheckout: s.totalInitiateCheckout, totalViewContent: s.totalViewContent,
-        roas: s.totalSpend > 0 ? Math.round((s.totalRevenue/s.totalSpend)*100)/100 : 0,
-        cpa: s.totalPurchases > 0 ? Math.round((s.totalSpend/s.totalPurchases)*100)/100 : 0,
-        ctr: s.totalImpressions > 0 ? Math.round((s.totalClicks/s.totalImpressions)*10000)/100 : 0,
-        cpc: s.totalClicks > 0 ? Math.round((s.totalSpend/s.totalClicks)*100)/100 : 0,
-        cpm: s.totalImpressions > 0 ? Math.round((s.totalSpend/s.totalImpressions*1000)*100)/100 : 0
+        totalSpend:Math.round(s.totalSpend*100)/100, totalRevenue:Math.round(s.totalRevenue*100)/100,
+        totalPurchases:s.totalPurchases, totalImpressions:s.totalImpressions, totalClicks:s.totalClicks,
+        totalReach:s.totalReach, totalAddToCart:s.totalAddToCart, totalInitiateCheckout:s.totalInitiateCheckout, totalViewContent:s.totalViewContent,
+        roas: s.totalSpend>0 ? Math.round((s.totalRevenue/s.totalSpend)*100)/100 : 0,
+        cpa: s.totalPurchases>0 ? Math.round((s.totalSpend/s.totalPurchases)*100)/100 : 0,
+        ctr: s.totalImpressions>0 ? Math.round((s.totalClicks/s.totalImpressions)*10000)/100 : 0,
+        cpc: s.totalClicks>0 ? Math.round((s.totalSpend/s.totalClicks)*100)/100 : 0
       },
-      funnel: {
-        impressions: s.totalImpressions, clicks: s.totalClicks, viewContent: s.totalViewContent,
-        addToCart: s.totalAddToCart, initiateCheckout: s.totalInitiateCheckout,
-        purchases: s.totalPurchases, revenue: Math.round(s.totalRevenue*100)/100
-      }
+      funnel: { impressions:s.totalImpressions, clicks:s.totalClicks, viewContent:s.totalViewContent, addToCart:s.totalAddToCart, initiateCheckout:s.totalInitiateCheckout, purchases:s.totalPurchases, revenue:Math.round(s.totalRevenue*100)/100 }
     });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Ad-level insights (criativos) for a campaign
+app.get("/api/meta/ads", async function(req, res) {
+  try {
+    if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("Variaveis nao configuradas");
+    var preset = req.query.preset || "last_7d";
+    var campaignId = req.query.campaignId;
+    var fields = "ad_name,ad_id,adset_name,adset_id,campaign_name,campaign_id,impressions,clicks,spend,cpc,ctr,actions,action_values,reach,frequency";
+    var url;
+    if (campaignId && campaignId !== "all") {
+      url = "https://graph.facebook.com/v22.0/" + campaignId + "/insights?fields=" + fields + "&level=ad&date_preset=" + preset + "&limit=100&access_token=" + CFG.metaAdsToken;
+    } else {
+      url = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&level=ad&date_preset=" + preset + "&limit=100&access_token=" + CFG.metaAdsToken;
+    }
+    var r = await fetch(url);
+    var data = await r.json();
+    if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta API erro " + r.status);
+    var ads = (data.data || []).map(function(a) {
+      var act = parseMetaActions(a);
+      var spend = parseFloat(a.spend) || 0;
+      return {
+        adId: a.ad_id, adName: a.ad_name,
+        adsetId: a.adset_id, adsetName: a.adset_name,
+        campaignId: a.campaign_id, campaignName: a.campaign_name,
+        impressions: parseInt(a.impressions)||0, clicks: parseInt(a.clicks)||0,
+        reach: parseInt(a.reach)||0, frequency: parseFloat(a.frequency)||0,
+        spend: spend, cpc: parseFloat(a.cpc)||0, ctr: parseFloat(a.ctr)||0,
+        purchases: act.purchases, purchaseValue: act.purchaseValue,
+        roas: spend>0 ? Math.round((act.purchaseValue/spend)*100)/100 : 0,
+        cpa: act.purchases>0 ? Math.round((spend/act.purchases)*100)/100 : 0,
+        addToCart: act.addToCart
+      };
+    });
+    res.json({ ok: true, data: ads });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
 // Daily breakdown for charts
 app.get("/api/meta/daily", async function(req, res) {
   try {
-    if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("META_AD_ACCOUNT_ID ou META_ADS_TOKEN nao configurado");
-    var days = Math.min(parseInt(req.query.days) || 7, 30);
-    var preset = "last_" + days + "d";
-    if (days <= 1) preset = "today";
+    if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("Variaveis nao configuradas");
+    var days = Math.min(parseInt(req.query.days)||7, 30);
+    var preset = days <= 1 ? "today" : "last_" + days + "d";
     var fields = "impressions,clicks,spend,actions,action_values";
-    var url = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&time_increment=1&date_preset=" + preset + "&limit=60&access_token=" + CFG.metaAdsToken;
     var campaignId = req.query.campaignId;
+    var url;
     if (campaignId && campaignId !== "all") {
       url = "https://graph.facebook.com/v22.0/" + campaignId + "/insights?fields=" + fields + "&time_increment=1&date_preset=" + preset + "&limit=60&access_token=" + CFG.metaAdsToken;
+    } else {
+      url = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&time_increment=1&date_preset=" + preset + "&limit=60&access_token=" + CFG.metaAdsToken;
     }
     var r = await fetch(url);
     var data = await r.json();
-    if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta Ads API erro " + r.status);
+    if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta API erro " + r.status);
     var daily = (data.data || []).map(function(d) {
-      var purchases = 0, purchaseValue = 0, addToCart = 0;
-      if (d.actions) {
-        d.actions.forEach(function(a) {
-          if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchases += parseInt(a.value) || 0;
-          if (a.action_type === "add_to_cart" || a.action_type === "offsite_conversion.fb_pixel_add_to_cart") addToCart += parseInt(a.value) || 0;
-        });
-      }
-      if (d.action_values) {
-        d.action_values.forEach(function(a) { if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchaseValue += parseFloat(a.value) || 0; });
-      }
-      var spend = parseFloat(d.spend) || 0;
-      return { date: d.date_start, spend: spend, impressions: parseInt(d.impressions)||0, clicks: parseInt(d.clicks)||0, purchases: purchases, revenue: Math.round(purchaseValue*100)/100, roas: spend > 0 ? Math.round((purchaseValue/spend)*100)/100 : 0, addToCart: addToCart };
+      var act = parseMetaActions(d);
+      var spend = parseFloat(d.spend)||0;
+      return { date:d.date_start, spend:spend, impressions:parseInt(d.impressions)||0, clicks:parseInt(d.clicks)||0, purchases:act.purchases, revenue:Math.round(act.purchaseValue*100)/100, roas:spend>0?Math.round((act.purchaseValue/spend)*100)/100:0, addToCart:act.addToCart };
     });
     res.json({ ok: true, data: daily });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-// IA Chat endpoint
+// IA Chat with fallback
 app.post("/api/meta/chat", async function(req, res) {
   try {
     if (!CFG.anthropicKey) throw new Error("ANTHROPIC_API_KEY nao configurado");
@@ -1741,35 +1783,41 @@ app.post("/api/meta/chat", async function(req, res) {
     if (!userMessage) return res.status(400).json({ ok: false, error: "Mensagem obrigatória" });
 
     var systemPrompt = "Você é um analista de mídia paga especializado em e-commerce de moda fitness feminina 45+. A loja é SSJ Moda Fitness.\n";
-    systemPrompt += "Você tem acesso aos dados atuais das campanhas Meta Ads da loja. Responda de forma prática, direta e com números.\n";
+    systemPrompt += "Você tem acesso aos dados atuais das campanhas, conjuntos de anúncios e anúncios (criativos) do Meta Ads da loja.\n";
+    systemPrompt += "Responda de forma prática, direta e com números. Fale como um gestor de tráfego experiente.\n";
     systemPrompt += "Quando sugerir criativos ou copies, lembre que o público é mulheres 45+ que buscam moda fitness confortável e estilosa.\n";
     systemPrompt += "Use emojis com moderação. Seja conciso mas completo. Formate com markdown.\n\n";
-
-    if (req.body.summaryData) systemPrompt += "RESUMO DO PERÍODO:\n" + JSON.stringify(req.body.summaryData, null, 2) + "\n\n";
+    if (req.body.summaryData) systemPrompt += "RESUMO:\n" + JSON.stringify(req.body.summaryData, null, 2) + "\n\n";
     if (req.body.funnelData) systemPrompt += "FUNIL:\n" + JSON.stringify(req.body.funnelData, null, 2) + "\n\n";
     if (req.body.campaignsData) systemPrompt += "CAMPANHAS:\n" + JSON.stringify(req.body.campaignsData, null, 2) + "\n\n";
+    if (req.body.adsData) systemPrompt += "ANÚNCIOS (CRIATIVOS):\n" + JSON.stringify(req.body.adsData, null, 2) + "\n\n";
 
-    console.log("[IA-CHAT] Mensagem: " + userMessage.substring(0, 80));
-    var r = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": CFG.anthropicKey, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({
-        model: "claude-opus-4-6",
-        max_tokens: 2000,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userMessage }]
-      })
-    });
-    var data = await r.json();
-    if (!r.ok) {
-      console.error("[IA-CHAT] API erro:", r.status, JSON.stringify(data).substring(0, 500));
-      throw new Error((data.error && data.error.message) || "Anthropic API erro " + r.status);
+    console.log("[IA-CHAT] Msg: " + userMessage.substring(0, 80));
+    var models = ["claude-opus-4-6", "claude-sonnet-4-6"];
+    var lastErr = null;
+    for (var mi = 0; mi < models.length; mi++) {
+      try {
+        console.log("[IA-CHAT] Tentando: " + models[mi]);
+        var r = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-api-key": CFG.anthropicKey, "anthropic-version": "2023-06-01" },
+          body: JSON.stringify({ model: models[mi], max_tokens: 2000, system: systemPrompt, messages: [{ role: "user", content: userMessage }] })
+        });
+        var data = await r.json();
+        if (!r.ok) {
+          console.error("[IA-CHAT] Erro " + models[mi] + ":", r.status, JSON.stringify(data).substring(0, 300));
+          lastErr = (data.error && data.error.message) || "API erro " + r.status;
+          continue;
+        }
+        var text = "";
+        if (data.content) { data.content.forEach(function(block) { if (block.type === "text") text += block.text; }); }
+        console.log("[IA-CHAT] Sucesso com " + models[mi]);
+        return res.json({ ok: true, response: text, model: models[mi] });
+      } catch (e) { lastErr = e.message; }
     }
-    var text = "";
-    if (data.content) { data.content.forEach(function(block) { if (block.type === "text") text += block.text; }); }
-    res.json({ ok: true, response: text });
+    throw new Error(lastErr || "Todos os modelos falharam");
   } catch (e) {
-    console.error("[IA-CHAT] Erro:", e.message);
+    console.error("[IA-CHAT] Erro final:", e.message);
     res.status(500).json({ ok: false, error: e.message });
   }
 });
