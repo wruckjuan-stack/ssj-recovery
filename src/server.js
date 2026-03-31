@@ -1780,19 +1780,21 @@ app.post("/api/meta/scorecard", async function(req, res) {
 app.get("/api/meta/real-revenue", async function(req, res) {
   try {
     var days = parseInt(req.query.days) || 7;
-    var fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - days);
-    var fromStr = fromDate.toISOString().slice(0, 10);
-    var toStr = new Date().toISOString().slice(0, 10);
+    var cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    var cutoffTs = cutoff.getTime();
 
-    var orders = await fetchOrders({
-      "q[created_at][from]": fromStr,
-      "q[created_at][to]": toStr,
-      limit: "50"
+    // Fetch recent orders (same as other endpoints that work)
+    var orders = await fetchOrders({ limit: "50" });
+
+    // Filter by date locally
+    var recentOrders = orders.filter(function(o) {
+      if (!o.createdAt) return false;
+      return new Date(o.createdAt).getTime() >= cutoffTs;
     });
 
     var paidStatuses = ["paid", "invoiced", "shipped", "delivered", "complete", "completed", "pago", "enviado", "entregue"];
-    var paidOrders = orders.filter(function(o) {
+    var paidOrders = recentOrders.filter(function(o) {
       var s = (o.status || "").toLowerCase();
       for (var i = 0; i < paidStatuses.length; i++) { if (s === paidStatuses[i]) return true; }
       return false;
@@ -1805,8 +1807,8 @@ app.get("/api/meta/real-revenue", async function(req, res) {
       ok: true,
       totalOrders: paidOrders.length,
       totalRevenue: Math.round(totalRevenue * 100) / 100,
-      totalAllOrders: orders.length,
-      conversionRate: orders.length > 0 ? Math.round((paidOrders.length / orders.length) * 100) : 0
+      totalAllOrders: recentOrders.length,
+      conversionRate: recentOrders.length > 0 ? Math.round((paidOrders.length / recentOrders.length) * 100) : 0
     });
   } catch (e) {
     console.error("[REAL-REVENUE] Erro:", e.message);
