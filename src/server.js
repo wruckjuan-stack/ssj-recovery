@@ -202,13 +202,12 @@ function record(cart, tpl, status, msgId, auto) {
   var entry = { id: Date.now() + "-" + cart.id, cartId: cart.id, contact: cart.name, phone: cart.phone, template: tpl.display, templateId: tpl.id, status: status, sentAt: new Date().toISOString(), cartValue: cart.total, cartValueRaw: cart.totalRaw, waMessageId: msgId, automated: !!auto, type: "carrinho" };
   DB.history.unshift(entry);
   if (DB.history.length > 500) DB.history.length = 500;
-  if (!DB.sentMap[cart.id]) DB.sentMap[cart.id] = [];
-  if (DB.sentMap[cart.id].indexOf(tpl.id) === -1) DB.sentMap[cart.id].push(tpl.id);
-  if (status !== "failed") { DB.stats.totalSent++; DB.stats.totalCartValue += cart.totalRaw || 0; } else { DB.stats.totalFailed++; }
-  // Track in conversations
-  if (status !== "failed" && cart.phone) {
-    addOutgoingMsg(cart.phone, cart.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
-  }
+  if (status !== "failed") {
+    if (!DB.sentMap[cart.id]) DB.sentMap[cart.id] = [];
+    if (DB.sentMap[cart.id].indexOf(tpl.id) === -1) DB.sentMap[cart.id].push(tpl.id);
+    DB.stats.totalSent++; DB.stats.totalCartValue += cart.totalRaw || 0;
+    if (cart.phone) addOutgoingMsg(cart.phone, cart.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
+  } else { DB.stats.totalFailed++; }
   return entry;
 }
 
