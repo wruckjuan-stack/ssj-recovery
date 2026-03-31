@@ -172,14 +172,14 @@ async function sendWA(phone, templateName, params, allTemplates, buttonUrl) {
     components.push({ type: "body", parameters: params.map(function(p) { return { type: "text", text: String(p) }; }) });
   }
 
-  // Button URL parameter (dynamic URL) - always send if template has button
+  // Button URL parameter (dynamic URL suffix) - always send if template has button
   if (tpl.hasButton) {
     var urlParam = buttonUrl || "cart";
-    components.push({ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: String(urlParam) }] });
+    components.push({ type: "button", sub_type: "url", index: 0, parameters: [{ type: "text", text: String(urlParam) }] });
   }
 
   var payload = { messaging_product: "whatsapp", to: phone, type: "template", template: { name: tpl.name, language: { code: tpl.lang }, components: components } };
-  console.log("[SEND-WA] " + phone + " template=" + tpl.name + " components=" + JSON.stringify(components));
+  console.log("[SEND-WA] " + phone + " tpl=" + tpl.name + " body_params=" + (params ? params.length : 0) + " btn=" + (tpl.hasButton ? "yes" : "no") + " url_suffix=" + (buttonUrl ? buttonUrl.substring(0, 50) + "..." : "none"));
 
   var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId + "/messages", {
     method: "POST",
@@ -187,7 +187,10 @@ async function sendWA(phone, templateName, params, allTemplates, buttonUrl) {
     body: JSON.stringify(payload)
   });
   var data = await r.json();
-  if (!r.ok) throw new Error((data.error && data.error.message) || "WA " + r.status);
+  if (!r.ok) {
+    console.error("[SEND-WA-ERRO] " + phone + " tpl=" + tpl.name + " status=" + r.status + " erro=" + JSON.stringify(data));
+    throw new Error((data.error && data.error.message) || "WA " + r.status);
+  }
   return (data.messages && data.messages[0] && data.messages[0].id) || null;
 }
 
