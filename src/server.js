@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const cron = require("node-cron");
+const { Pool } = require("pg");
 
 const app = express();
 app.use(cors());
@@ -26,56 +27,183 @@ const CFG = {
   port: process.env.PORT || 3001,
 };
 
-const DB = {
-  history: [],
-  sentMap: {},
-  cronLog: [],
-  stats: { totalSent: 0, totalDelivered: 0, totalRead: 0, totalFailed: 0, totalCartValue: 0, startedAt: new Date().toISOString() },
-  // PIX recovery
-  pixHistory: [],
-  pixSentMap: {},
-  pixCronLog: [],
-  pixStats: { totalSent: 0, totalRecovered: 0, totalFailed: 0 },
-  // Repurchase campaigns
-  recompraHistory: [],
-  recompraSentMap: {},
-  recompraCronLog: [],
-  recompraStats: { totalSent: 0, totalFailed: 0 },
-  // Repurchase campaign settings
-  recompraConfig: {
-    enabled: true,
-    intervals: [
-      { days: 30, enabled: true, templateId: "recompra_30dias", coupon: CFG.coupon30 || "VOLTESSJ10" },
-      { days: 60, enabled: true, templateId: "recompra_60dias", coupon: CFG.coupon60 || "VOLTESSJ15" },
-      { days: 90, enabled: true, templateId: "recompra_90dias", coupon: CFG.coupon90 || "VOLTESSJ20" },
-    ]
-  },
-  // Inbox / Conversations
-  conversations: {},  // keyed by phone number: { phone, name, messages[], lastMessageAt, unread }
-  // Custom template metadata (timing, type)
-  templateMeta: {},   // keyed by template name: { timing, tplType, createdAt }
+// ===================== POSTGRESQL =====================
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes("railway")
+    ? { rejectUnauthorized: false }
+    : false,
+});
+
+async function initDB() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS sent_messages (
+        id SERIAL PRIMARY KEY,
+        cart_id TEXT NOT NULL,
+        template_id TEXT NOT NULL,
+        phone TEXT,
+        contact_name TEXT,
+        cart_value NUMERIC DEFAULT 0,
+        wa_message_id TEXT,
+        status TEXT DEFAULT 'sent',
+        automated BOOLEAN DEFAULT false,
+        msg_type TEXT DEFAULT 'carrinho',
+        sent_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(cart_id, template_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS pix_sent (
+        id SERIAL PRIMARY KEY,
+        cart_id TEXT NOT NULL,
+        template_id TEXT NOT NULL,
+        phone TEXT,
+        contact_name TEXT,
+        cart_value TEXT,
+        wa_message_id TEXT,
+        status TEXT DEFAULT 'sent',
+        sent_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(cart_id, template_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS recompra_sent (
+        id SERIAL PRIMARY KEY,
+        order_id TEXT NOT NULL,
+        interval_days INT NOT NULL,
+        template_id TEXT NOT NULL,
+        phone TEXT,
+        contact_name TEXT,
+        order_value TEXT,
+        wa_message_id TEXT,
+        status TEXT DEFAULT 'sent',
+        sent_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(order_id, interval_days)
+      );
+
+      CREATE TABLE IF NOT EXISTS conversations (
+        phone TEXT PRIMARY KEY,
+        name TEXT,
+        unread INT DEFAULT 0,
+        last_message_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        phone TEXT NOT NULL,
+        wa_message_id TEXT,
+        direction TEXT NOT NULL,
+        text TEXT,
+        msg_type TEXT DEFAULT 'text',
+        template TEXT,
+        status TEXT DEFAULT 'sent',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_sent_cart ON sent_messages(cart_id);
+      CREATE INDEX IF NOT EXISTS idx_sent_wa ON sent_messages(wa_message_id);
+      CREATE INDEX IF NOT EXISTS idx_pix_cart ON pix_sent(cart_id);
+      CREATE INDEX IF NOT EXISTS idx_pix_wa ON pix_sent(wa_message_id);
+      CREATE INDEX IF NOT EXISTS idx_recompra_order ON recompra_sent(order_id);
+      CREATE INDEX IF NOT EXISTS idx_recompra_wa ON recompra_sent(wa_message_id);
+      CREATE INDEX IF NOT EXISTS idx_messages_phone ON messages(phone);
+      CREATE INDEX IF NOT EXISTS idx_messages_wa ON messages(wa_message_id);
+    `);
+    console.log("[DB] PostgreSQL inicializado com sucesso");
+  } catch (e) {
+    console.error("[DB] Erro ao inicializar PostgreSQL:", e.message);
+  } finally {
+    client.release();
+  }
+}
+
+// ===================== DB HELPERS =====================
+
+async function wasSent(cartId, templateId) {
+  try {
+    var r = await pool.query("SELECT 1 FROM sent_messages WHERE cart_id=$1 AND template_id=$2", [String(cartId), templateId]);
+    return r.rowCount > 0;
+  } catch (e) { return false; }
+}
+
+async function getSentTemplates(cartId) {
+  try {
+    var r = await pool.query("SELECT template_id FROM sent_messages WHERE cart_id=$1", [String(cartId)]);
+    return r.rows.map(function(row) { return row.template_id; });
+  } catch (e) { return []; }
+}
+
+async function wasPixSent(cartId, templateId) {
+  try {
+    var r = await pool.query("SELECT 1 FROM pix_sent WHERE cart_id=$1 AND template_id=$2", [String(cartId), templateId]);
+    return r.rowCount > 0;
+  } catch (e) { return false; }
+}
+
+async function getPixSentTemplates(cartId) {
+  try {
+    var r = await pool.query("SELECT template_id FROM pix_sent WHERE cart_id=$1", [String(cartId)]);
+    return r.rows.map(function(row) { return row.template_id; });
+  } catch (e) { return []; }
+}
+
+async function wasRecompraSent(orderId, intervalDays) {
+  try {
+    var r = await pool.query("SELECT 1 FROM recompra_sent WHERE order_id=$1 AND interval_days=$2", [String(orderId), intervalDays]);
+    return r.rowCount > 0;
+  } catch (e) { return false; }
+}
+
+// ===================== IN-MEMORY STATS & LOGS (non-critical, ok to lose) =====================
+
+var STATS = {
+  totalSent: 0, totalDelivered: 0, totalRead: 0, totalFailed: 0, totalCartValue: 0,
+  startedAt: new Date().toISOString()
 };
+var cronLog = [];
+var pixStats = { totalSent: 0, totalRecovered: 0, totalFailed: 0 };
+var pixCronLog = [];
+var recompraStats = { totalSent: 0, totalFailed: 0 };
+var recompraCronLog = [];
+
+// Repurchase campaign settings (in-memory, could be persisted later)
+var recompraConfig = {
+  enabled: true,
+  intervals: [
+    { days: 30, enabled: true, templateId: "recompra_30dias", coupon: CFG.coupon30 || "VOLTESSJ10" },
+    { days: 60, enabled: true, templateId: "recompra_60dias", coupon: CFG.coupon60 || "VOLTESSJ15" },
+    { days: 90, enabled: true, templateId: "recompra_90dias", coupon: CFG.coupon90 || "VOLTESSJ20" },
+  ]
+};
+
+// Template metadata (in-memory)
+var templateMeta = {};
 
 // ===================== TEMPLATES =====================
 
+// CARRINHO — todos v2: body={{1}}(nome) + botão URL dinâmica
 const TEMPLATES = [
-  { id: "lembrete_15min_v2", name: "lembrete_15min_v2", display: "Lembrete 15min", timing: "15min", minH: 0, maxH: 0.5, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Ver minhas pecas", preview: "Oiii, tudo bem {{1}}? 😊 Aqui e a equipe SSJ Moda Fitness.\n\nNotei que voce estava escolhendo algumas pecas aqui na SSJ e nao finalizou 🛒\n\nSem pressa — suas escolhas continuam reservadas! ✨\n\nNosso tecido e poliamida premium com zero transparencia, pensado para mulheres que nao abrem mao de conforto e seguranca no vestir 💖\n\nEstamos a disposicao!" },
-  { id: "confianca_2h_v2", name: "confianca_2h_v2", display: "Confianca 2h", timing: "2h", minH: 0.5, maxH: 12, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Garantir minhas pecas", preview: "Ola, aqui e a equipe SSJ Moda Fitness, {{1}} 👋\n\nSabemos que comprar moda fitness online pode gerar duvidas — principalmente sobre caimento e tecido 🤔\n\nPor isso, na SSJ voce tem troca gratis e facil, sem burocracia ✅ Se nao vestir como esperava, resolvemos rapidinho!\n\nSuas pecas em poliamida premium continuam esperando por voce 💜\n\nQualquer duvida, estamos aqui!" },
-  { id: "social_24h_v2", name: "social_24h_v2", display: "Social 24h", timing: "24h", minH: 12, maxH: 36, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Aproveitar agora", preview: "Ola, tudo bem {{1}}? Aqui e a Jessica da SSJ Moda Fitness 💕\n\nAs pecas que voce selecionou estao entre as favoritas das nossas clientes! ⭐\n\nMulheres como voce escolhem a SSJ pela qualidade do tecido que nao marca, nao transparece e dura por muito tempo — mesmo com uso diario 👏\n\nSuas escolhas ainda estao disponiveis!\n\nEsperamos voce de volta 🥰" },
-  { id: "cupom_48h_v2", name: "cupom_48h_v2", display: "Cupom 48h", timing: "48h", minH: 36, maxH: 96, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Usar meu cupom", preview: "Ola {{1}}, aqui e a equipe SSJ Moda Fitness 🎁\n\nSeparamos um mimo exclusivo pra voce finalizar sua compra!\n\nUse o cupom VOLTECOMSSJ e ganhe 10% OFF 🔥\n\nPoliamida premium, zero transparencia e troca gratis — voce compra com total seguranca ✅\n\nEssa condicao e valida por 24h! ⏳" },
+  { id: "lembrete_15min_v2", name: "lembrete_15min_v2", display: "Lembrete 15min", timing: "15min", minH: 0, maxH: 0.5, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Ver minhas pecas", preview: "Oiii, tudo bem {{1}}? ... Notei que voce estava escolhendo algumas pecas..." },
+  { id: "confianca_2h_v2", name: "confianca_2h_v2", display: "Confianca 2h", timing: "2h", minH: 0.5, maxH: 12, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Garantir minhas pecas", preview: "Ola, aqui e a equipe SSJ Moda Fitness, {{1}} ..." },
+  { id: "social_24h_v2", name: "social_24h_v2", display: "Social 24h", timing: "24h", minH: 12, maxH: 36, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Aproveitar agora", preview: "Ola, tudo bem {{1}}? Aqui e a Jessica da SSJ ..." },
+  { id: "cupom_48h_v2", name: "cupom_48h_v2", display: "Cupom 48h", timing: "48h", minH: 36, maxH: 96, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Usar meu cupom", preview: "Ola {{1}}, aqui e a equipe SSJ ... cupom VOLTECOMSSJ ..." },
 ];
 
-// PIX/Boleto recovery templates
+// PIX — CORRIGIDO: nomes corretos do Meta, body={{1}}(nome) + botão URL dinâmica
 const PIX_TEMPLATES = [
-  { id: "pix_expirado", name: "pix_expirado", display: "PIX Expirado", timing: "apos expirar", lang: "pt_BR", vars: ["primeiro_nome", "link_carrinho"], preview: "Oi {{1}}! Vi que seu pagamento via PIX expirou, mas nao se preocupe — seus itens ainda estao disponiveis.\n\nGere um novo PIX rapidinho aqui: {{2}}\n\nQualquer duvida, estamos aqui!" },
-  { id: "boleto_expirado", name: "boleto_expirado", display: "Boleto Expirado", timing: "apos expirar", lang: "pt_BR", vars: ["primeiro_nome", "link_carrinho"], preview: "Oi {{1}}! Seu boleto venceu, mas calma — suas pecas favoritas continuam te esperando na SSJ.\n\nClique aqui para gerar um novo pagamento: {{2}}\n\nE se preferir pagar via PIX, e instantaneo!" },
+  { id: "pix_5min",  name: "pix_5min",  display: "PIX 5min",  timing: "5min",  minH: 0, maxH: 0.25, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true },
+  { id: "pix_30min", name: "pix_30min", display: "PIX 30min", timing: "30min", minH: 0.25, maxH: 0.75, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true },
+  { id: "pix_1h",    name: "pix_1h",    display: "PIX 1h",    timing: "1h",    minH: 0.75, maxH: 6, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true },
+  { id: "pix_24h",   name: "pix_24h",   display: "PIX 24h",   timing: "24h",   minH: 6, maxH: 36, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true },
+  { id: "pix_48h",   name: "pix_48h",   display: "PIX 48h",   timing: "48h",   minH: 36, maxH: 96, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true },
 ];
 
-// Repurchase campaign templates
+// RECOMPRA — body={{1}}(nome) + {{2}}(cupom), SEM botão URL dinâmica
 const RECOMPRA_TEMPLATES = [
-  { id: "recompra_30dias", name: "recompra_30dias", display: "Recompra 30 dias", timing: "30 dias", lang: "pt_BR", vars: ["primeiro_nome", "cupom"], preview: "Oi {{1}}! Ja faz um mes que voce comprou com a gente e esperamos que esteja amando suas pecas!\n\nQue tal renovar o look? Use o cupom {{2}} e ganhe 10% OFF na proxima compra.\n\nAcesse: ssjmodafitness.com.br" },
-  { id: "recompra_60dias", name: "recompra_60dias", display: "Recompra 60 dias", timing: "60 dias", lang: "pt_BR", vars: ["primeiro_nome", "cupom"], preview: "{{1}}, sentimos sua falta! Ja faz 2 meses desde sua ultima compra na SSJ.\n\nTemos novidades incriveis e um cupom especial pra voce: {{2}} com 15% OFF!\n\nVem ver: ssjmodafitness.com.br" },
-  { id: "recompra_90dias", name: "recompra_90dias", display: "Recompra 90 dias", timing: "90 dias", lang: "pt_BR", vars: ["primeiro_nome", "cupom"], preview: "{{1}}, faz tempo que nao nos vemos! Preparamos algo especial pra voce voltar:\n\n20% OFF com o cupom {{2}}\n\nSao pecas novas, confortaveis e com a qualidade SSJ que voce ja conhece.\n\nAproveite: ssjmodafitness.com.br" },
+  { id: "recompra_30dias", name: "recompra_30dias", display: "Recompra 30 dias", timing: "30 dias", lang: "pt_BR", vars: ["primeiro_nome", "cupom"], hasButton: false, preview: "Oi {{1}}! ... Use o cupom {{2}} ..." },
+  { id: "recompra_60dias", name: "recompra_60dias", display: "Recompra 60 dias", timing: "60 dias", lang: "pt_BR", vars: ["primeiro_nome", "cupom"], hasButton: false, preview: "{{1}}, sentimos sua falta! ... cupom {{2}} ..." },
+  { id: "recompra_90dias", name: "recompra_90dias", display: "Recompra 90 dias", timing: "90 dias", lang: "pt_BR", vars: ["primeiro_nome", "cupom"], hasButton: false, preview: "{{1}}, faz tempo! ... cupom {{2}} ..." },
 ];
 
 // ===================== YAMPI HELPERS =====================
@@ -96,20 +224,26 @@ function formatPhone(num, ddd) {
   return c;
 }
 
-// ===================== CART FUNCTIONS (existing) =====================
+// ===================== CART FUNCTIONS =====================
 
 async function fetchCarts() {
   var data = await yampiGet("/checkout/carts", { include: "customer,items", limit: "50", orderBy: "created_at", sortedBy: "desc" });
-  return (data.data || []).map(function(cart) {
+  var results = [];
+  for (var i = 0; i < (data.data || []).length; i++) {
+    var cart = data.data[i];
     var cust = cart.customer && cart.customer.data ? cart.customer.data : {};
     var ph = (cust.phone && cust.phone.full_number) || (cust.spreadsheet && cust.spreadsheet.data && cust.spreadsheet.data.phone_number) || "";
     var ddd = (cust.phone && cust.phone.area_code) || (cust.spreadsheet && cust.spreadsheet.data && cust.spreadsheet.data.phone_code) || "";
     var created = (cart.created_at && cart.created_at.date) || cart.created_at || null;
     var hoursAgo = created ? Math.round((Date.now() - new Date(created).getTime()) / 3600000) : 0;
-    var items = Array.isArray(cart.items && cart.items.data) ? cart.items.data.map(function(i) { return (i.sku && i.sku.data && i.sku.data.title) || i.name || "Produto"; }) : [];
+    var items = Array.isArray(cart.items && cart.items.data) ? cart.items.data.map(function(it) { return (it.sku && it.sku.data && it.sku.data.title) || it.name || "Produto"; }) : [];
     var rec = TEMPLATES.find(function(t) { return hoursAgo >= t.minH && hoursAgo < t.maxH; });
     var lastTxStatus = cart.last_transaction_status || cart.transaction_status || null;
-    return {
+
+    // Buscar templates já enviados do PostgreSQL
+    var alreadySent = await getSentTemplates(cart.id);
+
+    results.push({
       id: cart.id, name: cust.name || cust.first_name || "Cliente",
       firstName: cust.first_name || (cust.name || "").split(" ")[0] || "Cliente",
       email: cust.email || "", phone: formatPhone(ph, ddd),
@@ -119,13 +253,14 @@ async function fetchCarts() {
       simUrl: cart.simulate_url || cart.unauth_simulate_url || "",
       hoursAgo: hoursAgo, createdAt: created,
       recommended: rec ? rec.id : TEMPLATES[3].id,
-      alreadySent: DB.sentMap[cart.id] || [],
+      alreadySent: alreadySent,
       lastTxStatus: lastTxStatus
-    };
-  });
+    });
+  }
+  return results;
 }
 
-// ===================== ORDERS FUNCTIONS (new) =====================
+// ===================== ORDERS FUNCTIONS =====================
 
 async function fetchOrders(params) {
   params = params || {};
@@ -167,12 +302,12 @@ async function sendWA(phone, templateName, params, allTemplates, buttonUrl) {
 
   var components = [];
 
-  // Body parameters (name, cupom, etc)
+  // Body parameters (nome, cupom, etc)
   if (params && params.length > 0) {
     components.push({ type: "body", parameters: params.map(function(p) { return { type: "text", text: String(p) }; }) });
   }
 
-  // Button URL parameter (dynamic URL suffix) - always send if template has button
+  // Button URL parameter (dynamic URL suffix) — SÓ se template tem botão
   if (tpl.hasButton) {
     var urlParam = buttonUrl || "cart";
     components.push({ type: "button", sub_type: "url", index: 0, parameters: [{ type: "text", text: String(urlParam) }] });
@@ -180,6 +315,7 @@ async function sendWA(phone, templateName, params, allTemplates, buttonUrl) {
 
   var payload = { messaging_product: "whatsapp", to: phone, type: "template", template: { name: tpl.name, language: { code: tpl.lang }, components: components } };
   console.log("[SEND-WA] " + phone + " tpl=" + tpl.name + " body_params=" + (params ? params.length : 0) + " btn=" + (tpl.hasButton ? "yes" : "no") + " url_suffix=" + (buttonUrl ? buttonUrl.substring(0, 50) + "..." : "none"));
+  console.log("[SEND-WA] Payload completo:", JSON.stringify(payload, null, 2));
 
   var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId + "/messages", {
     method: "POST",
@@ -204,24 +340,19 @@ function buildParams(tpl, cart) {
 
 function getCartUrl(cart) {
   var url = cart.simUrl || "";
-  // Extract path after domain for button URL parameter
-  // The button base URL is https://seguro.ssjmodafitness.com.br/{{1}}
-  // So we need to send only the part after the domain
   var domain = "https://seguro.ssjmodafitness.com.br/";
   if (url.indexOf(domain) === 0) {
     return url.substring(domain.length);
   }
-  // Try other common patterns
   var match = url.match(/ssjmodafitness\.com\.br\/(.*)/);
   if (match) return match[1];
-  // Fallback: return full URL
   return url;
 }
 
 function buildPixParams(tpl, cart) {
+  // PIX templates v2: só {{1}}=nome no body
   return tpl.vars.map(function(v) {
     if (v === "primeiro_nome") return cart.firstName;
-    if (v === "link_carrinho") return cart.simUrl;
     return "";
   });
 }
@@ -234,48 +365,119 @@ function buildRecompraParams(tpl, order, couponCode) {
   });
 }
 
-// ===================== RECORD FUNCTIONS =====================
+// ===================== RECORD FUNCTIONS (PostgreSQL) =====================
 
-function record(cart, tpl, status, msgId, auto) {
-  var entry = { id: Date.now() + "-" + cart.id, cartId: cart.id, contact: cart.name, phone: cart.phone, template: tpl.display, templateId: tpl.id, status: status, sentAt: new Date().toISOString(), cartValue: cart.total, cartValueRaw: cart.totalRaw, waMessageId: msgId, automated: !!auto, type: "carrinho" };
-  DB.history.unshift(entry);
-  if (DB.history.length > 500) DB.history.length = 500;
-  if (status !== "failed") {
-    if (!DB.sentMap[cart.id]) DB.sentMap[cart.id] = [];
-    if (DB.sentMap[cart.id].indexOf(tpl.id) === -1) DB.sentMap[cart.id].push(tpl.id);
-    DB.stats.totalSent++; DB.stats.totalCartValue += cart.totalRaw || 0;
-    if (cart.phone) addOutgoingMsg(cart.phone, cart.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
-  } else { DB.stats.totalFailed++; }
-  return entry;
-}
-
-function recordPix(cart, tpl, status, msgId) {
-  var entry = { id: Date.now() + "-pix-" + cart.id, cartId: cart.id, contact: cart.name, phone: cart.phone, template: tpl.display, templateId: tpl.id, status: status, sentAt: new Date().toISOString(), cartValue: cart.total, waMessageId: msgId, type: "pix" };
-  DB.pixHistory.unshift(entry);
-  if (DB.pixHistory.length > 500) DB.pixHistory.length = 500;
-  if (!DB.pixSentMap[cart.id]) DB.pixSentMap[cart.id] = [];
-  if (DB.pixSentMap[cart.id].indexOf(tpl.id) === -1) DB.pixSentMap[cart.id].push(tpl.id);
-  if (status !== "failed") DB.pixStats.totalSent++; else DB.pixStats.totalFailed++;
-  if (status !== "failed" && cart.phone) {
-    addOutgoingMsg(cart.phone, cart.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
+async function record(cart, tpl, status, msgId, auto) {
+  try {
+    if (status !== "failed") {
+      await pool.query(
+        `INSERT INTO sent_messages (cart_id, template_id, phone, contact_name, cart_value, wa_message_id, status, automated, msg_type)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'carrinho')
+         ON CONFLICT (cart_id, template_id) DO UPDATE SET status=$7, wa_message_id=$6`,
+        [String(cart.id), tpl.id, cart.phone, cart.name, cart.totalRaw || 0, msgId, status, !!auto]
+      );
+      STATS.totalSent++; STATS.totalCartValue += cart.totalRaw || 0;
+      if (cart.phone) await addOutgoingMsg(cart.phone, cart.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
+    } else {
+      STATS.totalFailed++;
+    }
+  } catch (e) {
+    console.error("[RECORD] Erro ao salvar:", e.message);
   }
-  return entry;
 }
 
-function recordRecompra(order, tpl, status, msgId, intervalDays) {
-  var entry = { id: Date.now() + "-recompra-" + order.id, orderId: order.id, contact: order.name, phone: order.phone, template: tpl.display, templateId: tpl.id, status: status, sentAt: new Date().toISOString(), orderValue: order.total, waMessageId: msgId, intervalDays: intervalDays, type: "recompra" };
-  DB.recompraHistory.unshift(entry);
-  if (DB.recompraHistory.length > 500) DB.recompraHistory.length = 500;
-  var key = order.id + "-" + intervalDays;
-  if (!DB.recompraSentMap[key]) DB.recompraSentMap[key] = true;
-  if (status !== "failed") DB.recompraStats.totalSent++; else DB.recompraStats.totalFailed++;
-  if (status !== "failed" && order.phone) {
-    addOutgoingMsg(order.phone, order.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
+async function recordPix(cart, tpl, status, msgId) {
+  try {
+    if (status !== "failed") {
+      await pool.query(
+        `INSERT INTO pix_sent (cart_id, template_id, phone, contact_name, cart_value, wa_message_id, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (cart_id, template_id) DO UPDATE SET status=$7, wa_message_id=$6`,
+        [String(cart.id), tpl.id, cart.phone, cart.name, cart.total, msgId, status]
+      );
+      pixStats.totalSent++;
+      if (cart.phone) await addOutgoingMsg(cart.phone, cart.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
+    } else {
+      pixStats.totalFailed++;
+    }
+  } catch (e) {
+    console.error("[RECORD-PIX] Erro ao salvar:", e.message);
   }
-  return entry;
 }
 
-// ===================== CRON: CART RECOVERY (existing) =====================
+async function recordRecompra(order, tpl, status, msgId, intervalDays) {
+  try {
+    if (status !== "failed") {
+      await pool.query(
+        `INSERT INTO recompra_sent (order_id, interval_days, template_id, phone, contact_name, order_value, wa_message_id, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (order_id, interval_days) DO UPDATE SET status=$8, wa_message_id=$7`,
+        [String(order.id), intervalDays, tpl.id, order.phone, order.name, order.total, msgId, status]
+      );
+      recompraStats.totalSent++;
+      if (order.phone) await addOutgoingMsg(order.phone, order.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
+    } else {
+      recompraStats.totalFailed++;
+    }
+  } catch (e) {
+    console.error("[RECORD-RECOMPRA] Erro ao salvar:", e.message);
+  }
+}
+
+// ===================== CONVERSATION TRACKING (PostgreSQL) =====================
+
+async function getOrCreateConvo(phone, name) {
+  try {
+    var r = await pool.query("SELECT * FROM conversations WHERE phone=$1", [phone]);
+    if (r.rowCount === 0) {
+      await pool.query(
+        "INSERT INTO conversations (phone, name, unread) VALUES ($1, $2, 0) ON CONFLICT (phone) DO UPDATE SET name=$2",
+        [phone, name || phone]
+      );
+    } else if (name && name !== phone) {
+      await pool.query("UPDATE conversations SET name=$1 WHERE phone=$2", [name, phone]);
+    }
+  } catch (e) {
+    console.error("[CONVO] Erro:", e.message);
+  }
+}
+
+async function addOutgoingMsg(phone, name, text, templateName, waMessageId) {
+  try {
+    await getOrCreateConvo(phone, name);
+    await pool.query(
+      "INSERT INTO messages (phone, wa_message_id, direction, text, template, status) VALUES ($1, $2, 'out', $3, $4, 'sent')",
+      [phone, waMessageId || ("out-" + Date.now()), text, templateName || null]
+    );
+    await pool.query("UPDATE conversations SET last_message_at=NOW() WHERE phone=$1", [phone]);
+  } catch (e) {
+    console.error("[MSG-OUT] Erro:", e.message);
+  }
+}
+
+async function addIncomingMsg(phone, name, text, waMessageId, msgType) {
+  try {
+    // Avoid duplicates
+    if (waMessageId) {
+      var dup = await pool.query("SELECT 1 FROM messages WHERE wa_message_id=$1", [waMessageId]);
+      if (dup.rowCount > 0) return;
+    }
+    await getOrCreateConvo(phone, name);
+    await pool.query(
+      "INSERT INTO messages (phone, wa_message_id, direction, text, msg_type, status) VALUES ($1, $2, 'in', $3, $4, 'received')",
+      [phone, waMessageId || ("in-" + Date.now()), text, msgType || "text"]
+    );
+    await pool.query(
+      "UPDATE conversations SET last_message_at=NOW(), unread=unread+1 WHERE phone=$1",
+      [phone]
+    );
+    console.log("[INBOX] Nova mensagem de " + phone + ": " + text);
+  } catch (e) {
+    console.error("[MSG-IN] Erro:", e.message);
+  }
+}
+
+// ===================== CRON: CART RECOVERY =====================
 
 cron.schedule("*/10 * * * *", async function() {
   console.log("[AUTO-CARRINHO] " + new Date().toISOString() + " Verificando carrinhos...");
@@ -287,30 +489,40 @@ cron.schedule("*/10 * * * *", async function() {
       if (!cart.phone || cart.phone.length < 12) { skipped++; continue; }
       var tpl = TEMPLATES.find(function(t) { return t.id === cart.recommended; });
       if (!tpl) { skipped++; continue; }
-      if (DB.sentMap[cart.id] && DB.sentMap[cart.id].indexOf(tpl.id) !== -1) { skipped++; continue; }
+      // Verifica no PostgreSQL se já foi enviado
+      var alreadySent = await wasSent(cart.id, tpl.id);
+      if (alreadySent) { skipped++; continue; }
       try {
         var msgId = await sendWA(cart.phone, tpl.name, buildParams(tpl, cart), null, getCartUrl(cart));
-        record(cart, tpl, "sent", msgId, true);
+        await record(cart, tpl, "sent", msgId, true);
         sent++;
         await new Promise(function(r) { setTimeout(r, 250); });
       } catch (e) {
         console.error("[AUTO-CARRINHO] Falha " + cart.name + " (" + cart.phone + "): " + e.message);
-        record(cart, tpl, "failed", null, true); failed++;
+        await record(cart, tpl, "failed", null, true); failed++;
       }
     }
-    DB.cronLog.unshift({ ts: new Date().toISOString(), cartsFound: carts.length, sent: sent, skipped: skipped, failed: failed });
-    if (DB.cronLog.length > 100) DB.cronLog.length = 100;
+    cronLog.unshift({ ts: new Date().toISOString(), cartsFound: carts.length, sent: sent, skipped: skipped, failed: failed });
+    if (cronLog.length > 100) cronLog.length = 100;
     console.log("[AUTO-CARRINHO] " + sent + " enviado(s), " + skipped + " pulado(s), " + failed + " falha(s)");
-  } catch (e) { console.error("[AUTO-CARRINHO] Erro: " + e.message); DB.cronLog.unshift({ ts: new Date().toISOString(), error: e.message }); }
+  } catch (e) { console.error("[AUTO-CARRINHO] Erro: " + e.message); cronLog.unshift({ ts: new Date().toISOString(), error: e.message }); }
 });
 
-// ===================== CRON: PIX/BOLETO RECOVERY (new) =====================
+// ===================== CRON: PIX/BOLETO RECOVERY =====================
 
 cron.schedule("*/15 * * * *", async function() {
-  console.log("[AUTO-PIX] " + new Date().toISOString() + " Verificando PIX/boleto expirados...");
+  console.log("[AUTO-PIX] " + new Date().toISOString() + " Verificando PIX/boleto...");
   try {
     var carts = await fetchCarts();
     var sent = 0, skipped = 0, failed = 0;
+
+    // LOG: mostrar TODOS os status encontrados pra mapear
+    var statusSet = {};
+    carts.forEach(function(c) {
+      var s = String(c.lastTxStatus || "null");
+      statusSet[s] = (statusSet[s] || 0) + 1;
+    });
+    console.log("[AUTO-PIX] Status encontrados na Yampi:", JSON.stringify(statusSet));
 
     for (var i = 0; i < carts.length; i++) {
       var cart = carts[i];
@@ -318,57 +530,71 @@ cron.schedule("*/15 * * * *", async function() {
 
       var txStatus = String(cart.lastTxStatus || "").toLowerCase();
 
-      // Check if PIX or boleto expired/refused
-      var isPix = txStatus === "pix_expired" || txStatus === "expired" || txStatus === "timeout";
-      var isBoleto = txStatus === "boleto_expired" || txStatus === "refused" || txStatus === "waiting_payment";
-
-      // Also check for common Yampi status patterns
-      if (!isPix && !isBoleto) {
-        if (txStatus.indexOf("pix") !== -1 && (txStatus.indexOf("expir") !== -1 || txStatus.indexOf("cancel") !== -1)) isPix = true;
-        if (txStatus.indexOf("boleto") !== -1 && (txStatus.indexOf("expir") !== -1 || txStatus.indexOf("venc") !== -1)) isBoleto = true;
+      // Filtro ampliado: aceitar qualquer status que indica pagamento não concluído
+      var isPixBoleto = false;
+      var pixBoletoStatuses = [
+        "pix_expired", "expired", "timeout", "refused",
+        "waiting_payment", "boleto_expired",
+        "cancelled", "canceled", "awaiting_payment",
+        "pending", "pendente", "not_paid", "overdue",
+        "payment_error", "payment_failed"
+      ];
+      for (var s = 0; s < pixBoletoStatuses.length; s++) {
+        if (txStatus === pixBoletoStatuses[s]) { isPixBoleto = true; break; }
+      }
+      // Fallback: check substrings
+      if (!isPixBoleto) {
+        if (txStatus.indexOf("expir") !== -1 || txStatus.indexOf("cancel") !== -1 ||
+            txStatus.indexOf("recus") !== -1 || txStatus.indexOf("venc") !== -1 ||
+            txStatus.indexOf("pending") !== -1 || txStatus.indexOf("waiting") !== -1) {
+          isPixBoleto = true;
+        }
       }
 
-      if (!isPix && !isBoleto) { skipped++; continue; }
+      if (!isPixBoleto) { skipped++; continue; }
 
-      var tpl = isPix ? PIX_TEMPLATES[0] : PIX_TEMPLATES[1];
+      // Escolher template baseado na idade do carrinho
+      var pixTpl = PIX_TEMPLATES.find(function(t) { return cart.hoursAgo >= t.minH && cart.hoursAgo < t.maxH; });
+      if (!pixTpl) pixTpl = PIX_TEMPLATES[PIX_TEMPLATES.length - 1]; // fallback: ultimo
 
-      // Already sent for this cart?
-      if (DB.pixSentMap[cart.id] && DB.pixSentMap[cart.id].indexOf(tpl.id) !== -1) { skipped++; continue; }
+      // Verifica no PostgreSQL se já foi enviado
+      var alreadySent = await wasPixSent(cart.id, pixTpl.id);
+      if (alreadySent) { skipped++; continue; }
 
       try {
         var allTpls = TEMPLATES.concat(PIX_TEMPLATES).concat(RECOMPRA_TEMPLATES);
-        var msgId = await sendWA(cart.phone, tpl.name, buildPixParams(tpl, cart), allTpls);
-        recordPix(cart, tpl, "sent", msgId);
+        var msgId = await sendWA(cart.phone, pixTpl.name, buildPixParams(pixTpl, cart), allTpls, getCartUrl(cart));
+        await recordPix(cart, pixTpl, "sent", msgId);
         sent++;
         await new Promise(function(r) { setTimeout(r, 250); });
       } catch (e) {
-        recordPix(cart, tpl, "failed", null);
+        console.error("[AUTO-PIX] Falha " + cart.name + ": " + e.message);
+        await recordPix(cart, pixTpl, "failed", null);
         failed++;
       }
     }
 
-    DB.pixCronLog.unshift({ ts: new Date().toISOString(), cartsChecked: carts.length, sent: sent, skipped: skipped, failed: failed });
-    if (DB.pixCronLog.length > 100) DB.pixCronLog.length = 100;
+    pixCronLog.unshift({ ts: new Date().toISOString(), cartsChecked: carts.length, sent: sent, skipped: skipped, failed: failed });
+    if (pixCronLog.length > 100) pixCronLog.length = 100;
     console.log("[AUTO-PIX] " + sent + " enviado(s), " + skipped + " pulado(s), " + failed + " falha(s)");
   } catch (e) {
     console.error("[AUTO-PIX] Erro: " + e.message);
-    DB.pixCronLog.unshift({ ts: new Date().toISOString(), error: e.message });
+    pixCronLog.unshift({ ts: new Date().toISOString(), error: e.message });
   }
 });
 
-// ===================== CRON: REPURCHASE CAMPAIGNS (new) =====================
+// ===================== CRON: REPURCHASE CAMPAIGNS =====================
 
 cron.schedule("0 10 * * *", async function() {
-  // Runs once daily at 10:00 AM
   console.log("[AUTO-RECOMPRA] " + new Date().toISOString() + " Verificando campanhas de recompra...");
-  if (!DB.recompraConfig.enabled) {
+  if (!recompraConfig.enabled) {
     console.log("[AUTO-RECOMPRA] Desabilitado nas configuracoes.");
-    DB.recompraCronLog.unshift({ ts: new Date().toISOString(), disabled: true });
+    recompraCronLog.unshift({ ts: new Date().toISOString(), disabled: true });
     return;
   }
 
   try {
-    var intervals = DB.recompraConfig.intervals.filter(function(iv) { return iv.enabled; });
+    var intervals = recompraConfig.intervals.filter(function(iv) { return iv.enabled; });
     var totalSent = 0, totalSkipped = 0, totalFailed = 0;
 
     for (var k = 0; k < intervals.length; k++) {
@@ -376,7 +602,6 @@ cron.schedule("0 10 * * *", async function() {
       var tpl = RECOMPRA_TEMPLATES.find(function(t) { return t.id === iv.templateId; });
       if (!tpl) continue;
 
-      // Calculate target date range (tolerance of 1 day)
       var targetDate = new Date();
       targetDate.setDate(targetDate.getDate() - iv.days);
       var fromDate = new Date(targetDate);
@@ -389,8 +614,6 @@ cron.schedule("0 10 * * *", async function() {
 
       try {
         var orders = await fetchOrders({ "q[created_at][from]": fromStr, "q[created_at][to]": toStr });
-
-        // Filter only paid/completed orders
         var paidOrders = orders.filter(function(o) {
           var s = (o.status || "").toLowerCase();
           return s === "paid" || s === "invoiced" || s === "shipped" || s === "delivered" || s === "complete" || s === "completed" || s === "pago" || s === "enviado" || s === "entregue";
@@ -400,18 +623,18 @@ cron.schedule("0 10 * * *", async function() {
           var order = paidOrders[j];
           if (!order.phone || order.phone.length < 12) { totalSkipped++; continue; }
 
-          var key = order.id + "-" + iv.days;
-          if (DB.recompraSentMap[key]) { totalSkipped++; continue; }
+          var alreadySent = await wasRecompraSent(order.id, iv.days);
+          if (alreadySent) { totalSkipped++; continue; }
 
           try {
             var allTpls = TEMPLATES.concat(PIX_TEMPLATES).concat(RECOMPRA_TEMPLATES);
             var coupon = iv.coupon || CFG.coupon;
             var msgId = await sendWA(order.phone, tpl.name, buildRecompraParams(tpl, order, coupon), allTpls);
-            recordRecompra(order, tpl, "sent", msgId, iv.days);
+            await recordRecompra(order, tpl, "sent", msgId, iv.days);
             totalSent++;
             await new Promise(function(r) { setTimeout(r, 300); });
           } catch (e) {
-            recordRecompra(order, tpl, "failed", null, iv.days);
+            await recordRecompra(order, tpl, "failed", null, iv.days);
             totalFailed++;
           }
         }
@@ -420,22 +643,23 @@ cron.schedule("0 10 * * *", async function() {
       }
     }
 
-    DB.recompraCronLog.unshift({ ts: new Date().toISOString(), sent: totalSent, skipped: totalSkipped, failed: totalFailed });
-    if (DB.recompraCronLog.length > 100) DB.recompraCronLog.length = 100;
+    recompraCronLog.unshift({ ts: new Date().toISOString(), sent: totalSent, skipped: totalSkipped, failed: totalFailed });
+    if (recompraCronLog.length > 100) recompraCronLog.length = 100;
     console.log("[AUTO-RECOMPRA] " + totalSent + " enviado(s), " + totalSkipped + " pulado(s), " + totalFailed + " falha(s)");
   } catch (e) {
     console.error("[AUTO-RECOMPRA] Erro: " + e.message);
-    DB.recompraCronLog.unshift({ ts: new Date().toISOString(), error: e.message });
+    recompraCronLog.unshift({ ts: new Date().toISOString(), error: e.message });
   }
 });
 
-// ===================== API ROUTES: EXISTING =====================
+// ===================== API ROUTES =====================
 
 app.get("/api/health", async function(req, res) {
-  var yOk = false, wOk = false;
+  var yOk = false, wOk = false, dbOk = false;
   try { await yampiGet("/catalog/products", { limit: "1" }); yOk = true; } catch (e) {}
   try { var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId, { headers: { Authorization: "Bearer " + CFG.waToken } }); wOk = r.ok; } catch (e) {}
-  res.json({ yampi: { ok: yOk, alias: CFG.yampiAlias }, whatsapp: { ok: wOk, phoneId: CFG.waPhoneId }, uptime: process.uptime(), stats: DB.stats });
+  try { await pool.query("SELECT 1"); dbOk = true; } catch (e) {}
+  res.json({ yampi: { ok: yOk, alias: CFG.yampiAlias }, whatsapp: { ok: wOk, phoneId: CFG.waPhoneId }, database: { ok: dbOk }, uptime: process.uptime(), stats: STATS });
 });
 
 app.get("/api/carts", async function(req, res) {
@@ -456,37 +680,70 @@ app.post("/api/send", async function(req, res) {
     var cart = carts.find(function(c) { return c.id === cartIds[i]; });
     if (!cart) { results.push({ cartId: cartIds[i], ok: false, error: "Nao encontrado" }); continue; }
     if (!cart.phone) { results.push({ cartId: cartIds[i], ok: false, error: "Sem telefone" }); continue; }
-    if (DB.sentMap[cartIds[i]] && DB.sentMap[cartIds[i]].indexOf(templateId) !== -1) { results.push({ cartId: cartIds[i], ok: false, error: "Ja enviado" }); continue; }
-    try { var msgId = await sendWA(cart.phone, tpl.name, buildParams(tpl, cart), null, getCartUrl(cart)); record(cart, tpl, "sent", msgId, false); results.push({ cartId: cartIds[i], ok: true, contact: cart.name }); }
-    catch (e) { record(cart, tpl, "failed", null, false); results.push({ cartId: cartIds[i], ok: false, error: e.message }); }
+    var alreadySent = await wasSent(cartIds[i], templateId);
+    if (alreadySent) { results.push({ cartId: cartIds[i], ok: false, error: "Ja enviado" }); continue; }
+    try { var msgId = await sendWA(cart.phone, tpl.name, buildParams(tpl, cart), null, getCartUrl(cart)); await record(cart, tpl, "sent", msgId, false); results.push({ cartId: cartIds[i], ok: true, contact: cart.name }); }
+    catch (e) { await record(cart, tpl, "failed", null, false); results.push({ cartId: cartIds[i], ok: false, error: e.message }); }
   }
   res.json({ ok: true, sent: results.filter(function(r) { return r.ok; }).length, failed: results.filter(function(r) { return !r.ok; }).length, results: results });
 });
 
-app.get("/api/history", function(req, res) { res.json({ data: DB.history.slice(0, 50), total: DB.history.length }); });
-
-app.get("/api/stats", function(req, res) {
-  var today = new Date().toISOString().slice(0, 10);
-  var todayH = DB.history.filter(function(e) { return e.sentAt.startsWith(today); });
-  var byTpl = {};
-  TEMPLATES.forEach(function(t) { var items = DB.history.filter(function(e) { return e.templateId === t.id; }); byTpl[t.id] = { display: t.display, total: items.length, delivered: items.filter(function(e) { return e.status === "delivered" || e.status === "read"; }).length, read: items.filter(function(e) { return e.status === "read"; }).length, failed: items.filter(function(e) { return e.status === "failed"; }).length }; });
-  res.json({ global: DB.stats, today: { sent: todayH.length, delivered: todayH.filter(function(e) { return e.status === "delivered" || e.status === "read"; }).length, read: todayH.filter(function(e) { return e.status === "read"; }).length, failed: todayH.filter(function(e) { return e.status === "failed"; }).length, automated: todayH.filter(function(e) { return e.automated; }).length }, byTemplate: byTpl, cronLog: DB.cronLog.slice(0, 10) });
+app.get("/api/history", async function(req, res) {
+  try {
+    var r = await pool.query("SELECT * FROM sent_messages ORDER BY sent_at DESC LIMIT 50");
+    res.json({ data: r.rows, total: r.rowCount });
+  } catch (e) { res.json({ data: [], total: 0 }); }
 });
 
-// ===================== API ROUTES: PIX/BOLETO (new) =====================
+app.get("/api/stats", async function(req, res) {
+  try {
+    var today = new Date().toISOString().slice(0, 10);
+    var todayR = await pool.query("SELECT status, automated FROM sent_messages WHERE sent_at::date = $1", [today]);
+    var todayRows = todayR.rows;
+    var byTpl = {};
+    for (var t = 0; t < TEMPLATES.length; t++) {
+      var tid = TEMPLATES[t].id;
+      var tplR = await pool.query("SELECT status FROM sent_messages WHERE template_id=$1", [tid]);
+      byTpl[tid] = {
+        display: TEMPLATES[t].display,
+        total: tplR.rowCount,
+        delivered: tplR.rows.filter(function(r) { return r.status === "delivered" || r.status === "read"; }).length,
+        read: tplR.rows.filter(function(r) { return r.status === "read"; }).length,
+        failed: tplR.rows.filter(function(r) { return r.status === "failed"; }).length
+      };
+    }
+    res.json({
+      global: STATS,
+      today: {
+        sent: todayRows.length,
+        delivered: todayRows.filter(function(r) { return r.status === "delivered" || r.status === "read"; }).length,
+        read: todayRows.filter(function(r) { return r.status === "read"; }).length,
+        failed: todayRows.filter(function(r) { return r.status === "failed"; }).length,
+        automated: todayRows.filter(function(r) { return r.automated; }).length
+      },
+      byTemplate: byTpl,
+      cronLog: cronLog.slice(0, 10)
+    });
+  } catch (e) { res.json({ global: STATS, today: {}, byTemplate: {}, cronLog: cronLog.slice(0, 10) }); }
+});
+
+// ===================== API ROUTES: PIX/BOLETO =====================
 
 app.get("/api/pix/carts", async function(req, res) {
   try {
     var carts = await fetchCarts();
-    var pixCarts = carts.filter(function(c) {
+    var pixCarts = [];
+    for (var i = 0; i < carts.length; i++) {
+      var c = carts[i];
       var tx = String(c.lastTxStatus || "").toLowerCase();
-      return tx.indexOf("expir") !== -1 || tx.indexOf("timeout") !== -1 || tx.indexOf("refused") !== -1 || tx === "waiting_payment" || tx.indexOf("pix") !== -1 || tx.indexOf("boleto") !== -1;
-    }).map(function(c) {
-      var tx = String(c.lastTxStatus || "").toLowerCase();
-      c.paymentType = tx.indexOf("pix") !== -1 ? "PIX" : tx.indexOf("boleto") !== -1 ? "Boleto" : "PIX/Boleto";
-      c.pixAlreadySent = DB.pixSentMap[c.id] || [];
-      return c;
-    });
+      if (tx.indexOf("expir") !== -1 || tx.indexOf("timeout") !== -1 || tx.indexOf("refused") !== -1 ||
+          tx === "waiting_payment" || tx === "awaiting_payment" || tx === "pending" || tx === "pendente" ||
+          tx === "cancelled" || tx === "canceled" || tx.indexOf("pix") !== -1 || tx.indexOf("boleto") !== -1) {
+        c.paymentType = tx.indexOf("pix") !== -1 ? "PIX" : tx.indexOf("boleto") !== -1 ? "Boleto" : "PIX/Boleto";
+        c.pixAlreadySent = await getPixSentTemplates(c.id);
+        pixCarts.push(c);
+      }
+    }
     res.json({ ok: true, count: pixCarts.length, data: pixCarts });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
@@ -505,35 +762,38 @@ app.post("/api/pix/send", async function(req, res) {
     var cart = carts.find(function(c) { return c.id === cartIds[i]; });
     if (!cart) { results.push({ cartId: cartIds[i], ok: false, error: "Nao encontrado" }); continue; }
     if (!cart.phone) { results.push({ cartId: cartIds[i], ok: false, error: "Sem telefone" }); continue; }
-    if (DB.pixSentMap[cartIds[i]] && DB.pixSentMap[cartIds[i]].indexOf(templateId) !== -1) { results.push({ cartId: cartIds[i], ok: false, error: "Ja enviado" }); continue; }
+    var alreadySent = await wasPixSent(cartIds[i], templateId);
+    if (alreadySent) { results.push({ cartId: cartIds[i], ok: false, error: "Ja enviado" }); continue; }
     try {
-      var msgId = await sendWA(cart.phone, tpl.name, buildPixParams(tpl, cart), allTpls);
-      recordPix(cart, tpl, "sent", msgId);
+      var msgId = await sendWA(cart.phone, tpl.name, buildPixParams(tpl, cart), allTpls, getCartUrl(cart));
+      await recordPix(cart, tpl, "sent", msgId);
       results.push({ cartId: cartIds[i], ok: true, contact: cart.name });
-    } catch (e) { recordPix(cart, tpl, "failed", null); results.push({ cartId: cartIds[i], ok: false, error: e.message }); }
+    } catch (e) { await recordPix(cart, tpl, "failed", null); results.push({ cartId: cartIds[i], ok: false, error: e.message }); }
   }
   res.json({ ok: true, sent: results.filter(function(r) { return r.ok; }).length, failed: results.filter(function(r) { return !r.ok; }).length, results: results });
 });
 
-app.get("/api/pix/history", function(req, res) { res.json({ data: DB.pixHistory.slice(0, 50), total: DB.pixHistory.length }); });
+app.get("/api/pix/history", async function(req, res) {
+  try {
+    var r = await pool.query("SELECT * FROM pix_sent ORDER BY sent_at DESC LIMIT 50");
+    res.json({ data: r.rows, total: r.rowCount });
+  } catch (e) { res.json({ data: [], total: 0 }); }
+});
 
 app.get("/api/pix/stats", function(req, res) {
   res.json({
-    stats: DB.pixStats,
-    cronLog: DB.pixCronLog.slice(0, 10),
-    byTemplate: PIX_TEMPLATES.map(function(t) {
-      var items = DB.pixHistory.filter(function(e) { return e.templateId === t.id; });
-      return { display: t.display, total: items.length, sent: items.filter(function(e) { return e.status === "sent"; }).length, failed: items.filter(function(e) { return e.status === "failed"; }).length };
-    })
+    stats: pixStats,
+    cronLog: pixCronLog.slice(0, 10),
+    byTemplate: PIX_TEMPLATES.map(function(t) { return { display: t.display, total: 0, sent: 0, failed: 0 }; })
   });
 });
 
-// ===================== API ROUTES: REPURCHASE (new) =====================
+// ===================== API ROUTES: REPURCHASE =====================
 
 app.get("/api/recompra/orders", async function(req, res) {
   try {
     var allOrders = [];
-    var intervals = DB.recompraConfig.intervals;
+    var intervals = recompraConfig.intervals;
 
     for (var k = 0; k < intervals.length; k++) {
       var iv = intervals[k];
@@ -548,14 +808,14 @@ app.get("/api/recompra/orders", async function(req, res) {
         return s === "paid" || s === "invoiced" || s === "shipped" || s === "delivered" || s === "complete" || s === "completed" || s === "pago" || s === "enviado" || s === "entregue";
       });
 
-      paidOrders.forEach(function(o) {
+      for (var j = 0; j < paidOrders.length; j++) {
+        var o = paidOrders[j];
         o.intervalDays = iv.days;
         o.intervalTemplate = iv.templateId;
         o.intervalCoupon = iv.coupon;
-        var key = o.id + "-" + iv.days;
-        o.alreadySent = !!DB.recompraSentMap[key];
+        o.alreadySent = await wasRecompraSent(o.id, iv.days);
         allOrders.push(o);
-      });
+      }
     }
 
     res.json({ ok: true, count: allOrders.length, data: allOrders });
@@ -564,13 +824,13 @@ app.get("/api/recompra/orders", async function(req, res) {
 
 app.get("/api/recompra/templates", function(req, res) { res.json({ data: RECOMPRA_TEMPLATES }); });
 
-app.get("/api/recompra/config", function(req, res) { res.json({ data: DB.recompraConfig }); });
+app.get("/api/recompra/config", function(req, res) { res.json({ data: recompraConfig }); });
 
 app.post("/api/recompra/config", function(req, res) {
-  if (req.body.enabled !== undefined) DB.recompraConfig.enabled = !!req.body.enabled;
+  if (req.body.enabled !== undefined) recompraConfig.enabled = !!req.body.enabled;
   if (req.body.intervals && Array.isArray(req.body.intervals)) {
     req.body.intervals.forEach(function(iv) {
-      var existing = DB.recompraConfig.intervals.find(function(e) { return e.days === iv.days; });
+      var existing = recompraConfig.intervals.find(function(e) { return e.days === iv.days; });
       if (existing) {
         if (iv.enabled !== undefined) existing.enabled = !!iv.enabled;
         if (iv.coupon) existing.coupon = iv.coupon;
@@ -578,7 +838,7 @@ app.post("/api/recompra/config", function(req, res) {
       }
     });
   }
-  res.json({ ok: true, data: DB.recompraConfig });
+  res.json({ ok: true, data: recompraConfig });
 });
 
 app.post("/api/recompra/send", async function(req, res) {
@@ -588,7 +848,6 @@ app.post("/api/recompra/send", async function(req, res) {
   var tpl = allTpls.find(function(t) { return t.id === templateId; });
   if (!tpl) return res.status(400).json({ error: "Template nao encontrado" });
 
-  // Fetch orders to get phone numbers
   var results = [];
   try {
     var targetDate = new Date();
@@ -601,116 +860,83 @@ app.post("/api/recompra/send", async function(req, res) {
       var order = orders.find(function(o) { return o.id === orderIds[i]; });
       if (!order) { results.push({ orderId: orderIds[i], ok: false, error: "Nao encontrado" }); continue; }
       if (!order.phone) { results.push({ orderId: orderIds[i], ok: false, error: "Sem telefone" }); continue; }
-      var key = order.id + "-" + intervalDays;
-      if (DB.recompraSentMap[key]) { results.push({ orderId: orderIds[i], ok: false, error: "Ja enviado" }); continue; }
+      var alreadySent = await wasRecompraSent(order.id, intervalDays);
+      if (alreadySent) { results.push({ orderId: orderIds[i], ok: false, error: "Ja enviado" }); continue; }
       try {
         var msgId = await sendWA(order.phone, tpl.name, buildRecompraParams(tpl, order, coupon || CFG.coupon), allTpls);
-        recordRecompra(order, tpl, "sent", msgId, intervalDays);
+        await recordRecompra(order, tpl, "sent", msgId, intervalDays);
         results.push({ orderId: orderIds[i], ok: true, contact: order.name });
-      } catch (e) { recordRecompra(order, tpl, "failed", null, intervalDays); results.push({ orderId: orderIds[i], ok: false, error: e.message }); }
+      } catch (e) { await recordRecompra(order, tpl, "failed", null, intervalDays); results.push({ orderId: orderIds[i], ok: false, error: e.message }); }
     }
   } catch (e) { return res.status(500).json({ ok: false, error: e.message }); }
 
   res.json({ ok: true, sent: results.filter(function(r) { return r.ok; }).length, failed: results.filter(function(r) { return !r.ok; }).length, results: results });
 });
 
-app.get("/api/recompra/history", function(req, res) { res.json({ data: DB.recompraHistory.slice(0, 50), total: DB.recompraHistory.length }); });
+app.get("/api/recompra/history", async function(req, res) {
+  try {
+    var r = await pool.query("SELECT * FROM recompra_sent ORDER BY sent_at DESC LIMIT 50");
+    res.json({ data: r.rows, total: r.rowCount });
+  } catch (e) { res.json({ data: [], total: 0 }); }
+});
 
 app.get("/api/recompra/stats", function(req, res) {
   res.json({
-    stats: DB.recompraStats,
-    config: DB.recompraConfig,
-    cronLog: DB.recompraCronLog.slice(0, 10),
-    byTemplate: RECOMPRA_TEMPLATES.map(function(t) {
-      var items = DB.recompraHistory.filter(function(e) { return e.templateId === t.id; });
-      return { display: t.display, total: items.length, sent: items.filter(function(e) { return e.status === "sent"; }).length, failed: items.filter(function(e) { return e.status === "failed"; }).length };
-    })
+    stats: recompraStats,
+    config: recompraConfig,
+    cronLog: recompraCronLog.slice(0, 10),
+    byTemplate: RECOMPRA_TEMPLATES.map(function(t) { return { display: t.display, total: 0, sent: 0, failed: 0 }; })
   });
 });
 
-// ===================== CONVERSATION TRACKING =====================
-
-function getOrCreateConvo(phone, name) {
-  if (!DB.conversations[phone]) {
-    DB.conversations[phone] = {
-      phone: phone,
-      name: name || phone,
-      messages: [],
-      lastMessageAt: new Date().toISOString(),
-      unread: 0
-    };
-  }
-  if (name && name !== phone) DB.conversations[phone].name = name;
-  return DB.conversations[phone];
-}
-
-function addOutgoingMsg(phone, name, text, templateName, waMessageId) {
-  var convo = getOrCreateConvo(phone, name);
-  convo.messages.push({
-    id: waMessageId || ("out-" + Date.now()),
-    direction: "out",
-    text: text,
-    template: templateName || null,
-    timestamp: new Date().toISOString(),
-    status: "sent"
-  });
-  convo.lastMessageAt = new Date().toISOString();
-  if (convo.messages.length > 200) convo.messages = convo.messages.slice(-200);
-}
-
-function addIncomingMsg(phone, name, text, waMessageId, msgType) {
-  var convo = getOrCreateConvo(phone, name);
-  // Avoid duplicates
-  if (waMessageId && convo.messages.find(function(m) { return m.id === waMessageId; })) return;
-  convo.messages.push({
-    id: waMessageId || ("in-" + Date.now()),
-    direction: "in",
-    text: text,
-    type: msgType || "text",
-    timestamp: new Date().toISOString()
-  });
-  convo.lastMessageAt = new Date().toISOString();
-  convo.unread = (convo.unread || 0) + 1;
-  if (convo.messages.length > 200) convo.messages = convo.messages.slice(-200);
-  console.log("[INBOX] Nova mensagem de " + phone + ": " + text);
-}
-
-// ===================== WEBHOOKS (expanded for inbox) =====================
+// ===================== WEBHOOKS =====================
 
 app.get("/api/webhook", function(req, res) { if (req.query["hub.mode"] === "subscribe" && req.query["hub.verify_token"] === "ssj_verify_token") return res.send(req.query["hub.challenge"]); res.sendStatus(403); });
 
-app.post("/api/webhook", function(req, res) {
-  (req.body.entry || []).forEach(function(entry) {
-    (entry.changes || []).forEach(function(change) {
-      var value = change.value || {};
+app.post("/api/webhook", async function(req, res) {
+  for (var e = 0; e < (req.body.entry || []).length; e++) {
+    var entry = req.body.entry[e];
+    for (var c = 0; c < (entry.changes || []).length; c++) {
+      var value = entry.changes[c].value || {};
 
-      // Status updates (existing)
-      (value.statuses || []).forEach(function(st) {
-        var h = DB.history.find(function(e) { return e.waMessageId === st.id; });
-        if (!h) h = DB.pixHistory.find(function(e) { return e.waMessageId === st.id; });
-        if (!h) h = DB.recompraHistory.find(function(e) { return e.waMessageId === st.id; });
-        if (h) {
-          var order = ["pending","sent","delivered","read","failed"];
-          if (order.indexOf(st.status) > order.indexOf(h.status)) {
-            h.status = st.status;
-            if (st.status === "delivered") DB.stats.totalDelivered++;
-            if (st.status === "read") DB.stats.totalRead++;
-          }
+      // Status updates
+      for (var s = 0; s < (value.statuses || []).length; s++) {
+        var st = value.statuses[s];
+        try {
+          // Update in sent_messages
+          await pool.query(
+            "UPDATE sent_messages SET status=$1 WHERE wa_message_id=$2 AND status NOT IN ('read')",
+            [st.status, st.id]
+          );
+          // Update in pix_sent
+          await pool.query(
+            "UPDATE pix_sent SET status=$1 WHERE wa_message_id=$2 AND status NOT IN ('read')",
+            [st.status, st.id]
+          );
+          // Update in recompra_sent
+          await pool.query(
+            "UPDATE recompra_sent SET status=$1 WHERE wa_message_id=$2 AND status NOT IN ('read')",
+            [st.status, st.id]
+          );
+          // Update in messages
+          await pool.query(
+            "UPDATE messages SET status=$1 WHERE wa_message_id=$2",
+            [st.status, st.id]
+          );
+          if (st.status === "delivered") STATS.totalDelivered++;
+          if (st.status === "read") STATS.totalRead++;
+        } catch (err) {
+          console.error("[WEBHOOK] Erro ao atualizar status:", err.message);
         }
-        // Also update conversation message status
-        Object.values(DB.conversations).forEach(function(convo) {
-          var msg = convo.messages.find(function(m) { return m.id === st.id; });
-          if (msg) msg.status = st.status;
-        });
-      });
+      }
 
-      // Incoming messages (NEW)
-      (value.messages || []).forEach(function(msg) {
-        var from = msg.from; // phone number
+      // Incoming messages
+      for (var m = 0; m < (value.messages || []).length; m++) {
+        var msg = value.messages[m];
+        var from = msg.from;
         var contactName = from;
-        // Try to get name from contacts
         if (value.contacts && value.contacts.length > 0) {
-          var contact = value.contacts.find(function(c) { return c.wa_id === from; });
+          var contact = value.contacts.find(function(ct) { return ct.wa_id === from; });
           if (contact && contact.profile && contact.profile.name) {
             contactName = contact.profile.name;
           }
@@ -722,17 +948,17 @@ app.post("/api/webhook", function(req, res) {
         if (msg.type === "text" && msg.text) {
           text = msg.text.body || "";
         } else if (msg.type === "image") {
-          text = "📷 Imagem" + (msg.image && msg.image.caption ? ": " + msg.image.caption : "");
+          text = "Imagem" + (msg.image && msg.image.caption ? ": " + msg.image.caption : "");
         } else if (msg.type === "audio") {
-          text = "🎵 Audio";
+          text = "Audio";
         } else if (msg.type === "video") {
-          text = "🎥 Video";
+          text = "Video";
         } else if (msg.type === "document") {
-          text = "📄 Documento" + (msg.document && msg.document.filename ? ": " + msg.document.filename : "");
+          text = "Documento" + (msg.document && msg.document.filename ? ": " + msg.document.filename : "");
         } else if (msg.type === "sticker") {
-          text = "🏷️ Sticker";
+          text = "Sticker";
         } else if (msg.type === "location") {
-          text = "📍 Localizacao";
+          text = "Localizacao";
         } else if (msg.type === "button") {
           text = (msg.button && msg.button.text) || "Botao";
         } else if (msg.type === "interactive") {
@@ -741,44 +967,63 @@ app.post("/api/webhook", function(req, res) {
           text = "[" + msgType + "]";
         }
 
-        addIncomingMsg(from, contactName, text, msg.id, msgType);
-      });
-    });
-  });
+        await addIncomingMsg(from, contactName, text, msg.id, msgType);
+      }
+    }
+  }
   res.sendStatus(200);
 });
 
 // ===================== INBOX API ROUTES =====================
 
-app.get("/api/inbox/conversations", function(req, res) {
-  var convos = Object.values(DB.conversations)
-    .sort(function(a, b) { return new Date(b.lastMessageAt) - new Date(a.lastMessageAt); })
-    .slice(0, 100)
-    .map(function(c) {
-      var lastMsg = c.messages.length > 0 ? c.messages[c.messages.length - 1] : null;
-      return {
-        phone: c.phone,
-        name: c.name,
-        lastMessage: lastMsg ? lastMsg.text : "",
-        lastMessageAt: c.lastMessageAt,
-        lastDirection: lastMsg ? lastMsg.direction : null,
-        unread: c.unread || 0,
-        messageCount: c.messages.length
-      };
+app.get("/api/inbox/conversations", async function(req, res) {
+  try {
+    var r = await pool.query(`
+      SELECT c.phone, c.name, c.unread, c.last_message_at,
+        (SELECT text FROM messages WHERE phone=c.phone ORDER BY created_at DESC LIMIT 1) as last_message,
+        (SELECT direction FROM messages WHERE phone=c.phone ORDER BY created_at DESC LIMIT 1) as last_direction,
+        (SELECT COUNT(*) FROM messages WHERE phone=c.phone) as message_count
+      FROM conversations c
+      ORDER BY c.last_message_at DESC
+      LIMIT 100
+    `);
+    var totalUnread = r.rows.reduce(function(s, c) { return s + (c.unread || 0); }, 0);
+    res.json({
+      ok: true,
+      data: r.rows.map(function(c) {
+        return {
+          phone: c.phone, name: c.name, lastMessage: c.last_message || "",
+          lastMessageAt: c.last_message_at, lastDirection: c.last_direction,
+          unread: c.unread || 0, messageCount: parseInt(c.message_count) || 0
+        };
+      }),
+      totalUnread: totalUnread
     });
-  var totalUnread = convos.reduce(function(s, c) { return s + c.unread; }, 0);
-  res.json({ ok: true, data: convos, totalUnread: totalUnread });
+  } catch (e) { res.json({ ok: true, data: [], totalUnread: 0 }); }
 });
 
-app.get("/api/inbox/conversation/:phone", function(req, res) {
-  var convo = DB.conversations[req.params.phone];
-  if (!convo) return res.json({ ok: true, data: { phone: req.params.phone, name: req.params.phone, messages: [] } });
-  res.json({ ok: true, data: convo });
+app.get("/api/inbox/conversation/:phone", async function(req, res) {
+  try {
+    var convo = await pool.query("SELECT * FROM conversations WHERE phone=$1", [req.params.phone]);
+    var msgs = await pool.query("SELECT * FROM messages WHERE phone=$1 ORDER BY created_at ASC LIMIT 200", [req.params.phone]);
+    if (convo.rowCount === 0) {
+      return res.json({ ok: true, data: { phone: req.params.phone, name: req.params.phone, messages: [] } });
+    }
+    res.json({
+      ok: true,
+      data: {
+        phone: convo.rows[0].phone,
+        name: convo.rows[0].name,
+        messages: msgs.rows.map(function(m) {
+          return { id: m.wa_message_id || m.id, direction: m.direction, text: m.text, type: m.msg_type, template: m.template, status: m.status, timestamp: m.created_at };
+        })
+      }
+    });
+  } catch (e) { res.json({ ok: true, data: { phone: req.params.phone, name: req.params.phone, messages: [] } }); }
 });
 
-app.post("/api/inbox/read/:phone", function(req, res) {
-  var convo = DB.conversations[req.params.phone];
-  if (convo) convo.unread = 0;
+app.post("/api/inbox/read/:phone", async function(req, res) {
+  try { await pool.query("UPDATE conversations SET unread=0 WHERE phone=$1", [req.params.phone]); } catch (e) {}
   res.json({ ok: true });
 });
 
@@ -788,7 +1033,6 @@ app.post("/api/inbox/send", async function(req, res) {
   if (!phone || !text) return res.status(400).json({ ok: false, error: "phone e text obrigatorios" });
 
   try {
-    // Send as free-form text message (only works within 24h window)
     var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId + "/messages", {
       method: "POST",
       headers: { Authorization: "Bearer " + CFG.waToken, "Content-Type": "application/json" },
@@ -803,9 +1047,7 @@ app.post("/api/inbox/send", async function(req, res) {
     if (!r.ok) throw new Error((data.error && data.error.message) || "WA " + r.status);
     var msgId = (data.messages && data.messages[0] && data.messages[0].id) || null;
 
-    // Track in conversation
-    var convo = getOrCreateConvo(phone);
-    addOutgoingMsg(phone, convo.name, text, null, msgId);
+    await addOutgoingMsg(phone, null, text, null, msgId);
 
     res.json({ ok: true, messageId: msgId });
   } catch (e) {
@@ -813,10 +1055,14 @@ app.post("/api/inbox/send", async function(req, res) {
   }
 });
 
-app.get("/api/inbox/unread", function(req, res) {
-  var total = Object.values(DB.conversations).reduce(function(s, c) { return s + (c.unread || 0); }, 0);
-  res.json({ ok: true, unread: total });
+app.get("/api/inbox/unread", async function(req, res) {
+  try {
+    var r = await pool.query("SELECT COALESCE(SUM(unread), 0) as total FROM conversations");
+    res.json({ ok: true, unread: parseInt(r.rows[0].total) || 0 });
+  } catch (e) { res.json({ ok: true, unread: 0 }); }
 });
+
+// ===================== WA TEMPLATE MANAGEMENT =====================
 
 app.get("/api/wa-templates", async function(req, res) {
   try {
@@ -831,7 +1077,6 @@ app.get("/api/wa-templates", async function(req, res) {
 
 app.post("/api/wa-templates", async function(req, res) {
   try {
-    // Count variables in body text ({{1}}, {{2}}, {{3}}, etc)
     var bodyText = req.body.bodyText || "";
     var varMatches = bodyText.match(/\{\{(\d+)\}\}/g) || [];
     var varCount = 0;
@@ -840,7 +1085,6 @@ app.post("/api/wa-templates", async function(req, res) {
       if (num > varCount) varCount = num;
     });
 
-    // Build example values for each variable
     var exampleValues = [];
     for (var i = 1; i <= varCount; i++) {
       if (i === 1) exampleValues.push("Maria");
@@ -863,7 +1107,6 @@ app.post("/api/wa-templates", async function(req, res) {
     if (req.body.footerText) {
       body.components.push({ type: "FOOTER", text: req.body.footerText });
     }
-    // Add CTA button if provided
     if (req.body.buttonText && req.body.buttonUrl) {
       body.components.push({
         type: "BUTTONS",
@@ -894,31 +1137,22 @@ app.post("/api/wa-templates", async function(req, res) {
       throw new Error(errMsg);
     }
 
-    // Save timing metadata locally
     if (req.body.timing || req.body.tplType) {
-      DB.templateMeta[req.body.name] = {
+      templateMeta[req.body.name] = {
         timing: req.body.timing || "",
         tplType: req.body.tplType || "carrinho",
         createdAt: new Date().toISOString()
       };
     }
 
-    // If it's a cart template with timing, register it in the TEMPLATES array for the cron
     if (req.body.timing && (req.body.tplType === "carrinho" || !req.body.tplType)) {
       var timingStr = (req.body.timing || "").toLowerCase().trim();
       var hours = 0;
-      if (timingStr.indexOf("min") !== -1) {
-        hours = parseFloat(timingStr) / 60;
-      } else if (timingStr.indexOf("h") !== -1) {
-        hours = parseFloat(timingStr);
-      } else if (timingStr.indexOf("d") !== -1) {
-        hours = parseFloat(timingStr) * 24;
-      } else {
-        hours = parseFloat(timingStr) || 0;
-      }
+      if (timingStr.indexOf("min") !== -1) hours = parseFloat(timingStr) / 60;
+      else if (timingStr.indexOf("h") !== -1) hours = parseFloat(timingStr);
+      else if (timingStr.indexOf("d") !== -1) hours = parseFloat(timingStr) * 24;
+      else hours = parseFloat(timingStr) || 0;
       if (hours > 0) {
-        // Detect variables used in the body text
-        var bodyText = req.body.bodyText || "";
         var vars = [];
         if (bodyText.indexOf("{{1}}") !== -1) vars.push("primeiro_nome");
         if (bodyText.indexOf("{{2}}") !== -1) {
@@ -926,33 +1160,21 @@ app.post("/api/wa-templates", async function(req, res) {
           else vars.push("link_carrinho");
         }
         if (bodyText.indexOf("{{3}}") !== -1) vars.push("link_carrinho");
-        if (vars.length === 0) vars = ["primeiro_nome", "link_carrinho"];
+        if (vars.length === 0) vars = ["primeiro_nome"];
 
-        // Find range: set minH slightly below hours, maxH slightly above
         var minH = Math.max(0, hours * 0.5);
         var maxH = hours * 1.5;
 
-        // Check if template already exists in TEMPLATES
         var existing = TEMPLATES.find(function(t) { return t.name === req.body.name; });
         if (existing) {
-          existing.minH = minH;
-          existing.maxH = maxH;
-          existing.timing = req.body.timing;
-          existing.vars = vars;
+          existing.minH = minH; existing.maxH = maxH; existing.timing = req.body.timing; existing.vars = vars;
         } else {
           TEMPLATES.push({
-            id: req.body.name,
-            name: req.body.name,
-            display: req.body.name.replace(/_/g, " "),
-            timing: req.body.timing,
-            minH: minH,
-            maxH: maxH,
-            lang: "pt_BR",
-            vars: vars,
-            preview: req.body.bodyText,
-            custom: true
+            id: req.body.name, name: req.body.name, display: req.body.name.replace(/_/g, " "),
+            timing: req.body.timing, minH: minH, maxH: maxH, lang: "pt_BR", vars: vars,
+            hasButton: !!(req.body.buttonText && req.body.buttonUrl),
+            preview: req.body.bodyText, custom: true
           });
-          // Sort templates by minH
           TEMPLATES.sort(function(a, b) { return a.minH - b.minH; });
         }
         console.log("[TEMPLATE] Registrado '" + req.body.name + "' com timing " + req.body.timing + " (" + hours + "h), range " + minH + "-" + maxH + "h");
@@ -964,7 +1186,7 @@ app.post("/api/wa-templates", async function(req, res) {
 });
 
 app.get("/api/template-meta", function(req, res) {
-  res.json({ ok: true, data: DB.templateMeta });
+  res.json({ ok: true, data: templateMeta });
 });
 
 app.delete("/api/wa-templates/:name", async function(req, res) {
@@ -978,7 +1200,18 @@ app.delete("/api/wa-templates/:name", async function(req, res) {
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-app.listen(CFG.port, function() { console.log("SSJ Recovery rodando na porta " + CFG.port); });
+// ===================== START SERVER =====================
+
+async function startServer() {
+  await initDB();
+  app.listen(CFG.port, function() { console.log("SSJ Recovery rodando na porta " + CFG.port); });
+}
+
+startServer().catch(function(e) {
+  console.error("[STARTUP] Erro fatal:", e.message);
+  // Start anyway without DB if needed
+  app.listen(CFG.port, function() { console.log("SSJ Recovery rodando na porta " + CFG.port + " (sem PostgreSQL)"); });
+});
 
 // Prevent crashes from unhandled errors
 process.on("uncaughtException", function(err) { console.error("[CRASH-PREVENTED] uncaughtException:", err.message); });
