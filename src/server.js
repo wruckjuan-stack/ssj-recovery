@@ -444,13 +444,14 @@ function buildRecompraParams(tpl, order, couponCode) {
 
 async function record(cart, tpl, status, msgId, auto) {
   try {
+    // SEMPRE salvar no banco — inclusive falhas — pra não reenviar
+    await pool.query(
+      `INSERT INTO sent_messages (cart_id, template_id, phone, contact_name, cart_value, wa_message_id, status, automated, msg_type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'carrinho')
+       ON CONFLICT (cart_id, template_id) DO UPDATE SET status=$7, wa_message_id=COALESCE($6, sent_messages.wa_message_id)`,
+      [String(cart.id), tpl.id, cart.phone, cart.name, cart.totalRaw || 0, msgId, status, !!auto]
+    );
     if (status !== "failed") {
-      await pool.query(
-        `INSERT INTO sent_messages (cart_id, template_id, phone, contact_name, cart_value, wa_message_id, status, automated, msg_type)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'carrinho')
-         ON CONFLICT (cart_id, template_id) DO UPDATE SET status=$7, wa_message_id=$6`,
-        [String(cart.id), tpl.id, cart.phone, cart.name, cart.totalRaw || 0, msgId, status, !!auto]
-      );
       STATS.totalSent++; STATS.totalCartValue += cart.totalRaw || 0;
       if (cart.phone) await addOutgoingMsg(cart.phone, cart.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
     } else {
@@ -463,13 +464,13 @@ async function record(cart, tpl, status, msgId, auto) {
 
 async function recordPix(cart, tpl, status, msgId) {
   try {
+    await pool.query(
+      `INSERT INTO pix_sent (cart_id, template_id, phone, contact_name, cart_value, wa_message_id, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (cart_id, template_id) DO UPDATE SET status=$7, wa_message_id=COALESCE($6, pix_sent.wa_message_id)`,
+      [String(cart.id), tpl.id, cart.phone, cart.name, cart.total, msgId, status]
+    );
     if (status !== "failed") {
-      await pool.query(
-        `INSERT INTO pix_sent (cart_id, template_id, phone, contact_name, cart_value, wa_message_id, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         ON CONFLICT (cart_id, template_id) DO UPDATE SET status=$7, wa_message_id=$6`,
-        [String(cart.id), tpl.id, cart.phone, cart.name, cart.total, msgId, status]
-      );
       pixStats.totalSent++;
       if (cart.phone) await addOutgoingMsg(cart.phone, cart.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
     } else {
@@ -482,13 +483,13 @@ async function recordPix(cart, tpl, status, msgId) {
 
 async function recordRecompra(order, tpl, status, msgId, intervalDays) {
   try {
+    await pool.query(
+      `INSERT INTO recompra_sent (order_id, interval_days, template_id, phone, contact_name, order_value, wa_message_id, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (order_id, interval_days) DO UPDATE SET status=$8, wa_message_id=COALESCE($7, recompra_sent.wa_message_id)`,
+      [String(order.id), intervalDays, tpl.id, order.phone, order.name, order.total, msgId, status]
+    );
     if (status !== "failed") {
-      await pool.query(
-        `INSERT INTO recompra_sent (order_id, interval_days, template_id, phone, contact_name, order_value, wa_message_id, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-         ON CONFLICT (order_id, interval_days) DO UPDATE SET status=$8, wa_message_id=$7`,
-        [String(order.id), intervalDays, tpl.id, order.phone, order.name, order.total, msgId, status]
-      );
       recompraStats.totalSent++;
       if (order.phone) await addOutgoingMsg(order.phone, order.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
     } else {
