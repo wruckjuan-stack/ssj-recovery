@@ -576,6 +576,11 @@ cron.schedule("*/10 * * * *", async function() {
       // Verifica no PostgreSQL se já foi enviado
       var alreadySent = await wasSent(cart.id, tpl.id);
       if (alreadySent) { skipped++; continue; }
+      // Intervalo mínimo de 2h entre templates do mesmo carrinho (evita envio em sequência rápida)
+      try {
+        var recentCheck = await pool.query("SELECT sent_at FROM sent_messages WHERE cart_id=$1 AND status != 'failed' ORDER BY sent_at DESC LIMIT 1", [String(cart.id)]);
+        if (recentCheck.rowCount > 0 && (Date.now() - new Date(recentCheck.rows[0].sent_at).getTime()) < 7200000) { skipped++; continue; }
+      } catch (e) {}
       try {
         var msgId = await sendWA(cart.phone, tpl.name, buildParams(tpl, cart), null, getCartUrl(cart));
         await record(cart, tpl, "sent", msgId, true);
