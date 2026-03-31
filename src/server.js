@@ -34,6 +34,9 @@ const pool = new Pool({
   ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes("railway")
     ? { rejectUnauthorized: false }
     : false,
+  max: 3,              // máximo 3 conexões (economiza RAM no trial)
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 });
 
 async function initDB() {
@@ -119,6 +122,42 @@ async function initDB() {
 }
 
 // ===================== DB HELPERS =====================
+
+// Batch: buscar todos os envios de uma vez (1 query em vez de 50)
+async function getAllSentMap() {
+  try {
+    var r = await pool.query("SELECT cart_id, template_id FROM sent_messages");
+    var map = {};
+    r.rows.forEach(function(row) {
+      if (!map[row.cart_id]) map[row.cart_id] = [];
+      map[row.cart_id].push(row.template_id);
+    });
+    return map;
+  } catch (e) { return {}; }
+}
+
+async function getAllPixSentMap() {
+  try {
+    var r = await pool.query("SELECT cart_id, template_id FROM pix_sent");
+    var map = {};
+    r.rows.forEach(function(row) {
+      if (!map[row.cart_id]) map[row.cart_id] = [];
+      map[row.cart_id].push(row.template_id);
+    });
+    return map;
+  } catch (e) { return {}; }
+}
+
+async function getAllRecompraSentMap() {
+  try {
+    var r = await pool.query("SELECT order_id, interval_days FROM recompra_sent");
+    var map = {};
+    r.rows.forEach(function(row) {
+      map[row.order_id + "-" + row.interval_days] = true;
+    });
+    return map;
+  } catch (e) { return {}; }
+}
 
 async function wasSent(cartId, templateId) {
   try {
@@ -228,6 +267,10 @@ function formatPhone(num, ddd) {
 
 async function fetchCarts() {
   var data = await yampiGet("/checkout/carts", { include: "customer,items", limit: "50", orderBy: "created_at", sortedBy: "desc" });
+
+  // Batch: buscar todos os envios de uma vez (1 query em vez de 50)
+  var sentMap = await getAllSentMap();
+
   var results = [];
   for (var i = 0; i < (data.data || []).length; i++) {
     var cart = data.data[i];
@@ -245,7 +288,6 @@ async function fetchCarts() {
       if (typeof rawTxStatus === "string") {
         lastTxStatus = rawTxStatus;
       } else if (typeof rawTxStatus === "object") {
-        // Yampi retorna objeto: pode ter .alias, .name, .data.alias, etc
         lastTxStatus = rawTxStatus.alias || rawTxStatus.name || rawTxStatus.status ||
           (rawTxStatus.data && (rawTxStatus.data.alias || rawTxStatus.data.name)) || null;
       }
@@ -255,9 +297,6 @@ async function fetchCarts() {
       console.log("[DEBUG-CART] Primeiro carrinho raw status:", JSON.stringify(rawTxStatus));
       console.log("[DEBUG-CART] Primeiro carrinho simUrl:", cart.simulate_url || cart.unauth_simulate_url || "VAZIO");
     }
-
-    // Buscar templates já enviados do PostgreSQL
-    var alreadySent = await getSentTemplates(cart.id);
 
     results.push({
       id: cart.id, name: cust.name || cust.first_name || "Cliente",
@@ -269,7 +308,7 @@ async function fetchCarts() {
       simUrl: cart.simulate_url || cart.unauth_simulate_url || "",
       hoursAgo: hoursAgo, createdAt: created,
       recommended: rec ? rec.id : TEMPLATES[3].id,
-      alreadySent: alreadySent,
+      alreadySent: sentMap[String(cart.id)] || [],
       lastTxStatus: lastTxStatus
     });
   }
