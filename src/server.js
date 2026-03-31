@@ -46,7 +46,9 @@ const DB = {
       { days: 60, enabled: true, templateId: "recompra_60dias", coupon: CFG.coupon60 || "VOLTESSJ15" },
       { days: 90, enabled: true, templateId: "recompra_90dias", coupon: CFG.coupon90 || "VOLTESSJ20" },
     ]
-  }
+  },
+  // Inbox / Conversations
+  conversations: {},  // keyed by phone number: { phone, name, messages[], lastMessageAt, unread }
 };
 
 // ===================== TEMPLATES =====================
@@ -201,6 +203,10 @@ function record(cart, tpl, status, msgId, auto) {
   if (!DB.sentMap[cart.id]) DB.sentMap[cart.id] = [];
   if (DB.sentMap[cart.id].indexOf(tpl.id) === -1) DB.sentMap[cart.id].push(tpl.id);
   if (status !== "failed") { DB.stats.totalSent++; DB.stats.totalCartValue += cart.totalRaw || 0; } else { DB.stats.totalFailed++; }
+  // Track in conversations
+  if (status !== "failed" && cart.phone) {
+    addOutgoingMsg(cart.phone, cart.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
+  }
   return entry;
 }
 
@@ -211,6 +217,9 @@ function recordPix(cart, tpl, status, msgId) {
   if (!DB.pixSentMap[cart.id]) DB.pixSentMap[cart.id] = [];
   if (DB.pixSentMap[cart.id].indexOf(tpl.id) === -1) DB.pixSentMap[cart.id].push(tpl.id);
   if (status !== "failed") DB.pixStats.totalSent++; else DB.pixStats.totalFailed++;
+  if (status !== "failed" && cart.phone) {
+    addOutgoingMsg(cart.phone, cart.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
+  }
   return entry;
 }
 
@@ -221,6 +230,9 @@ function recordRecompra(order, tpl, status, msgId, intervalDays) {
   var key = order.id + "-" + intervalDays;
   if (!DB.recompraSentMap[key]) DB.recompraSentMap[key] = true;
   if (status !== "failed") DB.recompraStats.totalSent++; else DB.recompraStats.totalFailed++;
+  if (status !== "failed" && order.phone) {
+    addOutgoingMsg(order.phone, order.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
+  }
   return entry;
 }
 
@@ -574,17 +586,194 @@ app.get("/api/recompra/stats", function(req, res) {
   });
 });
 
-// ===================== WEBHOOKS & WA TEMPLATES (existing) =====================
+// ===================== CONVERSATION TRACKING =====================
+
+function getOrCreateConvo(phone, name) {
+  if (!DB.conversations[phone]) {
+    DB.conversations[phone] = {
+      phone: phone,
+      name: name || phone,
+      messages: [],
+      lastMessageAt: new Date().toISOString(),
+      unread: 0
+    };
+  }
+  if (name && name !== phone) DB.conversations[phone].name = name;
+  return DB.conversations[phone];
+}
+
+function addOutgoingMsg(phone, name, text, templateName, waMessageId) {
+  var convo = getOrCreateConvo(phone, name);
+  convo.messages.push({
+    id: waMessageId || ("out-" + Date.now()),
+    direction: "out",
+    text: text,
+    template: templateName || null,
+    timestamp: new Date().toISOString(),
+    status: "sent"
+  });
+  convo.lastMessageAt = new Date().toISOString();
+  if (convo.messages.length > 200) convo.messages = convo.messages.slice(-200);
+}
+
+function addIncomingMsg(phone, name, text, waMessageId, msgType) {
+  var convo = getOrCreateConvo(phone, name);
+  // Avoid duplicates
+  if (waMessageId && convo.messages.find(function(m) { return m.id === waMessageId; })) return;
+  convo.messages.push({
+    id: waMessageId || ("in-" + Date.now()),
+    direction: "in",
+    text: text,
+    type: msgType || "text",
+    timestamp: new Date().toISOString()
+  });
+  convo.lastMessageAt = new Date().toISOString();
+  convo.unread = (convo.unread || 0) + 1;
+  if (convo.messages.length > 200) convo.messages = convo.messages.slice(-200);
+  console.log("[INBOX] Nova mensagem de " + phone + ": " + text);
+}
+
+// ===================== WEBHOOKS (expanded for inbox) =====================
 
 app.get("/api/webhook", function(req, res) { if (req.query["hub.mode"] === "subscribe" && req.query["hub.verify_token"] === "ssj_verify_token") return res.send(req.query["hub.challenge"]); res.sendStatus(403); });
+
 app.post("/api/webhook", function(req, res) {
-  (req.body.entry || []).forEach(function(entry) { (entry.changes || []).forEach(function(change) { ((change.value && change.value.statuses) || []).forEach(function(st) {
-    var h = DB.history.find(function(e) { return e.waMessageId === st.id; });
-    if (!h) h = DB.pixHistory.find(function(e) { return e.waMessageId === st.id; });
-    if (!h) h = DB.recompraHistory.find(function(e) { return e.waMessageId === st.id; });
-    if (h) { var order = ["pending","sent","delivered","read","failed"]; if (order.indexOf(st.status) > order.indexOf(h.status)) { h.status = st.status; if (st.status === "delivered") DB.stats.totalDelivered++; if (st.status === "read") DB.stats.totalRead++; } }
-  }); }); });
+  (req.body.entry || []).forEach(function(entry) {
+    (entry.changes || []).forEach(function(change) {
+      var value = change.value || {};
+
+      // Status updates (existing)
+      (value.statuses || []).forEach(function(st) {
+        var h = DB.history.find(function(e) { return e.waMessageId === st.id; });
+        if (!h) h = DB.pixHistory.find(function(e) { return e.waMessageId === st.id; });
+        if (!h) h = DB.recompraHistory.find(function(e) { return e.waMessageId === st.id; });
+        if (h) {
+          var order = ["pending","sent","delivered","read","failed"];
+          if (order.indexOf(st.status) > order.indexOf(h.status)) {
+            h.status = st.status;
+            if (st.status === "delivered") DB.stats.totalDelivered++;
+            if (st.status === "read") DB.stats.totalRead++;
+          }
+        }
+        // Also update conversation message status
+        Object.values(DB.conversations).forEach(function(convo) {
+          var msg = convo.messages.find(function(m) { return m.id === st.id; });
+          if (msg) msg.status = st.status;
+        });
+      });
+
+      // Incoming messages (NEW)
+      (value.messages || []).forEach(function(msg) {
+        var from = msg.from; // phone number
+        var contactName = from;
+        // Try to get name from contacts
+        if (value.contacts && value.contacts.length > 0) {
+          var contact = value.contacts.find(function(c) { return c.wa_id === from; });
+          if (contact && contact.profile && contact.profile.name) {
+            contactName = contact.profile.name;
+          }
+        }
+
+        var text = "";
+        var msgType = msg.type || "text";
+
+        if (msg.type === "text" && msg.text) {
+          text = msg.text.body || "";
+        } else if (msg.type === "image") {
+          text = "📷 Imagem" + (msg.image && msg.image.caption ? ": " + msg.image.caption : "");
+        } else if (msg.type === "audio") {
+          text = "🎵 Audio";
+        } else if (msg.type === "video") {
+          text = "🎥 Video";
+        } else if (msg.type === "document") {
+          text = "📄 Documento" + (msg.document && msg.document.filename ? ": " + msg.document.filename : "");
+        } else if (msg.type === "sticker") {
+          text = "🏷️ Sticker";
+        } else if (msg.type === "location") {
+          text = "📍 Localizacao";
+        } else if (msg.type === "button") {
+          text = (msg.button && msg.button.text) || "Botao";
+        } else if (msg.type === "interactive") {
+          text = (msg.interactive && msg.interactive.button_reply && msg.interactive.button_reply.title) || "Resposta interativa";
+        } else {
+          text = "[" + msgType + "]";
+        }
+
+        addIncomingMsg(from, contactName, text, msg.id, msgType);
+      });
+    });
+  });
   res.sendStatus(200);
+});
+
+// ===================== INBOX API ROUTES =====================
+
+app.get("/api/inbox/conversations", function(req, res) {
+  var convos = Object.values(DB.conversations)
+    .sort(function(a, b) { return new Date(b.lastMessageAt) - new Date(a.lastMessageAt); })
+    .slice(0, 100)
+    .map(function(c) {
+      var lastMsg = c.messages.length > 0 ? c.messages[c.messages.length - 1] : null;
+      return {
+        phone: c.phone,
+        name: c.name,
+        lastMessage: lastMsg ? lastMsg.text : "",
+        lastMessageAt: c.lastMessageAt,
+        lastDirection: lastMsg ? lastMsg.direction : null,
+        unread: c.unread || 0,
+        messageCount: c.messages.length
+      };
+    });
+  var totalUnread = convos.reduce(function(s, c) { return s + c.unread; }, 0);
+  res.json({ ok: true, data: convos, totalUnread: totalUnread });
+});
+
+app.get("/api/inbox/conversation/:phone", function(req, res) {
+  var convo = DB.conversations[req.params.phone];
+  if (!convo) return res.json({ ok: true, data: { phone: req.params.phone, name: req.params.phone, messages: [] } });
+  res.json({ ok: true, data: convo });
+});
+
+app.post("/api/inbox/read/:phone", function(req, res) {
+  var convo = DB.conversations[req.params.phone];
+  if (convo) convo.unread = 0;
+  res.json({ ok: true });
+});
+
+app.post("/api/inbox/send", async function(req, res) {
+  var phone = req.body.phone;
+  var text = req.body.text;
+  if (!phone || !text) return res.status(400).json({ ok: false, error: "phone e text obrigatorios" });
+
+  try {
+    // Send as free-form text message (only works within 24h window)
+    var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId + "/messages", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + CFG.waToken, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: phone,
+        type: "text",
+        text: { body: text }
+      })
+    });
+    var data = await r.json();
+    if (!r.ok) throw new Error((data.error && data.error.message) || "WA " + r.status);
+    var msgId = (data.messages && data.messages[0] && data.messages[0].id) || null;
+
+    // Track in conversation
+    var convo = getOrCreateConvo(phone);
+    addOutgoingMsg(phone, convo.name, text, null, msgId);
+
+    res.json({ ok: true, messageId: msgId });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+app.get("/api/inbox/unread", function(req, res) {
+  var total = Object.values(DB.conversations).reduce(function(s, c) { return s + (c.unread || 0); }, 0);
+  res.json({ ok: true, unread: total });
 });
 
 app.get("/api/wa-templates", async function(req, res) {
