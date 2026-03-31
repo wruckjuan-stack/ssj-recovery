@@ -193,7 +193,19 @@ function buildParams(tpl, cart) {
 }
 
 function getCartUrl(cart) {
-  return cart.simUrl || "";
+  var url = cart.simUrl || "";
+  // Extract path after domain for button URL parameter
+  // The button base URL is https://seguro.ssjmodafitness.com.br/{{1}}
+  // So we need to send only the part after the domain
+  var domain = "https://seguro.ssjmodafitness.com.br/";
+  if (url.indexOf(domain) === 0) {
+    return url.substring(domain.length);
+  }
+  // Try other common patterns
+  var match = url.match(/ssjmodafitness\.com\.br\/(.*)/);
+  if (match) return match[1];
+  // Fallback: return full URL
+  return url;
 }
 
 function buildPixParams(tpl, cart) {
