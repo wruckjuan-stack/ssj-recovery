@@ -1201,18 +1201,34 @@ app.delete("/api/wa-templates/:name", async function(req, res) {
 });
 
 // ===================== START SERVER =====================
+// IMPORTANTE: escutar na porta PRIMEIRO pra healthcheck do Railway passar
+// Depois inicializar o banco em background
 
-async function startServer() {
-  await initDB();
-  app.listen(CFG.port, function() { console.log("SSJ Recovery rodando na porta " + CFG.port); });
-}
+var server = app.listen(CFG.port, function() {
+  console.log("SSJ Recovery rodando na porta " + CFG.port);
+});
 
-startServer().catch(function(e) {
-  console.error("[STARTUP] Erro fatal:", e.message);
-  // Start anyway without DB if needed
-  app.listen(CFG.port, function() { console.log("SSJ Recovery rodando na porta " + CFG.port + " (sem PostgreSQL)"); });
+// Inicializar PostgreSQL em background (não bloqueia o healthcheck)
+initDB().then(function() {
+  console.log("[STARTUP] Banco pronto, servidor operacional");
+}).catch(function(e) {
+  console.error("[STARTUP] Erro ao conectar PostgreSQL:", e.message);
+  console.error("[STARTUP] Servidor rodando sem persistencia!");
 });
 
 // Prevent crashes from unhandled errors
 process.on("uncaughtException", function(err) { console.error("[CRASH-PREVENTED] uncaughtException:", err.message); });
 process.on("unhandledRejection", function(err) { console.error("[CRASH-PREVENTED] unhandledRejection:", err && err.message ? err.message : err); });
+
+// Graceful shutdown
+process.on("SIGTERM", function() {
+  console.log("[SHUTDOWN] Recebeu SIGTERM, fechando...");
+  server.close(function() {
+    pool.end().then(function() {
+      console.log("[SHUTDOWN] Encerrado com sucesso");
+      process.exit(0);
+    });
+  });
+  // Force close after 5s
+  setTimeout(function() { process.exit(0); }, 5000);
+});
