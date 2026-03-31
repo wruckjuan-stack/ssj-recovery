@@ -829,7 +829,18 @@ app.post("/api/wa-templates", async function(req, res) {
       body: JSON.stringify(body)
     });
     var data = await r.json();
-    if (!r.ok) throw new Error((data.error && data.error.message) || "Erro " + r.status);
+    if (!r.ok) {
+      console.error("[TEMPLATE-ERRO] Status:", r.status);
+      console.error("[TEMPLATE-ERRO] Resposta Meta:", JSON.stringify(data, null, 2));
+      console.error("[TEMPLATE-ERRO] Body enviado:", JSON.stringify(body, null, 2));
+      var errMsg = "Erro " + r.status;
+      if (data.error) {
+        errMsg = data.error.message || errMsg;
+        if (data.error.error_user_title) errMsg = data.error.error_user_title + " — " + (data.error.error_user_msg || data.error.message);
+        if (data.error.error_data && data.error.error_data.details) errMsg += " | Detalhe: " + data.error.error_data.details;
+      }
+      throw new Error(errMsg);
+    }
 
     // Save timing metadata locally
     if (req.body.timing || req.body.tplType) {
