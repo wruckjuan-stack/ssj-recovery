@@ -25,6 +25,10 @@ const CFG = {
   coupon60: process.env.COUPON_60 || "VOLTESSJ15",
   coupon90: process.env.COUPON_90 || "VOLTESSJ20",
   port: process.env.PORT || 3001,
+  metaAdAccountId: process.env.META_AD_ACCOUNT_ID || "",
+  metaAdsToken: process.env.META_ADS_TOKEN || "",
+  anthropicKey: process.env.ANTHROPIC_API_KEY || "",
+  alertPhone: process.env.ALERT_PHONE || "",
 };
 
 // ===================== POSTGRESQL =====================
@@ -112,6 +116,17 @@ async function initDB() {
       CREATE INDEX IF NOT EXISTS idx_recompra_wa ON recompra_sent(wa_message_id);
       CREATE INDEX IF NOT EXISTS idx_messages_phone ON messages(phone);
       CREATE INDEX IF NOT EXISTS idx_messages_wa ON messages(wa_message_id);
+
+      CREATE TABLE IF NOT EXISTS ia_reports (
+        id SERIAL PRIMARY KEY,
+        report_date DATE NOT NULL,
+        campaigns_data JSONB,
+        report_text TEXT,
+        alerts_sent BOOLEAN DEFAULT false,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(report_date)
+      );
+      CREATE INDEX IF NOT EXISTS idx_ia_reports_date ON ia_reports(report_date);
     `);
     console.log("[DB] PostgreSQL inicializado com sucesso");
   } catch (e) {
@@ -1363,6 +1378,413 @@ app.delete("/api/wa-templates/:name", async function(req, res) {
     });
     var data = await r.json();
     res.json({ ok: data.success || false });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ===================== META ADS + IA =====================
+
+async function fetchMetaCampaigns() {
+  if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("META_AD_ACCOUNT_ID ou META_ADS_TOKEN nao configurado");
+  var fields = "campaign_name,campaign_id,impressions,clicks,spend,cpc,cpm,ctr,actions,action_values,reach,frequency";
+  var url = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&level=campaign&date_preset=last_7d&limit=50&access_token=" + CFG.metaAdsToken;
+  var r = await fetch(url);
+  var data = await r.json();
+  if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta Ads API erro " + r.status);
+  var campaigns = (data.data || []).map(function(c) {
+    var purchases = 0, purchaseValue = 0;
+    if (c.actions) {
+      c.actions.forEach(function(a) { if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchases += parseInt(a.value) || 0; });
+    }
+    if (c.action_values) {
+      c.action_values.forEach(function(a) { if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchaseValue += parseFloat(a.value) || 0; });
+    }
+    var spend = parseFloat(c.spend) || 0;
+    var roas = spend > 0 ? (purchaseValue / spend) : 0;
+    return {
+      id: c.campaign_id, name: c.campaign_name,
+      impressions: parseInt(c.impressions) || 0, clicks: parseInt(c.clicks) || 0,
+      reach: parseInt(c.reach) || 0, frequency: parseFloat(c.frequency) || 0,
+      spend: spend, cpc: parseFloat(c.cpc) || 0,
+      cpm: parseFloat(c.cpm) || 0, ctr: parseFloat(c.ctr) || 0,
+      purchases: purchases, purchaseValue: purchaseValue,
+      roas: Math.round(roas * 100) / 100,
+      cpa: purchases > 0 ? Math.round((spend / purchases) * 100) / 100 : 0
+    };
+  });
+  return campaigns;
+}
+
+async function fetchMetaCampaignsToday() {
+  if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("META_AD_ACCOUNT_ID ou META_ADS_TOKEN nao configurado");
+  var fields = "campaign_name,campaign_id,impressions,clicks,spend,cpc,cpm,ctr,actions,action_values";
+  var url = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&level=campaign&date_preset=today&limit=50&access_token=" + CFG.metaAdsToken;
+  var r = await fetch(url);
+  var data = await r.json();
+  if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta Ads API erro " + r.status);
+  return data.data || [];
+}
+
+async function generateIAReport(campaigns) {
+  if (!CFG.anthropicKey) throw new Error("ANTHROPIC_API_KEY nao configurado");
+  var totalSpend = 0, totalPurchaseValue = 0, totalPurchases = 0;
+  campaigns.forEach(function(c) { totalSpend += c.spend; totalPurchaseValue += c.purchaseValue; totalPurchases += c.purchases; });
+  var globalRoas = totalSpend > 0 ? (totalPurchaseValue / totalSpend) : 0;
+
+  var prompt = `Você é um analista de mídia paga especializado em e-commerce de moda fitness feminina 45+. A loja é SSJ Moda Fitness.
+
+Analise os dados das campanhas dos últimos 7 dias e gere um relatório prático e direto.
+
+DADOS DAS CAMPANHAS:
+${JSON.stringify(campaigns, null, 2)}
+
+RESUMO GERAL:
+- Gasto total: R$ ${totalSpend.toFixed(2)}
+- Receita total: R$ ${totalPurchaseValue.toFixed(2)}
+- ROAS geral: ${globalRoas.toFixed(2)}
+- Total de compras: ${totalPurchases}
+
+Gere o relatório no seguinte formato:
+
+## RESUMO EXECUTIVO
+(2-3 linhas do cenário geral)
+
+## CAMPANHAS PRA ESCALAR
+(Quais campanhas estão performando bem e podem receber mais orçamento. Explique por quê.)
+
+## CAMPANHAS PRA PAUSAR OU AJUSTAR
+(Quais campanhas estão com performance ruim. Explique o problema e sugira ação.)
+
+## ALERTAS IMPORTANTES
+(CPAs muito altos, frequência alta, CTR muito baixo, ou qualquer anomalia)
+
+## AÇÕES RECOMENDADAS PARA HOJE
+(Lista de 3-5 ações práticas e específicas)
+
+Seja direto, prático e use números. Fale como um gestor de tráfego experiente.`;
+
+  var r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": CFG.anthropicKey,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2000,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  var data = await r.json();
+  if (!r.ok) throw new Error((data.error && data.error.message) || "Anthropic API erro " + r.status);
+  var text = "";
+  if (data.content) {
+    data.content.forEach(function(block) { if (block.type === "text") text += block.text; });
+  }
+  return text;
+}
+
+async function sendAlertWA(text) {
+  if (!CFG.alertPhone || !CFG.waToken) return;
+  try {
+    await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId + "/messages", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + CFG.waToken, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp", to: CFG.alertPhone,
+        type: "text", text: { body: text }
+      })
+    });
+    console.log("[ALERT-WA] Alerta enviado para " + CFG.alertPhone);
+  } catch (e) {
+    console.error("[ALERT-WA] Erro ao enviar alerta:", e.message);
+  }
+}
+
+// CRON: Relatório IA diário às 8h
+cron.schedule("0 8 * * *", async function() {
+  console.log("[AUTO-IA] " + new Date().toISOString() + " Gerando relatório IA...");
+  if (!CFG.metaAdAccountId || !CFG.anthropicKey) {
+    console.log("[AUTO-IA] Variáveis não configuradas, pulando.");
+    return;
+  }
+  try {
+    var campaigns = await fetchMetaCampaigns();
+    if (campaigns.length === 0) {
+      console.log("[AUTO-IA] Nenhuma campanha encontrada.");
+      return;
+    }
+    var report = await generateIAReport(campaigns);
+    var today = new Date().toISOString().slice(0, 10);
+
+    // Salvar no banco
+    await pool.query(
+      `INSERT INTO ia_reports (report_date, campaigns_data, report_text, alerts_sent)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (report_date) DO UPDATE SET campaigns_data=$2, report_text=$3, alerts_sent=$4`,
+      [today, JSON.stringify(campaigns), report, false]
+    );
+
+    // Extrair alertas e enviar WhatsApp
+    var alertSection = report.match(/## ALERTAS IMPORTANTES[\s\S]*?(?=##|$)/);
+    var acoes = report.match(/## AÇÕES RECOMENDADAS[\s\S]*?(?=##|$)/);
+    var alertText = "📊 *SSJ CRM — Relatório IA Diário*\n\n";
+    var totalSpend = 0, totalRoas = 0;
+    campaigns.forEach(function(c) { totalSpend += c.spend; totalRoas += c.purchaseValue; });
+    var gRoas = totalSpend > 0 ? (totalRoas / totalSpend) : 0;
+    alertText += "💰 Gasto 7d: R$ " + totalSpend.toFixed(2) + "\n";
+    alertText += "📈 ROAS geral: " + gRoas.toFixed(2) + "\n\n";
+    if (alertSection) alertText += alertSection[0].trim().substring(0, 500) + "\n\n";
+    if (acoes) alertText += acoes[0].trim().substring(0, 500);
+    if (alertText.length > 1500) alertText = alertText.substring(0, 1500) + "...";
+
+    await sendAlertWA(alertText);
+    await pool.query("UPDATE ia_reports SET alerts_sent=true WHERE report_date=$1", [today]);
+
+    console.log("[AUTO-IA] Relatório gerado e alerta enviado com sucesso.");
+  } catch (e) {
+    console.error("[AUTO-IA] Erro:", e.message);
+  }
+});
+
+// API: Meta Ads campaigns
+app.get("/api/meta/campaigns", async function(req, res) {
+  try {
+    var campaigns = await fetchMetaCampaigns();
+    var totalSpend = 0, totalRevenue = 0, totalPurchases = 0, totalImpressions = 0, totalClicks = 0;
+    campaigns.forEach(function(c) {
+      totalSpend += c.spend; totalRevenue += c.purchaseValue;
+      totalPurchases += c.purchases; totalImpressions += c.impressions; totalClicks += c.clicks;
+    });
+    res.json({
+      ok: true,
+      data: campaigns,
+      summary: {
+        totalSpend: Math.round(totalSpend * 100) / 100,
+        totalRevenue: Math.round(totalRevenue * 100) / 100,
+        totalPurchases: totalPurchases,
+        totalImpressions: totalImpressions,
+        totalClicks: totalClicks,
+        roas: totalSpend > 0 ? Math.round((totalRevenue / totalSpend) * 100) / 100 : 0,
+        cpa: totalPurchases > 0 ? Math.round((totalSpend / totalPurchases) * 100) / 100 : 0,
+        ctr: totalImpressions > 0 ? Math.round((totalClicks / totalImpressions) * 10000) / 100 : 0
+      }
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// API: Generate IA report manually
+app.post("/api/meta/report", async function(req, res) {
+  try {
+    var campaigns = await fetchMetaCampaigns();
+    if (campaigns.length === 0) return res.json({ ok: false, error: "Nenhuma campanha encontrada" });
+    var report = await generateIAReport(campaigns);
+    var today = new Date().toISOString().slice(0, 10);
+    await pool.query(
+      `INSERT INTO ia_reports (report_date, campaigns_data, report_text)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (report_date) DO UPDATE SET campaigns_data=$2, report_text=$3`,
+      [today, JSON.stringify(campaigns), report]
+    );
+    res.json({ ok: true, report: report, date: today, campaigns: campaigns.length });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// API: Get IA reports history
+app.get("/api/meta/reports", async function(req, res) {
+  try {
+    var r = await pool.query("SELECT id, report_date, report_text, alerts_sent, created_at FROM ia_reports ORDER BY report_date DESC LIMIT 30");
+    res.json({ ok: true, data: r.rows });
+  } catch (e) { res.json({ ok: true, data: [] }); }
+});
+
+// API: Get specific report
+app.get("/api/meta/report/:date", async function(req, res) {
+  try {
+    var r = await pool.query("SELECT * FROM ia_reports WHERE report_date=$1", [req.params.date]);
+    if (r.rowCount === 0) return res.json({ ok: false, error: "Relatório não encontrado" });
+    var row = r.rows[0];
+    res.json({ ok: true, data: { date: row.report_date, report: row.report_text, campaigns: row.campaigns_data, alertsSent: row.alerts_sent, createdAt: row.created_at } });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// API: Send alert manually
+app.post("/api/meta/alert", async function(req, res) {
+  try {
+    var text = req.body.text || "Teste de alerta SSJ CRM";
+    await sendAlertWA(text);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// ===================== META ADS: EXTENDED ENDPOINTS =====================
+
+// Campaigns by custom period
+app.get("/api/meta/campaigns-period", async function(req, res) {
+  try {
+    if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("META_AD_ACCOUNT_ID ou META_ADS_TOKEN nao configurado");
+    var preset = req.query.preset || "last_7d";
+    var validPresets = ["today", "yesterday", "last_3d", "last_7d", "last_14d", "last_28d", "last_30d", "this_month", "last_month"];
+    if (validPresets.indexOf(preset) === -1) preset = "last_7d";
+    var fields = "campaign_name,campaign_id,impressions,clicks,spend,cpc,cpm,ctr,actions,action_values,reach,frequency";
+    var url = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&level=campaign&date_preset=" + preset + "&limit=50&access_token=" + CFG.metaAdsToken;
+    var r = await fetch(url);
+    var data = await r.json();
+    if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta Ads API erro " + r.status);
+    var campaigns = (data.data || []).map(function(c) {
+      var purchases = 0, purchaseValue = 0, addToCart = 0, initiateCheckout = 0, viewContent = 0, leads = 0;
+      if (c.actions) {
+        c.actions.forEach(function(a) {
+          if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchases += parseInt(a.value) || 0;
+          if (a.action_type === "add_to_cart" || a.action_type === "offsite_conversion.fb_pixel_add_to_cart") addToCart += parseInt(a.value) || 0;
+          if (a.action_type === "initiate_checkout" || a.action_type === "offsite_conversion.fb_pixel_initiate_checkout") initiateCheckout += parseInt(a.value) || 0;
+          if (a.action_type === "view_content" || a.action_type === "offsite_conversion.fb_pixel_view_content") viewContent += parseInt(a.value) || 0;
+          if (a.action_type === "lead" || a.action_type === "offsite_conversion.fb_pixel_lead") leads += parseInt(a.value) || 0;
+        });
+      }
+      if (c.action_values) {
+        c.action_values.forEach(function(a) { if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchaseValue += parseFloat(a.value) || 0; });
+      }
+      var spend = parseFloat(c.spend) || 0;
+      var roas = spend > 0 ? (purchaseValue / spend) : 0;
+      return {
+        id: c.campaign_id, name: c.campaign_name,
+        impressions: parseInt(c.impressions) || 0, clicks: parseInt(c.clicks) || 0,
+        reach: parseInt(c.reach) || 0, frequency: parseFloat(c.frequency) || 0,
+        spend: spend, cpc: parseFloat(c.cpc) || 0,
+        cpm: parseFloat(c.cpm) || 0, ctr: parseFloat(c.ctr) || 0,
+        purchases: purchases, purchaseValue: purchaseValue,
+        roas: Math.round(roas * 100) / 100,
+        cpa: purchases > 0 ? Math.round((spend / purchases) * 100) / 100 : 0,
+        addToCart: addToCart, initiateCheckout: initiateCheckout,
+        viewContent: viewContent, leads: leads
+      };
+    });
+    var totalSpend = 0, totalRevenue = 0, totalPurchases = 0, totalImpressions = 0, totalClicks = 0;
+    var totalReach = 0, totalAddToCart = 0, totalInitiateCheckout = 0, totalViewContent = 0;
+    campaigns.forEach(function(c) {
+      totalSpend += c.spend; totalRevenue += c.purchaseValue;
+      totalPurchases += c.purchases; totalImpressions += c.impressions; totalClicks += c.clicks;
+      totalReach += c.reach; totalAddToCart += c.addToCart;
+      totalInitiateCheckout += c.initiateCheckout; totalViewContent += c.viewContent;
+    });
+    res.json({
+      ok: true, preset: preset,
+      data: campaigns,
+      summary: {
+        totalSpend: Math.round(totalSpend * 100) / 100,
+        totalRevenue: Math.round(totalRevenue * 100) / 100,
+        totalPurchases: totalPurchases,
+        totalImpressions: totalImpressions,
+        totalClicks: totalClicks,
+        totalReach: totalReach,
+        totalAddToCart: totalAddToCart,
+        totalInitiateCheckout: totalInitiateCheckout,
+        totalViewContent: totalViewContent,
+        roas: totalSpend > 0 ? Math.round((totalRevenue / totalSpend) * 100) / 100 : 0,
+        cpa: totalPurchases > 0 ? Math.round((totalSpend / totalPurchases) * 100) / 100 : 0,
+        ctr: totalImpressions > 0 ? Math.round((totalClicks / totalImpressions) * 10000) / 100 : 0,
+        cpc: totalClicks > 0 ? Math.round((totalSpend / totalClicks) * 100) / 100 : 0,
+        cpm: totalImpressions > 0 ? Math.round((totalSpend / totalImpressions * 1000) * 100) / 100 : 0
+      },
+      funnel: {
+        impressions: totalImpressions,
+        clicks: totalClicks,
+        viewContent: totalViewContent,
+        addToCart: totalAddToCart,
+        initiateCheckout: totalInitiateCheckout,
+        purchases: totalPurchases,
+        revenue: Math.round(totalRevenue * 100) / 100
+      }
+    });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Daily breakdown for charts (last 7 or 14 days)
+app.get("/api/meta/daily", async function(req, res) {
+  try {
+    if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("META_AD_ACCOUNT_ID ou META_ADS_TOKEN nao configurado");
+    var days = parseInt(req.query.days) || 7;
+    if (days > 30) days = 30;
+    var fields = "impressions,clicks,spend,actions,action_values";
+    var url = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&time_increment=1&date_preset=last_" + days + "d&limit=60&access_token=" + CFG.metaAdsToken;
+    var r = await fetch(url);
+    var data = await r.json();
+    if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta Ads API erro " + r.status);
+    var daily = (data.data || []).map(function(d) {
+      var purchases = 0, purchaseValue = 0, addToCart = 0;
+      if (d.actions) {
+        d.actions.forEach(function(a) {
+          if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchases += parseInt(a.value) || 0;
+          if (a.action_type === "add_to_cart" || a.action_type === "offsite_conversion.fb_pixel_add_to_cart") addToCart += parseInt(a.value) || 0;
+        });
+      }
+      if (d.action_values) {
+        d.action_values.forEach(function(a) { if (a.action_type === "purchase" || a.action_type === "offsite_conversion.fb_pixel_purchase") purchaseValue += parseFloat(a.value) || 0; });
+      }
+      var spend = parseFloat(d.spend) || 0;
+      return {
+        date: d.date_start,
+        spend: spend,
+        impressions: parseInt(d.impressions) || 0,
+        clicks: parseInt(d.clicks) || 0,
+        purchases: purchases,
+        revenue: Math.round(purchaseValue * 100) / 100,
+        roas: spend > 0 ? Math.round((purchaseValue / spend) * 100) / 100 : 0,
+        addToCart: addToCart
+      };
+    });
+    res.json({ ok: true, data: daily });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// IA Chat endpoint
+app.post("/api/meta/chat", async function(req, res) {
+  try {
+    if (!CFG.anthropicKey) throw new Error("ANTHROPIC_API_KEY nao configurado");
+    var userMessage = req.body.message || "";
+    var campaignsData = req.body.campaignsData || null;
+    var funnelData = req.body.funnelData || null;
+    var summaryData = req.body.summaryData || null;
+
+    if (!userMessage) return res.status(400).json({ ok: false, error: "Mensagem obrigatória" });
+
+    var systemPrompt = "Você é um analista de mídia paga especializado em e-commerce de moda fitness feminina 45+. A loja é SSJ Moda Fitness.\n\n";
+    systemPrompt += "Você tem acesso aos dados atuais das campanhas Meta Ads da loja. Responda de forma prática, direta e com números. Fale como um gestor de tráfego experiente.\n\n";
+    systemPrompt += "Quando sugerir criativos ou copies, lembre que o público é mulheres 45+ que buscam moda fitness confortável e estilosa.\n\n";
+    systemPrompt += "Use emojis com moderação. Seja conciso mas completo. Formate com markdown (## para títulos, **negrito** para ênfase, - para listas).\n\n";
+
+    if (summaryData) {
+      systemPrompt += "RESUMO GERAL DO PERÍODO:\n" + JSON.stringify(summaryData, null, 2) + "\n\n";
+    }
+    if (funnelData) {
+      systemPrompt += "DADOS DO FUNIL:\n" + JSON.stringify(funnelData, null, 2) + "\n\n";
+    }
+    if (campaignsData) {
+      systemPrompt += "DADOS DAS CAMPANHAS:\n" + JSON.stringify(campaignsData, null, 2) + "\n\n";
+    }
+
+    var r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": CFG.anthropicKey,
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 2000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMessage }]
+      })
+    });
+    var data = await r.json();
+    if (!r.ok) throw new Error((data.error && data.error.message) || "Anthropic API erro " + r.status);
+    var text = "";
+    if (data.content) {
+      data.content.forEach(function(block) { if (block.type === "text") text += block.text; });
+    }
+    res.json({ ok: true, response: text });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
