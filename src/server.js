@@ -643,7 +643,7 @@ cron.schedule("*/15 * * * *", async function() {
 
       // Escolher template PIX baseado na idade do pedido
       var pixTpl = PIX_TEMPLATES.find(function(t) { return order.hoursAgo >= t.minH && order.hoursAgo < t.maxH; });
-      if (!pixTpl) pixTpl = PIX_TEMPLATES[PIX_TEMPLATES.length - 1]; // fallback: ultimo
+      if (!pixTpl) { skipped++; continue; } // pedido fora do range de timing (>96h), pular
 
       // Verifica no PostgreSQL se já foi enviado (usando order.id como cart_id)
       var alreadySent = await wasPixSent(order.id, pixTpl.id);
@@ -838,20 +838,43 @@ app.get("/api/stats", async function(req, res) {
 
 app.get("/api/pix/carts", async function(req, res) {
   try {
-    var carts = await fetchCarts();
-    var pixCarts = [];
-    for (var i = 0; i < carts.length; i++) {
-      var c = carts[i];
-      var tx = String(c.lastTxStatus || "").toLowerCase();
-      if (tx.indexOf("expir") !== -1 || tx.indexOf("timeout") !== -1 || tx.indexOf("refused") !== -1 ||
-          tx === "waiting_payment" || tx === "awaiting_payment" || tx === "pending" || tx === "pendente" ||
-          tx === "cancelled" || tx === "canceled" || tx.indexOf("pix") !== -1 || tx.indexOf("boleto") !== -1) {
-        c.paymentType = tx.indexOf("pix") !== -1 ? "PIX" : tx.indexOf("boleto") !== -1 ? "Boleto" : "PIX/Boleto";
-        c.pixAlreadySent = await getPixSentTemplates(c.id);
-        pixCarts.push(c);
+    // Buscar PEDIDOS com status cancelado/recusado (não carrinhos)
+    var orders = await fetchOrders({ limit: "50" });
+    var pixStatuses = [
+      "cancelled", "canceled", "cancelado",
+      "refused", "recusado", "expired", "expirado",
+      "waiting_payment", "awaiting_payment",
+      "not_paid", "payment_error", "payment_failed",
+      "pending", "pendente"
+    ];
+    var pixOrders = [];
+    for (var i = 0; i < orders.length; i++) {
+      var o = orders[i];
+      var st = (o.status || "").toLowerCase();
+      var isPixBoleto = false;
+      for (var s = 0; s < pixStatuses.length; s++) {
+        if (st === pixStatuses[s]) { isPixBoleto = true; break; }
+      }
+      if (!isPixBoleto) {
+        if (st.indexOf("cancel") !== -1 || st.indexOf("recus") !== -1 ||
+            st.indexOf("expir") !== -1 || st.indexOf("pending") !== -1 ||
+            st.indexOf("waiting") !== -1) {
+          isPixBoleto = true;
+        }
+      }
+      if (isPixBoleto) {
+        o.paymentType = "PIX/Boleto";
+        o.pixAlreadySent = await getPixSentTemplates(o.id);
+        // Compatibilidade com o painel (espera campos de carrinho)
+        o.items = "Pedido #" + (o.number || o.id);
+        o.itemCount = 1;
+        o.totalRaw = o.totalRaw || 0;
+        o.recommended = null;
+        o.alreadySent = o.pixAlreadySent;
+        pixOrders.push(o);
       }
     }
-    res.json({ ok: true, count: pixCarts.length, data: pixCarts });
+    res.json({ ok: true, count: pixOrders.length, data: pixOrders });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
