@@ -1,1884 +1,1243 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const cron = require("node-cron");
-const { Pool } = require("pg");
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSJ Moda Fitness — CRM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.static(__dirname + "/public"));
+:root {
+  --bg: #F0F4F8;
+  --surface: #FFFFFF;
+  --surface-alt: #F7F9FC;
+  --surface-raised: #FFFFFF;
+  --border: #DAE3ED;
+  --border-light: #E8EEF4;
+  --text: #1B2A3D;
+  --text-secondary: #546A7F;
+  --text-muted: #8FA3B8;
+  --primary: #4A9FE5;
+  --primary-soft: #6BB3F0;
+  --primary-light: #E8F3FD;
+  --primary-lighter: #F2F8FE;
+  --primary-hover: #3589D0;
+  --primary-dark: #2A6DA8;
+  --accent: #E8B84B;
+  --accent-light: #FDF6E3;
+  --success: #3AAF76;
+  --success-light: #E4F6ED;
+  --warning: #E8A33D;
+  --warning-light: #FEF3E2;
+  --danger: #D85454;
+  --danger-light: #FDECEC;
+  --info: #5AAAE0;
+  --info-light: #EAF4FD;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+  --radius-lg: 18px;
+  --shadow-xs: 0 1px 2px rgba(27,42,61,0.04);
+  --shadow-sm: 0 1px 4px rgba(27,42,61,0.05), 0 1px 2px rgba(27,42,61,0.03);
+  --shadow: 0 4px 20px rgba(27,42,61,0.06), 0 1px 4px rgba(27,42,61,0.03);
+  --shadow-md: 0 8px 30px rgba(27,42,61,0.08), 0 2px 8px rgba(27,42,61,0.04);
+  --shadow-lg: 0 16px 50px rgba(27,42,61,0.1), 0 4px 12px rgba(27,42,61,0.04);
+  --sidebar-w: 252px;
+  --header-h: 58px;
+  --font: 'Outfit', -apple-system, sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
+  --transition: 0.18s ease;
+  --transition-slow: 0.3s ease;
+}
 
-// Health check for Railway
-app.get("/healthz", function(req, res) { res.send("ok"); });
+html { font-size: 14px; -webkit-font-smoothing: antialiased; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
 
-const CFG = {
-  yampiAlias: process.env.YAMPI_ALIAS || "",
-  yampiToken: process.env.YAMPI_TOKEN || "",
-  yampiSecret: process.env.YAMPI_SECRET || "",
-  waToken: process.env.WA_ACCESS_TOKEN || "",
-  waPhoneId: process.env.WA_PHONE_NUMBER_ID || "",
-  wabaId: process.env.WA_WABA_ID || "",
-  waVersion: process.env.WA_API_VERSION || "v22.0",
-  coupon: process.env.DEFAULT_COUPON || "VOLTECOMSSJ",
-  coupon30: process.env.COUPON_30 || "VOLTESSJ10",
-  coupon60: process.env.COUPON_60 || "VOLTESSJ15",
-  coupon90: process.env.COUPON_90 || "VOLTESSJ20",
-  port: process.env.PORT || 3001,
-  metaAdAccountId: process.env.META_AD_ACCOUNT_ID || "",
-  metaAdsToken: process.env.META_ADS_TOKEN || "",
-  anthropicKey: process.env.ANTHROPIC_API_KEY || "",
-  alertPhone: process.env.ALERT_PHONE || "",
-};
+/* ═══ SIDEBAR ═══ */
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: linear-gradient(180deg, #FAFCFE 0%, #F4F8FB 100%);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  z-index: 100; transition: transform var(--transition-slow);
+}
+.sidebar-brand { padding: 24px 22px 20px; border-bottom: 1px solid var(--border-light); position: relative; }
+.sidebar-brand::after {
+  content: ''; position: absolute; bottom: -1px; left: 22px; right: 22px; height: 1px;
+  background: linear-gradient(90deg, var(--primary-light), transparent);
+}
+.sidebar-brand h1 {
+  font-family: var(--font-display); font-size: 1.6rem; font-weight: 600;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  letter-spacing: -0.03em;
+}
+.sidebar-brand p { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.14em; margin-top: 4px; font-weight: 500; }
+.sidebar-nav { flex: 1; overflow-y: auto; padding: 16px 12px; }
+.sidebar-nav::-webkit-scrollbar { width: 3px; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+.nav-group { margin-bottom: 6px; }
+.nav-group-label { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.13em; color: var(--text-muted); padding: 14px 14px 7px; }
+.nav-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 9px 14px; border-radius: var(--radius-sm);
+  cursor: pointer; color: var(--text-secondary);
+  font-weight: 500; font-size: 0.88rem;
+  transition: all var(--transition); position: relative; margin-bottom: 2px;
+  border: 1px solid transparent;
+}
+.nav-item:hover { background: var(--surface); color: var(--text); border-color: var(--border-light); box-shadow: var(--shadow-xs); }
+.nav-item.active {
+  background: var(--primary-light); color: var(--primary-dark); font-weight: 600;
+  border-color: rgba(74,159,229,0.15); box-shadow: 0 1px 4px rgba(74,159,229,0.08);
+}
+.nav-item.active::before {
+  content: ''; position: absolute; left: 0; top: 8px; bottom: 8px;
+  width: 3px; border-radius: 0 3px 3px 0; background: var(--primary);
+}
+.nav-item .badge { margin-left: auto; background: var(--danger); color: white; font-size: 0.62rem; font-weight: 700; padding: 2px 7px; border-radius: 10px; min-width: 18px; text-align: center; line-height: 1.3; }
+.nav-item svg { width: 17px; height: 17px; flex-shrink: 0; opacity: 0.55; stroke-width: 1.8; }
+.nav-item:hover svg { opacity: 0.8; }
+.nav-item.active svg { opacity: 1; color: var(--primary); }
+.sidebar-footer { padding: 14px 22px; border-top: 1px solid var(--border-light); font-size: 0.7rem; color: var(--text-muted); font-weight: 500; letter-spacing: 0.02em; }
 
-// ===================== POSTGRESQL =====================
+/* ═══ MAIN ═══ */
+.main { margin-left: var(--sidebar-w); min-height: 100vh; }
+.topbar {
+  height: var(--header-h); background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-light);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; position: sticky; top: 0; z-index: 50;
+}
+.topbar-left { display: flex; align-items: center; gap: 14px; }
+.topbar-title { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.topbar-btn {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 7px 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); font-family: var(--font);
+  transition: all var(--transition); box-shadow: var(--shadow-xs);
+}
+.topbar-btn:hover { border-color: var(--primary-soft); color: var(--primary-dark); box-shadow: var(--shadow-sm); }
+.topbar-btn svg { width: 14px; height: 14px; }
+.mobile-toggle { display: none; background: none; border: none; cursor: pointer; color: var(--text); padding: 4px; }
+.content { padding: 24px 28px; max-width: 1440px; }
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes("railway")
-    ? { rejectUnauthorized: false }
-    : false,
-  max: 3,              // máximo 3 conexões (economiza RAM no trial)
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-});
+/* ═══ METRICS ═══ */
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.metric-card {
+  background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius);
+  padding: 20px 22px; transition: all var(--transition); position: relative; overflow: hidden;
+}
+.metric-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--primary-light), var(--primary-soft)); opacity: 0; transition: opacity var(--transition);
+}
+.metric-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.metric-card:hover::before { opacity: 1; }
+.metric-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
+}
+.metric-icon svg { width: 18px; height: 18px; }
+.metric-icon.blue { background: var(--primary-light); color: var(--primary); }
+.metric-icon.green { background: var(--success-light); color: var(--success); }
+.metric-icon.purple { background: #EDE6F8; color: #7C5CBF; }
+.metric-icon.red { background: var(--danger-light); color: var(--danger); }
+.metric-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; font-weight: 600; }
+.metric-value { font-family: var(--font-display); font-size: 2rem; font-weight: 600; color: var(--text); line-height: 1.1; letter-spacing: -0.02em; }
 
-async function initDB() {
-  const client = await pool.connect();
+/* ═══ CARDS ═══ */
+.card { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius); margin-bottom: 20px; box-shadow: var(--shadow-xs); }
+.card-header { padding: 16px 22px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.card-title { font-size: 0.92rem; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+.card-body { padding: 20px 22px; }
+.card-body.no-pad { padding: 0; }
+
+/* ═══ TABLE ═══ */
+.tbl-wrap { overflow-x: auto; }
+.tbl-wrap::-webkit-scrollbar { height: 4px; }
+.tbl-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); padding: 11px 18px; border-bottom: 1px solid var(--border-light); background: var(--surface-alt); white-space: nowrap; }
+th:first-child { border-radius: var(--radius) 0 0 0; }
+th:last-child { border-radius: 0 var(--radius) 0 0; }
+td { padding: 13px 18px; border-bottom: 1px solid var(--border-light); font-size: 0.84rem; vertical-align: middle; color: var(--text-secondary); }
+tr:last-child td { border-bottom: none; }
+tr { transition: background var(--transition); }
+tr:hover td { background: var(--primary-lighter); }
+
+/* ═══ BADGES ═══ */
+.badge-status { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 20px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.02em; }
+.badge-status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
+.badge-sent { background: var(--info-light); color: #3A7FBA; }
+.badge-sent::before { background: #3A7FBA; }
+.badge-delivered { background: var(--success-light); color: #2D8F60; }
+.badge-delivered::before { background: #2D8F60; }
+.badge-read { background: #EDE6F8; color: #6B4DAF; }
+.badge-read::before { background: #6B4DAF; }
+.badge-failed { background: var(--danger-light); color: #B83E3E; }
+.badge-failed::before { background: #B83E3E; }
+.badge-pending { background: var(--warning-light); color: #B07A2B; }
+.badge-pending::before { background: #B07A2B; }
+.badge-paid { background: var(--success-light); color: #2D8F60; }
+.badge-paid::before { background: #2D8F60; }
+.badge-cancelled { background: var(--danger-light); color: #B83E3E; }
+.badge-cancelled::before { background: #B83E3E; }
+.badge-refused { background: var(--warning-light); color: #B07A2B; }
+.badge-refused::before { background: #B07A2B; }
+
+/* ═══ BUTTONS ═══ */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600;
+  cursor: pointer; border: none; font-family: var(--font); transition: all var(--transition); white-space: nowrap; letter-spacing: 0.01em;
+}
+.btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-soft) 100%); color: white; box-shadow: 0 2px 8px rgba(74,159,229,0.25); }
+.btn-primary:hover { background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%); box-shadow: 0 4px 14px rgba(74,159,229,0.35); transform: translateY(-1px); }
+.btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); box-shadow: var(--shadow-xs); }
+.btn-outline:hover { border-color: var(--primary-soft); color: var(--primary-dark); box-shadow: var(--shadow-sm); }
+.btn-sm { padding: 6px 12px; font-size: 0.74rem; border-radius: var(--radius-xs); }
+.btn-gold { background: linear-gradient(135deg, var(--accent) 0%, #D4B85C 100%); color: white; box-shadow: 0 2px 8px rgba(232,184,75,0.25); }
+.btn-gold:hover { box-shadow: 0 4px 14px rgba(232,184,75,0.35); transform: translateY(-1px); }
+.btn-danger { background: var(--danger); color: white; }
+.btn-success { background: var(--success); color: white; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+
+/* ═══ INPUTS ═══ */
+.input, select, textarea {
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 14px;
+  font-size: 0.84rem; font-family: var(--font); background: var(--surface); color: var(--text);
+  transition: all var(--transition); width: 100%;
+}
+.input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-soft); box-shadow: 0 0 0 3px rgba(74,159,229,0.1); }
+.filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.filter-row .input, .filter-row select { width: auto; min-width: 155px; }
+
+/* ═══ INBOX ═══ */
+.inbox-layout { display: flex; height: calc(100vh - var(--header-h) - 48px); }
+.inbox-list { width: 340px; border-right: 1px solid var(--border-light); overflow-y: auto; flex-shrink: 0; background: var(--surface-alt); }
+.inbox-list::-webkit-scrollbar { width: 3px; }
+.inbox-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+.inbox-conv { padding: 14px 18px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: all var(--transition); }
+.inbox-conv:hover { background: var(--primary-lighter); }
+.inbox-conv.active { background: var(--primary-light); border-left: 3px solid var(--primary); }
+.inbox-conv-name { font-weight: 600; font-size: 0.88rem; color: var(--text); }
+.inbox-conv-preview { font-size: 0.76rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; max-width: 260px; }
+.inbox-conv-time { font-size: 0.66rem; color: var(--text-muted); float: right; font-weight: 500; }
+.inbox-conv .unread-dot { display: inline-block; width: 7px; height: 7px; background: var(--primary); border-radius: 50%; margin-left: 6px; vertical-align: middle; box-shadow: 0 0 0 2px var(--primary-light); }
+.inbox-chat { flex: 1; display: flex; flex-direction: column; background: var(--surface); }
+.inbox-chat-header { padding: 14px 22px; border-bottom: 1px solid var(--border-light); font-weight: 700; font-size: 0.95rem; color: var(--text); }
+.inbox-messages { flex: 1; overflow-y: auto; padding: 22px; display: flex; flex-direction: column; gap: 8px; background: var(--surface-alt); }
+.inbox-messages::-webkit-scrollbar { width: 3px; }
+.inbox-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+.msg-bubble { max-width: 68%; padding: 11px 16px; border-radius: 16px; font-size: 0.84rem; line-height: 1.55; word-wrap: break-word; }
+.msg-in { background: var(--surface); align-self: flex-start; border-bottom-left-radius: 4px; box-shadow: var(--shadow-xs); border: 1px solid var(--border-light); }
+.msg-out { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-soft) 100%); color: white; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 2px 8px rgba(74,159,229,0.2); }
+.msg-time { font-size: 0.62rem; opacity: 0.6; margin-top: 3px; }
+.msg-out .msg-time { color: rgba(255,255,255,0.7); }
+.inbox-input-row { padding: 14px 22px; border-top: 1px solid var(--border-light); display: flex; gap: 10px; background: var(--surface); }
+.inbox-input-row .input { flex: 1; }
+.inbox-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.88rem; background: var(--surface-alt); }
+
+/* ═══ CONFIG ═══ */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border-light); }
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+.toggle-desc { font-size: 0.74rem; color: var(--text-muted); margin-top: 2px; }
+.toggle-switch { width: 44px; height: 24px; background: var(--border); border-radius: 12px; cursor: pointer; position: relative; transition: background var(--transition); border: none; }
+.toggle-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: white; border-radius: 50%; transition: transform var(--transition); box-shadow: var(--shadow-sm); }
+.toggle-switch.on { background: var(--primary); }
+.toggle-switch.on::after { transform: translateX(20px); }
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+.status-dot.ok { background: var(--success); box-shadow: 0 0 0 3px var(--success-light); }
+.status-dot.err { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-light); }
+
+/* ═══ STATES ═══ */
+.loading { text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+.empty-state svg { width: 44px; height: 44px; opacity: 0.25; margin-bottom: 12px; }
+.empty-state p { font-size: 0.88rem; }
+.view { display: none; }
+.view.active { display: block; animation: fadeUp 0.22s ease; }
+
+/* ═══ TOAST ═══ */
+.toast-container { position: fixed; top: 16px; right: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+.toast { padding: 12px 20px; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; box-shadow: var(--shadow-lg); animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px); }
+.toast-success { background: rgba(58,175,118,0.95); color: white; }
+.toast-error { background: rgba(216,84,84,0.95); color: white; }
+.toast-info { background: rgba(74,159,229,0.95); color: white; }
+
+/* ═══ MODAL ═══ */
+.modal-overlay { position: fixed; inset: 0; background: rgba(27,42,61,0.35); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+.modal-overlay.show { opacity: 1; pointer-events: auto; }
+.modal { background: var(--surface); border-radius: var(--radius-lg); width: 92%; max-width: 480px; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow-lg); padding: 28px; transform: translateY(10px); transition: transform 0.25s; }
+.modal-overlay.show .modal { transform: translateY(0); }
+.modal h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; color: var(--text); letter-spacing: -0.01em; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 0.72rem; font-weight: 700; margin-bottom: 5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ═══ NEW: PERIOD, FUNNEL, CHAT, BADGES ═══ */
+.period-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:3px}
+.period-tab{background:none;border:none;padding:7px 14px;border-radius:var(--radius-xs);font-size:.76rem;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:var(--font);transition:all var(--transition);white-space:nowrap}
+.period-tab:hover{color:var(--text);background:var(--surface-alt)}.period-tab.active{background:var(--primary);color:#fff;box-shadow:0 2px 6px rgba(74,159,229,.3)}
+.funnel-container{display:flex;align-items:flex-end;justify-content:center;gap:0;padding:10px 0;overflow-x:auto}
+.funnel-step{text-align:center;flex:1;min-width:80px}.funnel-bar-wrap{display:flex;justify-content:center;margin-bottom:8px}
+.funnel-bar{width:100%;max-width:110px;border-radius:var(--radius-xs);overflow:hidden;position:relative}.funnel-bar::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.25) 0%,transparent 60%)}
+.funnel-value{font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--text)}.funnel-label{font-size:.64rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+.funnel-rate{font-size:.62rem;font-weight:700;margin-top:2px}.funnel-arrow{flex-shrink:0;padding:0 2px;margin-bottom:45px}.funnel-arrow svg{width:14px;height:14px;color:var(--border)}
+.ia-chat-card{display:flex;flex-direction:column}.ia-chat-status{font-size:.68rem;font-weight:700;color:var(--success);background:var(--success-light);padding:3px 10px;border-radius:10px;display:flex;align-items:center;gap:5px}
+.ia-chat-status::before{content:'';width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;animation:iaPulse 2s infinite}@keyframes iaPulse{0%,100%{opacity:1}50%{opacity:.4}}
+.ia-chat-body{display:flex;flex-direction:column;height:420px}
+.ia-chat-messages{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;background:var(--surface-alt)}.ia-chat-messages::-webkit-scrollbar{width:3px}.ia-chat-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+.ia-msg{display:flex;gap:8px;max-width:92%;animation:fadeUp .25s ease}.ia-msg-bot{align-self:flex-start}.ia-msg-user{align-self:flex-end;flex-direction:row-reverse}
+.ia-msg-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;flex-shrink:0}
+.ia-msg-bot .ia-msg-avatar{background:linear-gradient(135deg,var(--primary),var(--primary-soft));color:#fff}.ia-msg-user .ia-msg-avatar{background:var(--accent);color:#fff}
+.ia-msg-content{padding:10px 14px;border-radius:14px;font-size:.8rem;line-height:1.6;word-wrap:break-word}
+.ia-msg-bot .ia-msg-content{background:var(--surface);border:1px solid var(--border-light);border-bottom-left-radius:4px;box-shadow:var(--shadow-xs)}
+.ia-msg-user .ia-msg-content{background:linear-gradient(135deg,var(--primary),var(--primary-soft));color:#fff;border-bottom-right-radius:4px}
+.ia-msg-content h3{font-size:.86rem;font-weight:700;margin:10px 0 4px;color:var(--primary-dark)}.ia-msg-content h3:first-child{margin-top:0}
+.ia-msg-typing{display:flex;gap:4px;padding:4px 0}.ia-msg-typing span{width:6px;height:6px;background:var(--text-muted);border-radius:50%;animation:iaTyping 1.4s infinite}.ia-msg-typing span:nth-child(2){animation-delay:.2s}.ia-msg-typing span:nth-child(3){animation-delay:.4s}@keyframes iaTyping{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+.ia-chat-suggestions{display:flex;gap:5px;padding:8px 16px;flex-wrap:wrap;background:var(--surface);border-top:1px solid var(--border-light)}
+.ia-suggestion{background:var(--primary-light);border:1px solid rgba(74,159,229,.15);border-radius:20px;padding:4px 12px;font-size:.7rem;font-weight:600;color:var(--primary-dark);cursor:pointer;font-family:var(--font);transition:all var(--transition);white-space:nowrap}.ia-suggestion:hover{background:var(--primary);color:#fff}
+.ia-chat-input-row{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border-light);background:var(--surface)}.ia-chat-input-row .input{flex:1}
+.metric-delta{font-size:.68rem;font-weight:600;margin-top:4px}.metric-delta.up{color:var(--success)}.metric-delta.down{color:var(--danger)}.metric-delta.neutral{color:var(--text-muted)}
+.roas-gauge{height:5px;border-radius:3px;background:var(--border-light);overflow:hidden}.roas-gauge-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.alert-card{padding:10px 14px;margin-bottom:6px;display:flex;gap:8px;font-size:.8rem;border-left:3px solid;border-radius:0 var(--radius-sm) var(--radius-sm) 0}.alert-success{background:var(--success-light);border-color:var(--success)}.alert-warning{background:var(--warning-light);border-color:var(--warning)}.alert-danger{background:var(--danger-light);border-color:var(--danger)}
+.alert-title{font-weight:700;font-size:.78rem}.alert-detail{font-size:.72rem;color:var(--text-secondary);margin-top:2px}
+.health-badge{display:inline-flex;padding:3px 9px;border-radius:12px;font-size:.64rem;font-weight:700}
+.health-escalar{background:var(--success-light);color:#1a6b3f}.health-manter{background:var(--info-light);color:#2a6090}.health-ajustar{background:var(--warning-light);color:#8a5a1e}.health-pausar{background:var(--danger-light);color:#8b2e2e}
+.fatigue-badge{display:inline-flex;padding:3px 9px;border-radius:12px;font-size:.64rem;font-weight:700}
+.fatigue-critical{background:var(--danger-light);color:#8b2e2e}.fatigue-high{background:var(--warning-light);color:#8a5a1e}.fatigue-medium{background:#FEF3E2;color:#8a6d1e}.fatigue-low{background:var(--success-light);color:#1a6b3f}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .mobile-toggle { display: block; }
+  .content { padding: 16px; }
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .inbox-layout { flex-direction: column; height: auto; }
+  .inbox-list { width: 100%; max-height: 280px; border-right: none; border-bottom: 1px solid var(--border-light); }
+  .filter-row .input, .filter-row select { min-width: 120px; }
+  .topbar { padding: 0 16px; }
+  .metric-value { font-size: 1.6rem; }
+  #chartsRow, #iaRow { grid-template-columns: 1fr !important; }
+  .period-tabs { flex-wrap: wrap; }
+  .funnel-arrow { display: none; }
+  .ia-chat-body { height: 350px; }
+}
+.mobile-overlay { position: fixed; inset: 0; background: rgba(27,42,61,0.25); backdrop-filter: blur(2px); z-index: 99; display: none; }
+.mobile-overlay.show { display: block; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideIn { from { transform: translateX(80px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="toast-container" id="toasts"></div>
+<div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <h1>SSJ</h1>
+    <p>Moda Fitness — CRM</p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-group">
+      <div class="nav-group-label">CRM WhatsApp</div>
+      <div class="nav-item active" data-view="dashboard" onclick="showView('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" data-view="carrinhos" onclick="showView('carrinhos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+        Carrinhos
+      </div>
+      <div class="nav-item" data-view="pix" onclick="showView('pix')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        PIX / Boleto
+      </div>
+      <div class="nav-item" data-view="recompra" onclick="showView('recompra')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        Recompra
+      </div>
+      <div class="nav-item" data-view="inbox" onclick="showView('inbox')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Inbox
+        <span class="badge" id="unreadBadge" style="display:none">0</span>
+      </div>
+      <div class="nav-item" data-view="historico" onclick="showView('historico')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Histórico
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Meta Ads + IA</div>
+      <div class="nav-item" data-view="metaads" onclick="showView('metaads')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        Campanhas
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Configurações</div>
+      <div class="nav-item" data-view="templates" onclick="showView('templates')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Templates
+      </div>
+      <div class="nav-item" data-view="automacao" onclick="showView('automacao')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Automação
+      </div>
+      <div class="nav-item" data-view="integracoes" onclick="showView('integracoes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+        Integrações
+      </div>
+    </div>
+  </nav>
+  <div class="sidebar-footer">SSJ CRM v4.0</div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="mobile-toggle" onclick="toggleSidebar()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span class="topbar-title" id="topbarTitle">Dashboard</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="topbar-btn" onclick="loadDashboard()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        Atualizar
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+          <div class="metric-label">Enviados Hoje</div>
+          <div class="metric-value" id="m-sent">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="metric-label">Entregues</div>
+          <div class="metric-value" id="m-delivered">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <div class="metric-label">Lidos</div>
+          <div class="metric-value" id="m-read">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+          <div class="metric-label">Falharam</div>
+          <div class="metric-value" id="m-failed">—</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Últimos Envios</span></div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Telefone</th><th>Template</th><th>Status</th><th>Data</th></tr></thead>
+          <tbody id="dashRecentTable"><tr><td colspan="4" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
+      </div>
+    </div>
+
+    <!-- CARRINHOS -->
+    <div class="view" id="view-carrinhos">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Carrinhos Abandonados</span>
+          <button class="btn btn-outline btn-sm" onclick="loadCarts()">Atualizar</button>
+        </div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Cliente</th><th>Telefone</th><th>Valor</th><th>Produtos</th><th>Tempo</th><th>Status Envio</th><th>Ação</th></tr></thead>
+          <tbody id="cartsTable"><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
+      </div>
+    </div>
+
+    <!-- PIX -->
+    <div class="view" id="view-pix">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">PIX / Boleto Cancelados</span>
+          <button class="btn btn-outline btn-sm" onclick="loadPix()">Atualizar</button>
+        </div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Cliente</th><th>Telefone</th><th>Valor</th><th>Status Yampi</th><th>Status Envio</th><th>Data</th><th>Ação</th></tr></thead>
+          <tbody id="pixTable"><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
+      </div>
+    </div>
+
+    <!-- RECOMPRA -->
+    <div class="view" id="view-recompra">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Recompra 30 / 60 / 90 dias</span>
+          <div class="filter-row">
+            <select id="recompraFilter" onchange="loadRecompra()">
+              <option value="">Todos</option><option value="30">30 dias</option><option value="60">60 dias</option><option value="90">90 dias</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="loadRecompra()">Atualizar</button>
+          </div>
+        </div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Cliente</th><th>Telefone</th><th>Último Pedido</th><th>Dias</th><th>Cupom</th><th>Status Envio</th><th>Ação</th></tr></thead>
+          <tbody id="recompraTable"><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
+      </div>
+    </div>
+
+    <!-- INBOX -->
+    <div class="view" id="view-inbox">
+      <div class="card" style="overflow:hidden">
+        <div class="inbox-layout">
+          <div class="inbox-list" id="inboxList"><div class="loading">Carregando conversas...</div></div>
+          <div class="inbox-chat" id="inboxChat"><div class="inbox-empty">Selecione uma conversa</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div class="view" id="view-historico">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Histórico de Envios</span>
+          <div class="filter-row">
+            <select id="histType"><option value="cart">Carrinhos</option><option value="pix">PIX</option><option value="recompra">Recompra</option></select>
+            <input class="input" type="text" id="histSearch" placeholder="Buscar telefone..." style="max-width:175px">
+            <button class="btn btn-primary btn-sm" onclick="loadHistory()">Filtrar</button>
+          </div>
+        </div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Telefone</th><th>Template</th><th>Status</th><th>Data</th></tr></thead>
+          <tbody id="historyTable"><tr><td colspan="4" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
+      </div>
+    </div>
+
+    <!-- META ADS DASHBOARD v4.0 -->
+    <div class="view" id="view-metaads">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="period-tabs"><button class="period-tab" data-preset="today" onclick="changePeriod('today')">Hoje</button><button class="period-tab active" data-preset="last_7d" onclick="changePeriod('last_7d')">7d</button><button class="period-tab" data-preset="last_14d" onclick="changePeriod('last_14d')">14d</button><button class="period-tab" data-preset="last_28d" onclick="changePeriod('last_28d')">28d</button></div>
+          <select id="campaignFilter" onchange="filterByCampaign()" style="min-width:200px;padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.78rem;font-family:var(--font)"><option value="all">Todas as campanhas</option></select>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="loadMetaAds()">Atualizar</button>
+      </div>
+      <div class="card" style="margin-bottom:14px;border-left:3px solid var(--primary);border-radius:0 var(--radius) var(--radius) 0"><div class="card-header" style="border:none;padding-bottom:0"><span class="card-title"><span style="background:var(--primary);color:#fff;font-size:.58rem;padding:2px 7px;border-radius:10px;font-weight:700;margin-right:6px">IA</span>Scorecard Automático</span><button class="btn btn-outline btn-sm" onclick="loadScorecard(true)" style="font-size:.68rem">Regenerar</button></div><div class="card-body" id="scorecardBody" style="padding-top:8px"><div class="loading" style="padding:16px">Analisando com IA...</div></div></div>
+      <div id="alertsContainer" style="margin-bottom:12px"></div>
+      <div class="metrics-grid" style="grid-template-columns:repeat(auto-fit,minmax(148px,1fr));margin-bottom:14px">
+        <div class="metric-card"><div class="metric-label">Investimento</div><div class="metric-value" id="meta-spend2">—</div><div class="metric-delta" id="meta-spend-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">Receita</div><div class="metric-value" id="meta-revenue2">—</div><div class="metric-delta" id="meta-revenue-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">ROAS <span style="font-size:.56rem;background:var(--primary-light);color:var(--primary-dark);padding:1px 5px;border-radius:8px" id="roasTargetBadge">meta 3x</span></div><div class="metric-value" id="meta-roas2">—</div><div class="metric-delta" id="meta-roas-delta"></div><div id="roasGauge" style="margin-top:4px"></div></div>
+        <div class="metric-card"><div class="metric-label">Compras</div><div class="metric-value" id="meta-purchases2">—</div><div class="metric-delta" id="meta-purchases-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">CPA</div><div class="metric-value" id="meta-cpa2">—</div><div class="metric-delta" id="meta-cpa-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">CTR</div><div class="metric-value" id="meta-ctr2">—</div><div class="metric-delta" id="meta-ctr-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">Alcance</div><div class="metric-value" id="meta-reach2">—</div></div>
+        <div class="metric-card"><div class="metric-label">CPC</div><div class="metric-value" id="meta-cpc2">—</div></div>
+      </div>
+      <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">ROAS: Meta vs Real</span><div style="display:flex;align-items:center;gap:6px"><label style="font-size:.68rem;color:var(--text-muted)">Meta:</label><input type="number" id="roasTargetInput" value="3" min="1" max="20" step="0.5" style="width:48px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--radius-xs);font-size:.78rem;font-family:var(--font)" onchange="updateRoasTarget(this.value)"><span style="font-size:.68rem;color:var(--text-muted)">x</span></div></div><div class="card-body" id="roasTargetBody"><div class="loading">Carregando...</div></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px" id="chartsRow"><div class="card"><div class="card-header"><span class="card-title">Gasto vs Receita</span></div><div class="card-body" style="height:220px;position:relative"><canvas id="chartSpendRevenue"></canvas></div></div><div class="card"><div class="card-header"><span class="card-title">ROAS Diário <span style="font-size:.66rem;color:var(--text-muted)">(vermelho=meta <span id="roasLineLabel">3x</span>)</span></span></div><div class="card-body" style="height:220px;position:relative"><canvas id="chartRoas"></canvas></div></div></div>
+      <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">Mapa de Eficiência</span><span style="font-size:.66rem;color:var(--text-muted)">X=Gasto Y=ROAS Bolha=Compras</span></div><div class="card-body" style="height:260px;position:relative"><canvas id="chartBubble"></canvas></div></div>
+      <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">Simulador de Escala</span></div><div class="card-body"><div style="display:flex;align-items:center;gap:14px;margin-bottom:12px"><label style="font-size:.8rem;font-weight:600;white-space:nowrap">Aumento:</label><input type="range" id="scaleSlider" min="0" max="200" value="50" style="flex:1" oninput="updateSimulator(this.value)"><span id="scaleLabel" style="font-size:1rem;font-weight:700;color:var(--primary);min-width:45px">+50%</span></div><div class="metrics-grid" style="grid-template-columns:repeat(4,1fr)"><div class="metric-card" style="text-align:center"><div class="metric-label">Gasto proj.</div><div class="metric-value" id="sim-spend" style="font-size:1.1rem">—</div></div><div class="metric-card" style="text-align:center"><div class="metric-label">CPA proj.</div><div class="metric-value" id="sim-cpa" style="font-size:1.1rem">—</div></div><div class="metric-card" style="text-align:center"><div class="metric-label">Compras proj.</div><div class="metric-value" id="sim-purchases" style="font-size:1.1rem">—</div></div><div class="metric-card" style="text-align:center"><div class="metric-label">Receita proj.</div><div class="metric-value" id="sim-revenue" style="font-size:1.1rem">—</div></div></div></div></div>
+      <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">Fadiga Criativa</span><span style="font-size:.66rem;color:var(--text-muted)">Freq. alta + CTR baixo</span></div><div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Anúncio</th><th>Conjunto</th><th>Freq.</th><th>CTR</th><th>ROAS</th><th>Risco</th></tr></thead><tbody id="fatigueTable"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody></table></div></div></div>
+      <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">Funil de Conversão</span></div><div class="card-body"><div class="funnel-container" id="funnelContainer"><div style="text-align:center;padding:24px;color:var(--text-muted)">Carregando...</div></div></div></div>
+      <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">Campanhas</span><span id="metaPeriodLabel" style="font-size:.7rem;color:var(--text-muted)">7d</span></div><div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Campanha</th><th>Gasto</th><th>Cliques</th><th>CTR</th><th>Add Cart</th><th>Compras</th><th>ROAS</th><th>CPA</th><th>Saúde</th></tr></thead><tbody id="metaCampaignsTable2"><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody></table></div></div></div>
+      <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">Criativos</span></div><div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Anúncio</th><th>Conjunto</th><th>Gasto</th><th>CTR</th><th>Add Cart</th><th>Compras</th><th>ROAS</th><th>CPA</th><th>Saúde</th></tr></thead><tbody id="metaAdsTable"><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody></table></div></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px" id="iaRow"><div class="card"><div class="card-header"><span class="card-title">Relatório IA</span><div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" id="genReportBtn2" onclick="generateReport()">Gerar</button><button class="btn btn-outline btn-sm" onclick="loadReportHistory()">Histórico</button></div></div><div class="card-body" id="iaReportBody2" style="max-height:440px;overflow-y:auto"><div class="empty-state"><p>Clique em "Gerar"</p></div></div></div>
+        <div class="card ia-chat-card"><div class="card-header"><span class="card-title">Chat IA</span><span class="ia-chat-status">Online</span></div><div class="ia-chat-body"><div class="ia-chat-messages" id="iaChatMessages"><div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">Posso analisar campanhas, criativos, funil. Pergunte!</div></div></div><div class="ia-chat-suggestions" id="iaChatSuggestions"><button class="ia-suggestion" onclick="iaAsk('Análise completa das campanhas e criativos')">📊 Análise</button><button class="ia-suggestion" onclick="iaAsk('Quais criativos com fadiga?')">🔥 Fadiga</button><button class="ia-suggestion" onclick="iaAsk('Sugira 3 criativos novos')">🎨 Ideias</button><button class="ia-suggestion" onclick="iaAsk('5 copies persuasivas')">✍️ Copies</button><button class="ia-suggestion" onclick="iaAsk('Como atingir ROAS 3x?')">🎯 Meta</button></div><div class="ia-chat-input-row"><input class="input" id="iaChatInput" placeholder="Pergunte..." onkeypress="if(event.key==='Enter')iaSend()"><button class="btn btn-primary" onclick="iaSend()" id="iaSendBtn">Enviar</button></div></div></div></div>
+      <div class="card" id="reportHistoryCard2" style="display:none"><div class="card-header"><span class="card-title">Histórico</span></div><div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Alerta</th><th>Ação</th></tr></thead><tbody id="reportHistoryTable2"></tbody></table></div></div></div>
+    </div>
+
+    <!-- TEMPLATES -->
+    <div class="view" id="view-templates">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Templates WhatsApp</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="openTemplateModal()">+ Novo Template</button>
+            <button class="btn btn-outline btn-sm" onclick="loadTemplates()">Atualizar</button>
+          </div>
+        </div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Nome</th><th>Categoria</th><th>Status</th><th>Idioma</th></tr></thead>
+          <tbody id="templatesTable"><tr><td colspan="4" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
+      </div>
+    </div>
+
+    <!-- AUTOMAÇÃO -->
+    <div class="view" id="view-automacao">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Automações Ativas</span></div>
+        <div class="card-body">
+          <div class="toggle-row">
+            <div><div class="toggle-label">Carrinho Abandonado</div><div class="toggle-desc">Verifica a cada 10 minutos</div></div>
+            <button class="toggle-switch on" id="togCart" onclick="toggleCron(this)"></button>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">PIX / Boleto Cancelado</div><div class="toggle-desc">Verifica a cada 15 minutos</div></div>
+            <button class="toggle-switch on" id="togPix" onclick="toggleCron(this)"></button>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Recompra Automática</div><div class="toggle-desc">Diário às 10h</div></div>
+            <button class="toggle-switch on" id="togRecompra" onclick="toggleCron(this)"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTEGRAÇÕES -->
+    <div class="view" id="view-integracoes">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Status das Integrações</span></div>
+        <div class="card-body" id="integrationsBody"><div class="loading">Verificando integrações...</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL ENVIO -->
+<div class="modal-overlay" id="sendModal">
+  <div class="modal">
+    <h2 id="modalTitle">Enviar Template</h2>
+    <div class="form-group"><label>Telefone</label><input class="input" id="modalPhone" readonly></div>
+    <div class="form-group"><label>Nome</label><input class="input" id="modalName" readonly></div>
+    <div class="form-group"><label>Template</label><select id="modalTemplate"></select></div>
+    <div class="form-group" id="modalCouponGroup" style="display:none"><label>Cupom</label><input class="input" id="modalCoupon"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="modalSendBtn" onclick="sendFromModal()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CRIAR TEMPLATE -->
+<div class="modal-overlay" id="templateModal">
+  <div class="modal" style="max-width:560px">
+    <h2>Novo Template WhatsApp</h2>
+    <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:18px">Preencha os campos e submeta para aprovação do Meta. Use {{1}} para nome, {{2}} para cupom/link.</p>
+    <div class="form-group">
+      <label>Nome do template *</label>
+      <input class="input" id="tplName" placeholder="ex: lembrete_promo_v1 (sem espaços, minúsculo)">
+    </div>
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="tplCategory">
+        <option value="MARKETING" selected>Marketing</option>
+        <option value="UTILITY">Utilidade</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Tipo</label>
+      <select id="tplType">
+        <option value="carrinho">Carrinho Abandonado</option>
+        <option value="pix">PIX / Boleto</option>
+        <option value="recompra">Recompra</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Timing (quando enviar)</label>
+      <input class="input" id="tplTiming" placeholder="ex: 15min, 2h, 24h, 48h">
+    </div>
+    <div class="form-group">
+      <label>Texto do corpo (body) *</label>
+      <textarea id="tplBody" rows="5" placeholder="Oiii, tudo bem {{1}}? Notei que você estava escolhendo algumas peças..." style="resize:vertical"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Texto do rodapé (footer) — opcional</label>
+      <input class="input" id="tplFooter" placeholder="ex: SSJ Moda Fitness">
+    </div>
+    <div class="form-group">
+      <label>Texto do botão URL — opcional</label>
+      <input class="input" id="tplBtnText" placeholder="ex: Ver minhas peças">
+    </div>
+    <div class="form-group">
+      <label>URL do botão (com {{1}} no final) — opcional</label>
+      <input class="input" id="tplBtnUrl" placeholder="ex: https://seguro.ssjmodafitness.com.br/{{1}}">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px">
+      <button class="btn btn-outline" onclick="closeTemplateModal()">Cancelar</button>
+      <button class="btn btn-primary" id="tplSubmitBtn" onclick="submitTemplate()">Enviar para Aprovação</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const API = window.location.origin;
+
+function toast(msg, type = 'info') {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+async function api(path, opts = {}) {
   try {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS sent_messages (
-        id SERIAL PRIMARY KEY,
-        cart_id TEXT NOT NULL,
-        template_id TEXT NOT NULL,
-        phone TEXT,
-        contact_name TEXT,
-        cart_value NUMERIC DEFAULT 0,
-        wa_message_id TEXT,
-        status TEXT DEFAULT 'sent',
-        automated BOOLEAN DEFAULT false,
-        msg_type TEXT DEFAULT 'carrinho',
-        sent_at TIMESTAMPTZ DEFAULT NOW(),
-        UNIQUE(cart_id, template_id)
-      );
-
-      CREATE TABLE IF NOT EXISTS pix_sent (
-        id SERIAL PRIMARY KEY,
-        cart_id TEXT NOT NULL,
-        template_id TEXT NOT NULL,
-        phone TEXT,
-        contact_name TEXT,
-        cart_value TEXT,
-        wa_message_id TEXT,
-        status TEXT DEFAULT 'sent',
-        sent_at TIMESTAMPTZ DEFAULT NOW(),
-        UNIQUE(cart_id, template_id)
-      );
-
-      CREATE TABLE IF NOT EXISTS recompra_sent (
-        id SERIAL PRIMARY KEY,
-        order_id TEXT NOT NULL,
-        interval_days INT NOT NULL,
-        template_id TEXT NOT NULL,
-        phone TEXT,
-        contact_name TEXT,
-        order_value TEXT,
-        wa_message_id TEXT,
-        status TEXT DEFAULT 'sent',
-        sent_at TIMESTAMPTZ DEFAULT NOW(),
-        UNIQUE(order_id, interval_days)
-      );
-
-      CREATE TABLE IF NOT EXISTS conversations (
-        phone TEXT PRIMARY KEY,
-        name TEXT,
-        unread INT DEFAULT 0,
-        last_message_at TIMESTAMPTZ DEFAULT NOW()
-      );
-
-      CREATE TABLE IF NOT EXISTS messages (
-        id SERIAL PRIMARY KEY,
-        phone TEXT NOT NULL,
-        wa_message_id TEXT,
-        direction TEXT NOT NULL,
-        text TEXT,
-        msg_type TEXT DEFAULT 'text',
-        template TEXT,
-        status TEXT DEFAULT 'sent',
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_sent_cart ON sent_messages(cart_id);
-      CREATE INDEX IF NOT EXISTS idx_sent_wa ON sent_messages(wa_message_id);
-      CREATE INDEX IF NOT EXISTS idx_pix_cart ON pix_sent(cart_id);
-      CREATE INDEX IF NOT EXISTS idx_pix_wa ON pix_sent(wa_message_id);
-      CREATE INDEX IF NOT EXISTS idx_recompra_order ON recompra_sent(order_id);
-      CREATE INDEX IF NOT EXISTS idx_recompra_wa ON recompra_sent(wa_message_id);
-      CREATE INDEX IF NOT EXISTS idx_messages_phone ON messages(phone);
-      CREATE INDEX IF NOT EXISTS idx_messages_wa ON messages(wa_message_id);
-
-      CREATE TABLE IF NOT EXISTS ia_reports (
-        id SERIAL PRIMARY KEY,
-        report_date DATE NOT NULL,
-        campaigns_data JSONB,
-        report_text TEXT,
-        alerts_sent BOOLEAN DEFAULT false,
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        UNIQUE(report_date)
-      );
-      CREATE INDEX IF NOT EXISTS idx_ia_reports_date ON ia_reports(report_date);
-    `);
-    console.log("[DB] PostgreSQL inicializado com sucesso");
+    const r = await fetch(API + path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
   } catch (e) {
-    console.error("[DB] Erro ao inicializar PostgreSQL:", e.message);
-  } finally {
-    client.release();
+    console.error('API Error:', path, e);
+    return null;
   }
 }
 
-// ===================== DB HELPERS =====================
-
-// Batch: buscar todos os envios de uma vez (1 query em vez de 50)
-async function getAllSentMap() {
-  try {
-    var r = await pool.query("SELECT cart_id, template_id FROM sent_messages");
-    var map = {};
-    r.rows.forEach(function(row) {
-      if (!map[row.cart_id]) map[row.cart_id] = [];
-      map[row.cart_id].push(row.template_id);
-    });
-    return map;
-  } catch (e) { return {}; }
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-async function getAllPixSentMap() {
-  try {
-    var r = await pool.query("SELECT cart_id, template_id FROM pix_sent");
-    var map = {};
-    r.rows.forEach(function(row) {
-      if (!map[row.cart_id]) map[row.cart_id] = [];
-      map[row.cart_id].push(row.template_id);
-    });
-    return map;
-  } catch (e) { return {}; }
+function fmtPhone(p) {
+  if (!p) return '—';
+  return p.replace(/^55(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3') || p;
 }
 
-async function getAllRecompraSentMap() {
-  try {
-    var r = await pool.query("SELECT order_id, interval_days FROM recompra_sent");
-    var map = {};
-    r.rows.forEach(function(row) {
-      map[row.order_id + "-" + row.interval_days] = true;
-    });
-    return map;
-  } catch (e) { return {}; }
+function fmtMoney(v) {
+  if (!v && v !== 0) return '—';
+  const n = Number(v);
+  if (isNaN(n)) return String(v);
+  return 'R$ ' + n.toFixed(2).replace('.', ',');
 }
 
-async function wasSent(cartId, templateId) {
-  try {
-    var r = await pool.query("SELECT 1 FROM sent_messages WHERE cart_id=$1 AND template_id=$2", [String(cartId), templateId]);
-    return r.rowCount > 0;
-  } catch (e) { return false; }
+function statusBadge(s) {
+  if (!s) return '<span class="badge-status badge-pending">—</span>';
+  const sl = String(s).toLowerCase();
+  const map = { sent:'sent', delivered:'delivered', read:'read', failed:'failed', pending:'pending', paid:'paid', cancelled:'cancelled', canceled:'cancelled', refused:'refused', waiting_payment:'pending', expired:'failed' };
+  const cls = map[sl] || 'pending';
+  const labels = { sent:'Enviado', delivered:'Entregue', read:'Lido', failed:'Falhou', pending:'Pendente', paid:'Pago', cancelled:'Cancelado', canceled:'Cancelado', refused:'Recusado', waiting_payment:'Aguardando', expired:'Expirado' };
+  return `<span class="badge-status badge-${cls}">${labels[sl] || s}</span>`;
 }
 
-async function getSentTemplates(cartId) {
-  try {
-    var r = await pool.query("SELECT template_id FROM sent_messages WHERE cart_id=$1", [String(cartId)]);
-    return r.rows.map(function(row) { return row.template_id; });
-  } catch (e) { return []; }
+function timeAgo(d) {
+  if (!d) return '';
+  const diff = Date.now() - new Date(d).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
 }
 
-async function wasPixSent(cartId, templateId) {
-  try {
-    var r = await pool.query("SELECT 1 FROM pix_sent WHERE cart_id=$1 AND template_id=$2", [String(cartId), templateId]);
-    return r.rowCount > 0;
-  } catch (e) { return false; }
-}
+function esc(s) { return String(s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
 
-async function getPixSentTemplates(cartId) {
-  try {
-    var r = await pool.query("SELECT template_id FROM pix_sent WHERE cart_id=$1", [String(cartId)]);
-    return r.rows.map(function(row) { return row.template_id; });
-  } catch (e) { return []; }
-}
-
-async function wasRecompraSent(orderId, intervalDays) {
-  try {
-    var r = await pool.query("SELECT 1 FROM recompra_sent WHERE order_id=$1 AND interval_days=$2", [String(orderId), intervalDays]);
-    return r.rowCount > 0;
-  } catch (e) { return false; }
-}
-
-// ===================== IN-MEMORY STATS & LOGS (non-critical, ok to lose) =====================
-
-var STATS = {
-  totalSent: 0, totalDelivered: 0, totalRead: 0, totalFailed: 0, totalCartValue: 0,
-  startedAt: new Date().toISOString()
-};
-var cronLog = [];
-var pixStats = { totalSent: 0, totalRecovered: 0, totalFailed: 0 };
-var pixCronLog = [];
-var recompraStats = { totalSent: 0, totalFailed: 0 };
-var recompraCronLog = [];
-
-// Repurchase campaign settings (in-memory, could be persisted later)
-var recompraConfig = {
-  enabled: true,
-  intervals: [
-    { days: 30, enabled: true, templateId: "recompra_30dias", coupon: CFG.coupon30 || "VOLTESSJ10" },
-    { days: 60, enabled: true, templateId: "recompra_60dias", coupon: CFG.coupon60 || "VOLTESSJ15" },
-    { days: 90, enabled: true, templateId: "recompra_90dias", coupon: CFG.coupon90 || "VOLTESSJ20" },
-  ]
+const viewTitles = {
+  dashboard: 'Dashboard', carrinhos: 'Carrinhos Abandonados', pix: 'PIX / Boleto',
+  recompra: 'Recompra', inbox: 'Inbox', historico: 'Histórico de Envios',
+  metaads: 'Meta Ads + IA', templates: 'Templates WhatsApp',
+  automacao: 'Automação', integracoes: 'Integrações'
 };
 
-// Template metadata (in-memory)
-var templateMeta = {};
-
-// ===================== TEMPLATES =====================
-
-// CARRINHO — todos v2: body={{1}}(nome) + botão URL dinâmica
-const TEMPLATES = [
-  { id: "lembrete_15min_v2", name: "lembrete_15min_v2", display: "Lembrete 15min", timing: "15min", minH: 0, maxH: 0.5, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Ver minhas pecas", preview: "Oiii, tudo bem {{1}}? ... Notei que voce estava escolhendo algumas pecas..." },
-  { id: "confianca_2h_v2", name: "confianca_2h_v2", display: "Confianca 2h", timing: "2h", minH: 0.5, maxH: 12, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Garantir minhas pecas", preview: "Ola, aqui e a equipe SSJ Moda Fitness, {{1}} ..." },
-  { id: "social_24h_v2", name: "social_24h_v2", display: "Social 24h", timing: "24h", minH: 12, maxH: 36, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Aproveitar agora", preview: "Ola, tudo bem {{1}}? Aqui e a Jessica da SSJ ..." },
-  { id: "cupom_48h_v2", name: "cupom_48h_v2", display: "Cupom 48h", timing: "48h", minH: 36, maxH: 96, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true, buttonText: "Usar meu cupom", preview: "Ola {{1}}, aqui e a equipe SSJ ... cupom VOLTECOMSSJ ..." },
-];
-
-// PIX — CORRIGIDO: nomes corretos do Meta, body={{1}}(nome) + botão URL dinâmica
-const PIX_TEMPLATES = [
-  { id: "pix_5min",  name: "pix_5min",  display: "PIX 5min",  timing: "5min",  minH: 0, maxH: 0.25, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true },
-  { id: "pix_30min", name: "pix_30min", display: "PIX 30min", timing: "30min", minH: 0.25, maxH: 0.75, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true },
-  { id: "pix_1h",    name: "pix_1h",    display: "PIX 1h",    timing: "1h",    minH: 0.75, maxH: 6, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true },
-  { id: "pix_24h",   name: "pix_24h",   display: "PIX 24h",   timing: "24h",   minH: 6, maxH: 36, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true },
-  { id: "pix_48h",   name: "pix_48h",   display: "PIX 48h",   timing: "48h",   minH: 36, maxH: 96, lang: "pt_BR", vars: ["primeiro_nome"], hasButton: true },
-];
-
-// RECOMPRA — body={{1}}(nome) + {{2}}(cupom), SEM botão URL dinâmica
-const RECOMPRA_TEMPLATES = [
-  { id: "recompra_30dias", name: "recompra_30dias", display: "Recompra 30 dias", timing: "30 dias", lang: "pt_BR", vars: ["primeiro_nome", "cupom"], hasButton: false, preview: "Oi {{1}}! ... Use o cupom {{2}} ..." },
-  { id: "recompra_60dias", name: "recompra_60dias", display: "Recompra 60 dias", timing: "60 dias", lang: "pt_BR", vars: ["primeiro_nome", "cupom"], hasButton: false, preview: "{{1}}, sentimos sua falta! ... cupom {{2}} ..." },
-  { id: "recompra_90dias", name: "recompra_90dias", display: "Recompra 90 dias", timing: "90 dias", lang: "pt_BR", vars: ["primeiro_nome", "cupom"], hasButton: false, preview: "{{1}}, faz tempo! ... cupom {{2}} ..." },
-];
-
-// ===================== YAMPI HELPERS =====================
-
-async function yampiGet(path, params) {
-  params = params || {};
-  var url = new URL("https://api.dooki.com.br/v2/" + CFG.yampiAlias + path);
-  Object.entries(params).forEach(function(e) { url.searchParams.set(e[0], e[1]); });
-  var r = await fetch(url, { headers: { "User-Token": CFG.yampiToken, "User-Secret-Key": CFG.yampiSecret, "Content-Type": "application/json" } });
-  if (!r.ok) throw new Error("Yampi " + r.status);
-  return r.json();
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + name)?.classList.add('active');
+  document.querySelector(`.nav-item[data-view="${name}"]`)?.classList.add('active');
+  document.getElementById('topbarTitle').textContent = viewTitles[name] || name;
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('mobileOverlay').classList.remove('show');
+  const loaders = { dashboard:loadDashboard, carrinhos:loadCarts, pix:loadPix, recompra:loadRecompra, inbox:loadInbox, historico:loadHistory, templates:loadTemplates, integracoes:loadIntegrations, metaads:loadMetaAds };
+  if (loaders[name]) loaders[name]();
 }
 
-function formatPhone(num, ddd) {
-  var c = String(num).replace(/\D/g, "");
-  if (c.length <= 9) c = (ddd || "41") + c;
-  if (c.length <= 11) c = "55" + c;
-  return c;
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('mobileOverlay').classList.toggle('show');
 }
 
-// ===================== CART FUNCTIONS =====================
+// ═══ DASHBOARD ═══
+// /api/stats → { global, today: { sent, delivered, read, failed, automated }, byTemplate, cronLog }
+// /api/history → { data: [...], total }
+async function loadDashboard() {
+  const [stats, history] = await Promise.all([api('/api/stats'), api('/api/history')]);
+  if (stats && stats.today) {
+    const t = stats.today;
+    document.getElementById('m-sent').textContent = t.sent || 0;
+    document.getElementById('m-delivered').textContent = t.delivered || 0;
+    document.getElementById('m-read').textContent = t.read || 0;
+    document.getElementById('m-failed').textContent = t.failed || 0;
+  }
+  const tb = document.getElementById('dashRecentTable');
+  const items = (history && history.data) ? history.data : [];
+  if (items.length > 0) {
+    tb.innerHTML = items.slice(0, 10).map(h => `
+      <tr>
+        <td>${fmtPhone(h.phone)}</td>
+        <td>${h.template || h.templateId || '—'}</td>
+        <td>${statusBadge(h.status)}</td>
+        <td>${fmtDate(h.sentAt)}</td>
+      </tr>
+    `).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="4" class="empty-state"><p>Nenhum envio registrado</p></td></tr>';
+  }
+}
 
-async function fetchCarts() {
-  var data = await yampiGet("/checkout/carts", { include: "customer,items", limit: "50", orderBy: "created_at", sortedBy: "desc" });
-
-  // Batch: buscar todos os envios de uma vez (1 query em vez de 50)
-  var sentMap = await getAllSentMap();
-
-  var results = [];
-  for (var i = 0; i < (data.data || []).length; i++) {
-    var cart = data.data[i];
-    var cust = cart.customer && cart.customer.data ? cart.customer.data : {};
-    var ph = (cust.phone && cust.phone.full_number) || (cust.spreadsheet && cust.spreadsheet.data && cust.spreadsheet.data.phone_number) || "";
-    var ddd = (cust.phone && cust.phone.area_code) || (cust.spreadsheet && cust.spreadsheet.data && cust.spreadsheet.data.phone_code) || "";
-    var created = (cart.created_at && cart.created_at.date) || cart.created_at || null;
-    var hoursAgo = created ? Math.round((Date.now() - new Date(created).getTime()) / 3600000) : 0;
-    var items = Array.isArray(cart.items && cart.items.data) ? cart.items.data.map(function(it) { return (it.sku && it.sku.data && it.sku.data.title) || it.name || "Produto"; }) : [];
-    var rec = TEMPLATES.find(function(t) { return hoursAgo >= t.minH && hoursAgo < t.maxH; });
-    // Extrair status da transação — Yampi pode retornar string, objeto, ou objeto aninhado
-    var rawTxStatus = cart.last_transaction_status || cart.transaction_status || null;
-    var lastTxStatus = null;
-    if (rawTxStatus) {
-      if (typeof rawTxStatus === "string") {
-        lastTxStatus = rawTxStatus;
-      } else if (typeof rawTxStatus === "object") {
-        lastTxStatus = rawTxStatus.alias || rawTxStatus.name || rawTxStatus.status ||
-          (rawTxStatus.data && (rawTxStatus.data.alias || rawTxStatus.data.name)) || null;
+// ═══ CARRINHOS ═══
+// /api/carts → { ok, count, totalAbandoned, data: [{ id, name, firstName, phone, total, totalRaw, items, itemCount, hoursAgo, createdAt, recommended, alreadySent }] }
+async function loadCarts() {
+  const res = await api('/api/carts');
+  const tb = document.getElementById('cartsTable');
+  const carts = (res && res.data) ? res.data : [];
+  if (carts.length > 0) {
+    tb.innerHTML = carts.map(c => {
+      // alreadySent = array of template IDs already sent, recommended = next template to send
+      const sent = c.alreadySent || [];
+      let waBadge;
+      if (sent.length === 0) {
+        waBadge = '<span class="badge-status badge-pending">Não enviado</span>';
+      } else {
+        waBadge = sent.map(t => `<span class="badge-status badge-delivered" style="margin:1px 2px;font-size:0.65rem">${t.replace(/_/g,' ').replace(/v2/,'').trim()}</span>`).join('');
       }
-    }
-    // Log primeiro carrinho pra debug (só uma vez)
-    if (i === 0) {
-      console.log("[DEBUG-CART] Primeiro carrinho raw status:", JSON.stringify(rawTxStatus));
-      console.log("[DEBUG-CART] Primeiro carrinho simUrl:", cart.simulate_url || cart.unauth_simulate_url || "VAZIO");
-    }
-
-    results.push({
-      id: cart.id, name: cust.name || cust.first_name || "Cliente",
-      firstName: cust.first_name || (cust.name || "").split(" ")[0] || "Cliente",
-      email: cust.email || "", phone: formatPhone(ph, ddd),
-      total: (cart.totalizers && cart.totalizers.total_formated) || "R$ " + ((cart.totalizers && cart.totalizers.total) || 0).toFixed(2),
-      totalRaw: (cart.totalizers && cart.totalizers.total) || 0,
-      items: items.join(", ") || "Itens no carrinho", itemCount: items.length,
-      simUrl: cart.simulate_url || cart.unauth_simulate_url || "",
-      hoursAgo: hoursAgo, createdAt: created,
-      recommended: rec ? rec.id : TEMPLATES[3].id,
-      alreadySent: sentMap[String(cart.id)] || [],
-      lastTxStatus: lastTxStatus
-    });
-  }
-  return results;
-}
-
-// ===================== ORDERS FUNCTIONS =====================
-
-async function fetchOrders(params) {
-  params = params || {};
-  params.include = "customer";
-  params.limit = params.limit || "50";
-  params.orderBy = params.orderBy || "created_at";
-  params.sortedBy = params.sortedBy || "desc";
-  var data = await yampiGet("/orders", params);
-  return (data.data || []).map(function(order) {
-    var cust = order.customer && order.customer.data ? order.customer.data : {};
-    var ph = (cust.phone && cust.phone.full_number) || (cust.spreadsheet && cust.spreadsheet.data && cust.spreadsheet.data.phone_number) || "";
-    var ddd = (cust.phone && cust.phone.area_code) || (cust.spreadsheet && cust.spreadsheet.data && cust.spreadsheet.data.phone_code) || "";
-    var created = (order.created_at && order.created_at.date) || order.created_at || null;
-    var daysAgo = created ? Math.round((Date.now() - new Date(created).getTime()) / 86400000) : 0;
-    var hoursAgo = created ? Math.round((Date.now() - new Date(created).getTime()) / 3600000) : 0;
-    // Extrair status
-    var statusAlias = order.status && order.status.data ? order.status.data.alias : (order.status_alias || "");
-    var statusLabel = order.status && order.status.data ? order.status.data.name : (order.status_label || "");
-    // Checkout URL pra recompra/PIX
-    var checkoutUrl = order.checkout_url || order.simulate_url || order.unauth_simulate_url || "";
-    return {
-      id: order.id,
-      number: order.number || order.id,
-      name: cust.name || cust.first_name || "Cliente",
-      firstName: cust.first_name || (cust.name || "").split(" ")[0] || "Cliente",
-      email: cust.email || "",
-      phone: formatPhone(ph, ddd),
-      total: order.value_total_formated || "R$ " + (order.value_total || 0).toFixed(2),
-      totalRaw: order.value_total || 0,
-      status: statusAlias,
-      statusLabel: statusLabel,
-      createdAt: created,
-      daysAgo: daysAgo,
-      hoursAgo: hoursAgo,
-      customerId: cust.id || null,
-      simUrl: checkoutUrl
-    };
-  });
-}
-
-// ===================== WHATSAPP SEND =====================
-
-async function sendWA(phone, templateName, params, allTemplates, buttonUrl) {
-  var searchIn = allTemplates || TEMPLATES;
-  var tpl = searchIn.find(function(t) { return t.name === templateName; });
-  if (!tpl) throw new Error("Template nao encontrado: " + templateName);
-
-  var components = [];
-
-  // Body parameters (nome, cupom, etc)
-  if (params && params.length > 0) {
-    components.push({ type: "body", parameters: params.map(function(p) { return { type: "text", text: String(p) }; }) });
-  }
-
-  // Button URL parameter (dynamic URL suffix) — SÓ se template tem botão
-  if (tpl.hasButton) {
-    // CRITICAL: remover espaços da URL — Yampi gera utm_campaign= &force... com espaço
-    var urlParam = (buttonUrl || "cart").replace(/ /g, "");
-    components.push({ type: "button", sub_type: "url", index: 0, parameters: [{ type: "text", text: String(urlParam) }] });
-  }
-
-  var payload = { messaging_product: "whatsapp", to: phone, type: "template", template: { name: tpl.name, language: { code: tpl.lang }, components: components } };
-  console.log("[SEND-WA] " + phone + " tpl=" + tpl.name + " body_params=" + (params ? params.length : 0) + " btn=" + (tpl.hasButton ? "yes" : "no"));
-
-  var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId + "/messages", {
-    method: "POST",
-    headers: { Authorization: "Bearer " + CFG.waToken, "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  var data = await r.json();
-  if (!r.ok) {
-    console.error("[SEND-WA-ERRO] " + phone + " tpl=" + tpl.name + " status=" + r.status + " erro=" + JSON.stringify(data));
-    throw new Error((data.error && data.error.message) || "WA " + r.status);
-  }
-  return (data.messages && data.messages[0] && data.messages[0].id) || null;
-}
-
-function buildParams(tpl, cart) {
-  return tpl.vars.map(function(v) {
-    if (v === "primeiro_nome") return cart.firstName;
-    if (v === "cupom") return CFG.coupon;
-    return "";
-  });
-}
-
-function getCartUrl(cart) {
-  var url = cart.simUrl || "";
-  if (!url) return "cart";
-
-  // Log pra debug
-  console.log("[CART-URL] simUrl original:", url.substring(0, 100));
-
-  // Se a URL contém o domínio SSJ, extrair só o path
-  var domain = "https://seguro.ssjmodafitness.com.br/";
-  if (url.indexOf(domain) === 0) {
-    var path = url.substring(domain.length);
-    console.log("[CART-URL] Extraido path:", path.substring(0, 80));
-    return path;
-  }
-
-  // Tentar extrair path de qualquer URL com domínio SSJ
-  var match = url.match(/ssjmodafitness\.com\.br\/(.*)/);
-  if (match) return match[1];
-
-  // Se a URL é de outro domínio (Yampi), extrair só o path+query
-  try {
-    var parsed = new URL(url);
-    var suffix = parsed.pathname.substring(1) + parsed.search;
-    console.log("[CART-URL] URL externa, usando path:", suffix.substring(0, 80));
-    return suffix || "cart";
-  } catch (e) {
-    // URL inválida, retornar fallback
-    return "cart";
+      const nextTpl = c.recommended && !sent.includes(c.recommended) ? `<div style="margin-top:3px"><span class="badge-status badge-pending" style="font-size:0.62rem">Próximo: ${c.recommended.replace(/_/g,' ').replace(/v2/,'').trim()}</span></div>` : '';
+      return `
+      <tr>
+        <td>${c.name || 'Sem nome'}</td>
+        <td>${fmtPhone(c.phone)}</td>
+        <td>${c.total || fmtMoney(c.totalRaw)}</td>
+        <td>${c.items || (c.itemCount + ' itens')}</td>
+        <td>${c.hoursAgo != null ? c.hoursAgo + 'h' : timeAgo(c.createdAt)}</td>
+        <td>${waBadge}${nextTpl}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="openSendModal('cart',${c.id},'${esc(c.phone)}','${esc(c.name)}')">Enviar</button></td>
+      </tr>`;
+    }).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Nenhum carrinho abandonado</p></td></tr>';
   }
 }
 
-function buildPixParams(tpl, cart) {
-  // PIX templates v2: só {{1}}=nome no body
-  return tpl.vars.map(function(v) {
-    if (v === "primeiro_nome") return cart.firstName;
-    return "";
-  });
-}
-
-function buildRecompraParams(tpl, order, couponCode) {
-  return tpl.vars.map(function(v) {
-    if (v === "primeiro_nome") return order.firstName;
-    if (v === "cupom") return couponCode;
-    return "";
-  });
-}
-
-// ===================== RECORD FUNCTIONS (PostgreSQL) =====================
-
-async function record(cart, tpl, status, msgId, auto) {
-  try {
-    // SEMPRE salvar no banco — inclusive falhas — pra não reenviar
-    await pool.query(
-      `INSERT INTO sent_messages (cart_id, template_id, phone, contact_name, cart_value, wa_message_id, status, automated, msg_type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'carrinho')
-       ON CONFLICT (cart_id, template_id) DO UPDATE SET status=$7, wa_message_id=COALESCE($6, sent_messages.wa_message_id)`,
-      [String(cart.id), tpl.id, cart.phone, cart.name, cart.totalRaw || 0, msgId, status, !!auto]
-    );
-    if (status !== "failed") {
-      STATS.totalSent++; STATS.totalCartValue += cart.totalRaw || 0;
-      if (cart.phone) await addOutgoingMsg(cart.phone, cart.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
-    } else {
-      STATS.totalFailed++;
-    }
-  } catch (e) {
-    console.error("[RECORD] Erro ao salvar:", e.message);
+// ═══ PIX ═══
+// /api/pix/carts → { ok, count, data: [{ id, name, phone, total, status, statusLabel, hoursAgo, createdAt }] }
+async function loadPix() {
+  const [res, histRes] = await Promise.all([api('/api/pix/carts'), api('/api/pix/history')]);
+  const tb = document.getElementById('pixTable');
+  const orders = (res && res.data) ? res.data : [];
+  const hist = (histRes && histRes.data) ? histRes.data : [];
+  // Build map: orderId → last WA status
+  const waStatusMap = {};
+  hist.forEach(h => { if (h.cartId) waStatusMap[h.cartId] = h.status; });
+  if (orders.length > 0) {
+    tb.innerHTML = orders.map(p => {
+      const waStatus = waStatusMap[String(p.id)];
+      const waBadge = waStatus ? statusBadge(waStatus) : '<span class="badge-status badge-pending">Não enviado</span>';
+      return `
+      <tr>
+        <td>${p.name || 'Sem nome'}</td>
+        <td>${fmtPhone(p.phone)}</td>
+        <td>${p.total || fmtMoney(p.totalRaw)}</td>
+        <td>${statusBadge(p.status)}</td>
+        <td>${waBadge}</td>
+        <td>${fmtDate(p.createdAt)}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="openSendModal('pix',${p.id},'${esc(p.phone)}','${esc(p.name)}')">Enviar</button></td>
+      </tr>`;
+    }).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Nenhum pedido PIX cancelado</p></td></tr>';
   }
 }
 
-async function recordPix(cart, tpl, status, msgId) {
-  try {
-    await pool.query(
-      `INSERT INTO pix_sent (cart_id, template_id, phone, contact_name, cart_value, wa_message_id, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       ON CONFLICT (cart_id, template_id) DO UPDATE SET status=$7, wa_message_id=COALESCE($6, pix_sent.wa_message_id)`,
-      [String(cart.id), tpl.id, cart.phone, cart.name, cart.total, msgId, status]
-    );
-    if (status !== "failed") {
-      pixStats.totalSent++;
-      if (cart.phone) await addOutgoingMsg(cart.phone, cart.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
-    } else {
-      pixStats.totalFailed++;
-    }
-  } catch (e) {
-    console.error("[RECORD-PIX] Erro ao salvar:", e.message);
+// ═══ RECOMPRA ═══
+// /api/recompra/orders → { ok, count, data: [{ id, name, phone, total, daysAgo, intervalDays, intervalTemplate, intervalCoupon, alreadySent }] }
+async function loadRecompra() {
+  const res = await api('/api/recompra/orders');
+  const tb = document.getElementById('recompraTable');
+  const orders = (res && res.data) ? res.data : [];
+  if (orders.length > 0) {
+    tb.innerHTML = orders.map(r => {
+      const coupon = r.intervalCoupon || 'VOLTECOMSSJ';
+      const days = r.intervalDays || r.daysAgo || '—';
+      const sent = r.alreadySent === true;
+      const waBadge = sent
+        ? `<span class="badge-status badge-delivered">Enviado</span><div style="margin-top:2px"><span class="badge-status badge-read" style="font-size:0.62rem">${(r.intervalTemplate || '').replace(/_/g,' ')}</span></div>`
+        : '<span class="badge-status badge-pending">Não enviado</span>';
+      return `
+        <tr>
+          <td>${r.name || 'Sem nome'}</td>
+          <td>${fmtPhone(r.phone)}</td>
+          <td>${fmtDate(r.createdAt)}</td>
+          <td>${days} dias</td>
+          <td><span class="badge-status badge-sent">${coupon}</span></td>
+          <td>${waBadge}</td>
+          <td>${sent
+            ? '<span style="font-size:0.75rem;color:var(--text-muted)">—</span>'
+            : `<button class="btn btn-gold btn-sm" onclick="openSendModal('recompra',${r.id},'${esc(r.phone)}','${esc(r.name)}','${esc(coupon)}',${days},'${esc(r.intervalTemplate)}')">Enviar</button>`
+          }</td>
+        </tr>`;
+    }).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Nenhum pedido elegível para recompra</p></td></tr>';
   }
 }
 
-async function recordRecompra(order, tpl, status, msgId, intervalDays) {
-  try {
-    await pool.query(
-      `INSERT INTO recompra_sent (order_id, interval_days, template_id, phone, contact_name, order_value, wa_message_id, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       ON CONFLICT (order_id, interval_days) DO UPDATE SET status=$8, wa_message_id=COALESCE($7, recompra_sent.wa_message_id)`,
-      [String(order.id), intervalDays, tpl.id, order.phone, order.name, order.total, msgId, status]
-    );
-    if (status !== "failed") {
-      recompraStats.totalSent++;
-      if (order.phone) await addOutgoingMsg(order.phone, order.name, "[Template: " + tpl.display + "]", tpl.name, msgId);
-    } else {
-      recompraStats.totalFailed++;
-    }
-  } catch (e) {
-    console.error("[RECORD-RECOMPRA] Erro ao salvar:", e.message);
+// ═══ INBOX ═══
+// /api/inbox/conversations → { ok, data: [{ phone, name, lastMessage, lastMessageAt, unread, messageCount }], totalUnread }
+let currentConvPhone = null;
+
+async function loadInbox() {
+  const res = await api('/api/inbox/conversations');
+  const list = document.getElementById('inboxList');
+  const convs = (res && res.data) ? res.data : [];
+  if (convs.length > 0) {
+    list.innerHTML = convs.map(c => `
+      <div class="inbox-conv ${c.phone === currentConvPhone ? 'active' : ''}" onclick="openConversation('${c.phone}','${esc(c.name || c.phone)}')">
+        <span class="inbox-conv-time">${timeAgo(c.lastMessageAt)}</span>
+        <div class="inbox-conv-name">
+          ${c.name || fmtPhone(c.phone)}
+          ${c.unread > 0 ? '<span class="unread-dot"></span>' : ''}
+        </div>
+        <div class="inbox-conv-preview">${c.lastMessage || ''}</div>
+      </div>
+    `).join('');
+  } else {
+    list.innerHTML = '<div class="empty-state"><p>Nenhuma conversa</p></div>';
+  }
+  loadUnread();
+}
+
+// /api/inbox/conversation/:phone → { ok, data: { phone, name, messages: [{ id, direction, text, type, template, status, timestamp }] } }
+async function openConversation(phone, name) {
+  currentConvPhone = phone;
+  document.querySelectorAll('.inbox-conv').forEach(c => c.classList.remove('active'));
+  event?.target?.closest?.('.inbox-conv')?.classList.add('active');
+  api('/api/inbox/read/' + phone, { method: 'POST' });
+
+  const chat = document.getElementById('inboxChat');
+  chat.innerHTML = `
+    <div class="inbox-chat-header">${name || fmtPhone(phone)}</div>
+    <div class="inbox-messages" id="chatMessages"><div class="loading">Carregando...</div></div>
+    <div class="inbox-input-row">
+      <input class="input" id="chatInput" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter')sendChat()">
+      <button class="btn btn-primary" onclick="sendChat()">Enviar</button>
+    </div>`;
+
+  const res = await api('/api/inbox/conversation/' + phone);
+  const msgs = document.getElementById('chatMessages');
+  const messages = (res && res.data && res.data.messages) ? res.data.messages : [];
+  if (messages.length > 0) {
+    msgs.innerHTML = messages.map(m => `
+      <div class="msg-bubble ${m.direction === 'in' ? 'msg-in' : 'msg-out'}">
+        ${m.text || ''}
+        <div class="msg-time">${fmtDate(m.timestamp)}</div>
+      </div>
+    `).join('');
+    msgs.scrollTop = msgs.scrollHeight;
+  } else {
+    msgs.innerHTML = '<div class="empty-state"><p>Sem mensagens</p></div>';
   }
 }
 
-// ===================== CONVERSATION TRACKING (PostgreSQL) =====================
+// /api/inbox/send espera { phone, text } (NÃO "message")
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input?.value?.trim();
+  if (!text || !currentConvPhone) return;
+  input.value = '';
+  const msgs = document.getElementById('chatMessages');
+  msgs.innerHTML += `<div class="msg-bubble msg-out">${text}<div class="msg-time">agora</div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+  const res = await api('/api/inbox/send', { method: 'POST', body: JSON.stringify({ phone: currentConvPhone, text: text }) });
+  if (res && res.ok) toast('Mensagem enviada', 'success');
+  else toast('Erro ao enviar: ' + (res?.error || ''), 'error');
+}
 
-async function getOrCreateConvo(phone, name) {
-  try {
-    var r = await pool.query("SELECT * FROM conversations WHERE phone=$1", [phone]);
-    if (r.rowCount === 0) {
-      await pool.query(
-        "INSERT INTO conversations (phone, name, unread) VALUES ($1, $2, 0) ON CONFLICT (phone) DO UPDATE SET name=$2",
-        [phone, name || phone]
-      );
-    } else if (name && name !== phone) {
-      await pool.query("UPDATE conversations SET name=$1 WHERE phone=$2", [name, phone]);
-    }
-  } catch (e) {
-    console.error("[CONVO] Erro:", e.message);
+// /api/inbox/unread → { ok, unread }
+async function loadUnread() {
+  const data = await api('/api/inbox/unread');
+  const badge = document.getElementById('unreadBadge');
+  const count = data?.unread || 0;
+  if (count > 0) { badge.textContent = count; badge.style.display = ''; }
+  else { badge.style.display = 'none'; }
+}
+
+// ═══ HISTÓRICO ═══
+// /api/history, /api/pix/history, /api/recompra/history → { data: [...], total }
+async function loadHistory() {
+  const type = document.getElementById('histType')?.value || 'cart';
+  const search = document.getElementById('histSearch')?.value || '';
+  const endpoints = { cart: '/api/history', pix: '/api/pix/history', recompra: '/api/recompra/history' };
+  const res = await api(endpoints[type] || endpoints.cart);
+  const tb = document.getElementById('historyTable');
+  let items = (res && res.data) ? res.data : [];
+  if (search) items = items.filter(i => (i.phone || '').includes(search));
+  if (items.length > 0) {
+    tb.innerHTML = items.slice(0, 50).map(h => `
+      <tr><td>${fmtPhone(h.phone)}</td><td>${h.template || h.templateId || '—'}</td><td>${statusBadge(h.status)}</td><td>${fmtDate(h.sentAt)}</td></tr>
+    `).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="4" class="empty-state"><p>Nenhum registro</p></td></tr>';
   }
 }
 
-async function addOutgoingMsg(phone, name, text, templateName, waMessageId) {
-  try {
-    await getOrCreateConvo(phone, name);
-    await pool.query(
-      "INSERT INTO messages (phone, wa_message_id, direction, text, template, status) VALUES ($1, $2, 'out', $3, $4, 'sent')",
-      [phone, waMessageId || ("out-" + Date.now()), text, templateName || null]
-    );
-    await pool.query("UPDATE conversations SET last_message_at=NOW() WHERE phone=$1", [phone]);
-  } catch (e) {
-    console.error("[MSG-OUT] Erro:", e.message);
+// ═══ TEMPLATES ═══
+// /api/wa-templates → { ok, data: [{ name, category, status, language }] }
+async function loadTemplates() {
+  const res = await api('/api/wa-templates');
+  const tb = document.getElementById('templatesTable');
+  const items = (res && res.data) ? res.data : [];
+  if (items.length > 0) {
+    tb.innerHTML = items.map(t => `
+      <tr><td><strong>${t.name}</strong></td><td>${t.category || '—'}</td><td>${statusBadge(t.status === 'APPROVED' ? 'delivered' : 'pending')}</td><td>${t.language || '—'}</td></tr>
+    `).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="4" class="empty-state"><p>Nenhum template encontrado</p></td></tr>';
   }
 }
 
-async function addIncomingMsg(phone, name, text, waMessageId, msgType) {
-  try {
-    // Avoid duplicates
-    if (waMessageId) {
-      var dup = await pool.query("SELECT 1 FROM messages WHERE wa_message_id=$1", [waMessageId]);
-      if (dup.rowCount > 0) return;
-    }
-    await getOrCreateConvo(phone, name);
-    await pool.query(
-      "INSERT INTO messages (phone, wa_message_id, direction, text, msg_type, status) VALUES ($1, $2, 'in', $3, $4, 'received')",
-      [phone, waMessageId || ("in-" + Date.now()), text, msgType || "text"]
-    );
-    await pool.query(
-      "UPDATE conversations SET last_message_at=NOW(), unread=unread+1 WHERE phone=$1",
-      [phone]
-    );
-    console.log("[INBOX] Nova mensagem de " + phone + ": " + text);
-  } catch (e) {
-    console.error("[MSG-IN] Erro:", e.message);
-  }
-}
-
-// ===================== CRON: CART RECOVERY =====================
-
-cron.schedule("*/10 * * * *", async function() {
-  console.log("[AUTO-CARRINHO] " + new Date().toISOString() + " Verificando carrinhos...");
-  try {
-    var carts = await fetchCarts();
-    var sent = 0, skipped = 0, failed = 0;
-    for (var i = 0; i < carts.length; i++) {
-      var cart = carts[i];
-      if (!cart.phone || cart.phone.length < 12) { skipped++; continue; }
-      var tpl = TEMPLATES.find(function(t) { return t.id === cart.recommended; });
-      if (!tpl) { skipped++; continue; }
-      // Verifica no PostgreSQL se já foi enviado
-      var alreadySent = await wasSent(cart.id, tpl.id);
-      if (alreadySent) { skipped++; continue; }
-      // Intervalo mínimo de 2h entre templates do mesmo carrinho (evita envio em sequência rápida)
-      try {
-        var recentCheck = await pool.query("SELECT sent_at FROM sent_messages WHERE cart_id=$1 AND status != 'failed' ORDER BY sent_at DESC LIMIT 1", [String(cart.id)]);
-        if (recentCheck.rowCount > 0 && (Date.now() - new Date(recentCheck.rows[0].sent_at).getTime()) < 7200000) { skipped++; continue; }
-      } catch (e) {}
-      try {
-        var msgId = await sendWA(cart.phone, tpl.name, buildParams(tpl, cart), null, getCartUrl(cart));
-        await record(cart, tpl, "sent", msgId, true);
-        sent++;
-        await new Promise(function(r) { setTimeout(r, 250); });
-      } catch (e) {
-        console.error("[AUTO-CARRINHO] Falha " + cart.name + " (" + cart.phone + "): " + e.message);
-        await record(cart, tpl, "failed", null, true); failed++;
-      }
-    }
-    cronLog.unshift({ ts: new Date().toISOString(), cartsFound: carts.length, sent: sent, skipped: skipped, failed: failed });
-    if (cronLog.length > 100) cronLog.length = 100;
-    console.log("[AUTO-CARRINHO] " + sent + " enviado(s), " + skipped + " pulado(s), " + failed + " falha(s)");
-  } catch (e) { console.error("[AUTO-CARRINHO] Erro: " + e.message); cronLog.unshift({ ts: new Date().toISOString(), error: e.message }); }
-});
-
-// ===================== CRON: PIX/BOLETO RECOVERY =====================
-
-cron.schedule("*/15 * * * *", async function() {
-  console.log("[AUTO-PIX] " + new Date().toISOString() + " Verificando PIX/boleto...");
-  try {
-    // Buscar pedidos recentes (sem filtro de data — já vem ordenado por created_at desc)
-    var orders = await fetchOrders({ limit: "50" });
-
-    var sent = 0, skipped = 0, failed = 0;
-
-    // LOG: mostrar TODOS os status encontrados
-    var statusSet = {};
-    orders.forEach(function(o) {
-      var s = (o.status || "sem_status").toLowerCase();
-      statusSet[s] = (statusSet[s] || 0) + 1;
-    });
-    console.log("[AUTO-PIX] Status encontrados nos pedidos:", JSON.stringify(statusSet));
-
-    // Filtrar pedidos com pagamento cancelado/recusado/expirado
-    var pixStatuses = [
-      "cancelled", "canceled", "cancelado",
-      "refused", "recusado", "expired", "expirado",
-      "waiting_payment", "awaiting_payment",
-      "not_paid", "payment_error", "payment_failed",
-      "pending", "pendente"
+// ═══ INTEGRAÇÕES ═══
+// /api/health → { yampi: { ok }, whatsapp: { ok }, database: { ok }, uptime, stats }
+async function loadIntegrations() {
+  const data = await api('/api/health');
+  const body = document.getElementById('integrationsBody');
+  if (data) {
+    const items = [
+      { name: 'Yampi API', ok: data.yampi?.ok },
+      { name: 'WhatsApp Cloud API', ok: data.whatsapp?.ok },
+      { name: 'PostgreSQL', ok: data.database?.ok }
     ];
-
-    for (var i = 0; i < orders.length; i++) {
-      var order = orders[i];
-      if (!order.phone || order.phone.length < 12) { skipped++; continue; }
-
-      var orderStatus = (order.status || "").toLowerCase();
-
-      // Verificar se é status de PIX/boleto não pago
-      var isPixBoleto = false;
-      for (var s = 0; s < pixStatuses.length; s++) {
-        if (orderStatus === pixStatuses[s]) { isPixBoleto = true; break; }
-      }
-      // Fallback: substrings
-      if (!isPixBoleto) {
-        if (orderStatus.indexOf("cancel") !== -1 || orderStatus.indexOf("recus") !== -1 ||
-            orderStatus.indexOf("expir") !== -1 || orderStatus.indexOf("pending") !== -1 ||
-            orderStatus.indexOf("waiting") !== -1) {
-          isPixBoleto = true;
-        }
-      }
-
-      if (!isPixBoleto) { skipped++; continue; }
-
-      // Escolher template PIX baseado na idade do pedido
-      var pixTpl = PIX_TEMPLATES.find(function(t) { return order.hoursAgo >= t.minH && order.hoursAgo < t.maxH; });
-      if (!pixTpl) { skipped++; continue; } // pedido fora do range de timing (>96h), pular
-
-      // Verifica no PostgreSQL se já foi enviado (usando order.id como cart_id)
-      var alreadySent = await wasPixSent(order.id, pixTpl.id);
-      if (alreadySent) { skipped++; continue; }
-
-      try {
-        var allTpls = TEMPLATES.concat(PIX_TEMPLATES).concat(RECOMPRA_TEMPLATES);
-        var urlSuffix = getCartUrl(order); // usa simUrl do pedido
-        var msgId = await sendWA(order.phone, pixTpl.name, buildPixParams(pixTpl, order), allTpls, urlSuffix);
-        // Registrar como PIX sent (reutiliza cart_id field pro order.id)
-        await recordPix({ id: order.id, phone: order.phone, name: order.name, total: order.total }, pixTpl, "sent", msgId);
-        sent++;
-        await new Promise(function(r) { setTimeout(r, 250); });
-      } catch (e) {
-        console.error("[AUTO-PIX] Falha " + order.name + " (" + order.phone + "): " + e.message);
-        await recordPix({ id: order.id, phone: order.phone, name: order.name, total: order.total }, pixTpl, "failed", null);
-        failed++;
-      }
+    body.innerHTML = items.map(i => {
+      const ok = i.ok === true;
+      return `<div class="toggle-row"><div><div class="toggle-label"><span class="status-dot ${ok ? 'ok' : 'err'}"></span>${i.name}</div><div class="toggle-desc">${ok ? 'Conectado e funcionando' : 'Erro na conexão'}</div></div><span class="badge-status ${ok ? 'badge-delivered' : 'badge-failed'}">${ok ? 'Online' : 'Offline'}</span></div>`;
+    }).join('');
+    if (data.uptime) {
+      const h = Math.floor(data.uptime / 3600), m = Math.floor((data.uptime % 3600) / 60);
+      body.innerHTML += `<div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">Uptime: ${h}h ${m}min</div>`;
     }
-
-    pixCronLog.unshift({ ts: new Date().toISOString(), ordersChecked: orders.length, sent: sent, skipped: skipped, failed: failed });
-    if (pixCronLog.length > 100) pixCronLog.length = 100;
-    console.log("[AUTO-PIX] " + sent + " enviado(s), " + skipped + " pulado(s), " + failed + " falha(s)");
-  } catch (e) {
-    console.error("[AUTO-PIX] Erro: " + e.message);
-    pixCronLog.unshift({ ts: new Date().toISOString(), error: e.message });
-  }
-});
-
-// ===================== CRON: REPURCHASE CAMPAIGNS =====================
-
-cron.schedule("0 10 * * *", async function() {
-  console.log("[AUTO-RECOMPRA] " + new Date().toISOString() + " Verificando campanhas de recompra...");
-  if (!recompraConfig.enabled) {
-    console.log("[AUTO-RECOMPRA] Desabilitado nas configuracoes.");
-    recompraCronLog.unshift({ ts: new Date().toISOString(), disabled: true });
-    return;
-  }
-
-  try {
-    var intervals = recompraConfig.intervals.filter(function(iv) { return iv.enabled; });
-    var totalSent = 0, totalSkipped = 0, totalFailed = 0;
-
-    for (var k = 0; k < intervals.length; k++) {
-      var iv = intervals[k];
-      var tpl = RECOMPRA_TEMPLATES.find(function(t) { return t.id === iv.templateId; });
-      if (!tpl) continue;
-
-      var targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() - iv.days);
-      var fromDate = new Date(targetDate);
-      fromDate.setDate(fromDate.getDate() - 1);
-      var toDate = new Date(targetDate);
-      toDate.setDate(toDate.getDate() + 1);
-
-      var fromStr = fromDate.toISOString().slice(0, 10);
-      var toStr = toDate.toISOString().slice(0, 10);
-
-      try {
-        var orders = await fetchOrders({ "q[created_at][from]": fromStr, "q[created_at][to]": toStr });
-        var paidOrders = orders.filter(function(o) {
-          var s = (o.status || "").toLowerCase();
-          return s === "paid" || s === "invoiced" || s === "shipped" || s === "delivered" || s === "complete" || s === "completed" || s === "pago" || s === "enviado" || s === "entregue";
-        });
-
-        for (var j = 0; j < paidOrders.length; j++) {
-          var order = paidOrders[j];
-          if (!order.phone || order.phone.length < 12) { totalSkipped++; continue; }
-
-          var alreadySent = await wasRecompraSent(order.id, iv.days);
-          if (alreadySent) { totalSkipped++; continue; }
-
-          try {
-            var allTpls = TEMPLATES.concat(PIX_TEMPLATES).concat(RECOMPRA_TEMPLATES);
-            var coupon = iv.coupon || CFG.coupon;
-            var msgId = await sendWA(order.phone, tpl.name, buildRecompraParams(tpl, order, coupon), allTpls);
-            await recordRecompra(order, tpl, "sent", msgId, iv.days);
-            totalSent++;
-            await new Promise(function(r) { setTimeout(r, 300); });
-          } catch (e) {
-            await recordRecompra(order, tpl, "failed", null, iv.days);
-            totalFailed++;
-          }
-        }
-      } catch (e) {
-        console.error("[AUTO-RECOMPRA] Erro ao buscar pedidos " + iv.days + "d: " + e.message);
-      }
-    }
-
-    recompraCronLog.unshift({ ts: new Date().toISOString(), sent: totalSent, skipped: totalSkipped, failed: totalFailed });
-    if (recompraCronLog.length > 100) recompraCronLog.length = 100;
-    console.log("[AUTO-RECOMPRA] " + totalSent + " enviado(s), " + totalSkipped + " pulado(s), " + totalFailed + " falha(s)");
-  } catch (e) {
-    console.error("[AUTO-RECOMPRA] Erro: " + e.message);
-    recompraCronLog.unshift({ ts: new Date().toISOString(), error: e.message });
-  }
-});
-
-// ===================== API ROUTES =====================
-
-app.get("/api/health", async function(req, res) {
-  var yOk = false, wOk = false, dbOk = false;
-  try { await yampiGet("/catalog/products", { limit: "1" }); yOk = true; } catch (e) {}
-  try { var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId, { headers: { Authorization: "Bearer " + CFG.waToken } }); wOk = r.ok; } catch (e) {}
-  try { await pool.query("SELECT 1"); dbOk = true; } catch (e) {}
-  res.json({ yampi: { ok: yOk, alias: CFG.yampiAlias }, whatsapp: { ok: wOk, phoneId: CFG.waPhoneId }, database: { ok: dbOk }, uptime: process.uptime(), stats: STATS });
-});
-
-app.get("/api/carts", async function(req, res) {
-  try { var carts = await fetchCarts(); res.json({ ok: true, count: carts.length, totalAbandoned: carts.reduce(function(s, c) { return s + c.totalRaw; }, 0), data: carts }); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.get("/api/templates", function(req, res) { res.json({ data: TEMPLATES }); });
-
-app.post("/api/send", async function(req, res) {
-  var cartIds = req.body.cartIds, templateId = req.body.templateId;
-  if (!cartIds || !cartIds.length) return res.status(400).json({ error: "cartIds obrigatorio" });
-  var tpl = TEMPLATES.find(function(t) { return t.id === templateId; });
-  if (!tpl) return res.status(400).json({ error: "Template nao encontrado" });
-  var carts; try { carts = await fetchCarts(); } catch (e) { return res.status(500).json({ error: e.message }); }
-  var results = [];
-  for (var i = 0; i < cartIds.length; i++) {
-    var cart = carts.find(function(c) { return c.id === cartIds[i]; });
-    if (!cart) { results.push({ cartId: cartIds[i], ok: false, error: "Nao encontrado" }); continue; }
-    if (!cart.phone) { results.push({ cartId: cartIds[i], ok: false, error: "Sem telefone" }); continue; }
-    var alreadySent = await wasSent(cartIds[i], templateId);
-    if (alreadySent) { results.push({ cartId: cartIds[i], ok: false, error: "Ja enviado" }); continue; }
-    try { var msgId = await sendWA(cart.phone, tpl.name, buildParams(tpl, cart), null, getCartUrl(cart)); await record(cart, tpl, "sent", msgId, false); results.push({ cartId: cartIds[i], ok: true, contact: cart.name }); }
-    catch (e) { await record(cart, tpl, "failed", null, false); results.push({ cartId: cartIds[i], ok: false, error: e.message }); }
-  }
-  res.json({ ok: true, sent: results.filter(function(r) { return r.ok; }).length, failed: results.filter(function(r) { return !r.ok; }).length, results: results });
-});
-
-app.get("/api/history", async function(req, res) {
-  try {
-    var r = await pool.query("SELECT * FROM sent_messages ORDER BY sent_at DESC LIMIT 50");
-    var data = r.rows.map(function(row) {
-      return {
-        id: row.id,
-        cartId: row.cart_id,
-        contact: row.contact_name || "Cliente",
-        phone: row.phone || "",
-        template: row.template_id ? row.template_id.replace(/_/g, " ").replace(/\bv2\b/, "").trim() : "",
-        templateId: row.template_id,
-        status: row.status || "sent",
-        sentAt: row.sent_at ? new Date(row.sent_at).toISOString() : "",
-        cartValue: row.cart_value ? "R$ " + Number(row.cart_value).toFixed(2) : "—",
-        cartValueRaw: Number(row.cart_value) || 0,
-        waMessageId: row.wa_message_id,
-        automated: row.automated || false,
-        type: row.msg_type || "carrinho"
-      };
-    });
-    res.json({ data: data, total: r.rowCount });
-  } catch (e) { console.error("[HISTORY] Erro:", e.message); res.json({ data: [], total: 0 }); }
-});
-
-app.get("/api/stats", async function(req, res) {
-  try {
-    var today = new Date().toISOString().slice(0, 10);
-    var todayR = await pool.query("SELECT status, automated FROM sent_messages WHERE sent_at::date = $1", [today]);
-    var todayRows = todayR.rows;
-    var byTpl = {};
-    for (var t = 0; t < TEMPLATES.length; t++) {
-      var tid = TEMPLATES[t].id;
-      var tplR = await pool.query("SELECT status FROM sent_messages WHERE template_id=$1", [tid]);
-      byTpl[tid] = {
-        display: TEMPLATES[t].display,
-        total: tplR.rowCount,
-        delivered: tplR.rows.filter(function(r) { return r.status === "delivered" || r.status === "read"; }).length,
-        read: tplR.rows.filter(function(r) { return r.status === "read"; }).length,
-        failed: tplR.rows.filter(function(r) { return r.status === "failed"; }).length
-      };
-    }
-    res.json({
-      global: STATS,
-      today: {
-        sent: todayRows.length,
-        delivered: todayRows.filter(function(r) { return r.status === "delivered" || r.status === "read"; }).length,
-        read: todayRows.filter(function(r) { return r.status === "read"; }).length,
-        failed: todayRows.filter(function(r) { return r.status === "failed"; }).length,
-        automated: todayRows.filter(function(r) { return r.automated; }).length
-      },
-      byTemplate: byTpl,
-      cronLog: cronLog.slice(0, 10)
-    });
-  } catch (e) { res.json({ global: STATS, today: {}, byTemplate: {}, cronLog: cronLog.slice(0, 10) }); }
-});
-
-// ===================== API ROUTES: PIX/BOLETO =====================
-
-app.get("/api/pix/carts", async function(req, res) {
-  try {
-    // Buscar PEDIDOS com status cancelado/recusado (não carrinhos)
-    var orders = await fetchOrders({ limit: "50" });
-    var pixStatuses = [
-      "cancelled", "canceled", "cancelado",
-      "refused", "recusado", "expired", "expirado",
-      "waiting_payment", "awaiting_payment",
-      "not_paid", "payment_error", "payment_failed",
-      "pending", "pendente"
-    ];
-    var pixOrders = [];
-    for (var i = 0; i < orders.length; i++) {
-      var o = orders[i];
-      var st = (o.status || "").toLowerCase();
-      var isPixBoleto = false;
-      for (var s = 0; s < pixStatuses.length; s++) {
-        if (st === pixStatuses[s]) { isPixBoleto = true; break; }
-      }
-      if (!isPixBoleto) {
-        if (st.indexOf("cancel") !== -1 || st.indexOf("recus") !== -1 ||
-            st.indexOf("expir") !== -1 || st.indexOf("pending") !== -1 ||
-            st.indexOf("waiting") !== -1) {
-          isPixBoleto = true;
-        }
-      }
-      if (isPixBoleto) {
-        o.paymentType = "PIX/Boleto";
-        o.pixAlreadySent = await getPixSentTemplates(o.id);
-        // Compatibilidade com o painel (espera campos de carrinho)
-        o.items = "Pedido #" + (o.number || o.id);
-        o.itemCount = 1;
-        o.totalRaw = o.totalRaw || 0;
-        o.recommended = null;
-        o.alreadySent = o.pixAlreadySent;
-        pixOrders.push(o);
-      }
-    }
-    res.json({ ok: true, count: pixOrders.length, data: pixOrders });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.get("/api/pix/templates", function(req, res) { res.json({ data: PIX_TEMPLATES }); });
-
-app.post("/api/pix/send", async function(req, res) {
-  var cartIds = req.body.cartIds, templateId = req.body.templateId;
-  if (!cartIds || !cartIds.length) return res.status(400).json({ error: "cartIds obrigatorio" });
-  var allTpls = TEMPLATES.concat(PIX_TEMPLATES).concat(RECOMPRA_TEMPLATES);
-  var tpl = allTpls.find(function(t) { return t.id === templateId; });
-  if (!tpl) return res.status(400).json({ error: "Template nao encontrado" });
-  var carts; try { carts = await fetchCarts(); } catch (e) { return res.status(500).json({ error: e.message }); }
-  var results = [];
-  for (var i = 0; i < cartIds.length; i++) {
-    var cart = carts.find(function(c) { return c.id === cartIds[i]; });
-    if (!cart) { results.push({ cartId: cartIds[i], ok: false, error: "Nao encontrado" }); continue; }
-    if (!cart.phone) { results.push({ cartId: cartIds[i], ok: false, error: "Sem telefone" }); continue; }
-    var alreadySent = await wasPixSent(cartIds[i], templateId);
-    if (alreadySent) { results.push({ cartId: cartIds[i], ok: false, error: "Ja enviado" }); continue; }
-    try {
-      var msgId = await sendWA(cart.phone, tpl.name, buildPixParams(tpl, cart), allTpls, getCartUrl(cart));
-      await recordPix(cart, tpl, "sent", msgId);
-      results.push({ cartId: cartIds[i], ok: true, contact: cart.name });
-    } catch (e) { await recordPix(cart, tpl, "failed", null); results.push({ cartId: cartIds[i], ok: false, error: e.message }); }
-  }
-  res.json({ ok: true, sent: results.filter(function(r) { return r.ok; }).length, failed: results.filter(function(r) { return !r.ok; }).length, results: results });
-});
-
-app.get("/api/pix/history", async function(req, res) {
-  try {
-    var r = await pool.query("SELECT * FROM pix_sent ORDER BY sent_at DESC LIMIT 50");
-    var data = r.rows.map(function(row) {
-      return {
-        id: row.id,
-        cartId: row.cart_id,
-        contact: row.contact_name || "Cliente",
-        phone: row.phone || "",
-        template: row.template_id ? row.template_id.replace(/_/g, " ") : "",
-        templateId: row.template_id,
-        status: row.status || "sent",
-        sentAt: row.sent_at ? new Date(row.sent_at).toISOString() : "",
-        cartValue: row.cart_value || "—",
-        waMessageId: row.wa_message_id,
-        type: "pix"
-      };
-    });
-    res.json({ data: data, total: r.rowCount });
-  } catch (e) { res.json({ data: [], total: 0 }); }
-});
-
-app.get("/api/pix/stats", function(req, res) {
-  res.json({
-    stats: pixStats,
-    cronLog: pixCronLog.slice(0, 10),
-    byTemplate: PIX_TEMPLATES.map(function(t) { return { display: t.display, total: 0, sent: 0, failed: 0 }; })
-  });
-});
-
-// ===================== API ROUTES: REPURCHASE =====================
-
-app.get("/api/recompra/orders", async function(req, res) {
-  try {
-    var allOrders = [];
-    var intervals = recompraConfig.intervals;
-
-    for (var k = 0; k < intervals.length; k++) {
-      var iv = intervals[k];
-      var targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() - iv.days);
-      var fromDate = new Date(targetDate); fromDate.setDate(fromDate.getDate() - 2);
-      var toDate = new Date(targetDate); toDate.setDate(toDate.getDate() + 2);
-
-      var orders = await fetchOrders({ "q[created_at][from]": fromDate.toISOString().slice(0, 10), "q[created_at][to]": toDate.toISOString().slice(0, 10) });
-      var paidOrders = orders.filter(function(o) {
-        var s = (o.status || "").toLowerCase();
-        return s === "paid" || s === "invoiced" || s === "shipped" || s === "delivered" || s === "complete" || s === "completed" || s === "pago" || s === "enviado" || s === "entregue";
-      });
-
-      for (var j = 0; j < paidOrders.length; j++) {
-        var o = paidOrders[j];
-        o.intervalDays = iv.days;
-        o.intervalTemplate = iv.templateId;
-        o.intervalCoupon = iv.coupon;
-        o.alreadySent = await wasRecompraSent(o.id, iv.days);
-        allOrders.push(o);
-      }
-    }
-
-    res.json({ ok: true, count: allOrders.length, data: allOrders });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.get("/api/recompra/templates", function(req, res) { res.json({ data: RECOMPRA_TEMPLATES }); });
-
-app.get("/api/recompra/config", function(req, res) { res.json({ data: recompraConfig }); });
-
-app.post("/api/recompra/config", function(req, res) {
-  if (req.body.enabled !== undefined) recompraConfig.enabled = !!req.body.enabled;
-  if (req.body.intervals && Array.isArray(req.body.intervals)) {
-    req.body.intervals.forEach(function(iv) {
-      var existing = recompraConfig.intervals.find(function(e) { return e.days === iv.days; });
-      if (existing) {
-        if (iv.enabled !== undefined) existing.enabled = !!iv.enabled;
-        if (iv.coupon) existing.coupon = iv.coupon;
-        if (iv.templateId) existing.templateId = iv.templateId;
-      }
-    });
-  }
-  res.json({ ok: true, data: recompraConfig });
-});
-
-app.post("/api/recompra/send", async function(req, res) {
-  var orderIds = req.body.orderIds, templateId = req.body.templateId, coupon = req.body.coupon, intervalDays = req.body.intervalDays || 30;
-  if (!orderIds || !orderIds.length) return res.status(400).json({ error: "orderIds obrigatorio" });
-  var allTpls = TEMPLATES.concat(PIX_TEMPLATES).concat(RECOMPRA_TEMPLATES);
-  var tpl = allTpls.find(function(t) { return t.id === templateId; });
-  if (!tpl) return res.status(400).json({ error: "Template nao encontrado" });
-
-  var results = [];
-  try {
-    var targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() - intervalDays);
-    var fromDate = new Date(targetDate); fromDate.setDate(fromDate.getDate() - 5);
-    var toDate = new Date(targetDate); toDate.setDate(toDate.getDate() + 5);
-    var orders = await fetchOrders({ "q[created_at][from]": fromDate.toISOString().slice(0, 10), "q[created_at][to]": toDate.toISOString().slice(0, 10) });
-
-    for (var i = 0; i < orderIds.length; i++) {
-      var order = orders.find(function(o) { return o.id === orderIds[i]; });
-      if (!order) { results.push({ orderId: orderIds[i], ok: false, error: "Nao encontrado" }); continue; }
-      if (!order.phone) { results.push({ orderId: orderIds[i], ok: false, error: "Sem telefone" }); continue; }
-      var alreadySent = await wasRecompraSent(order.id, intervalDays);
-      if (alreadySent) { results.push({ orderId: orderIds[i], ok: false, error: "Ja enviado" }); continue; }
-      try {
-        var msgId = await sendWA(order.phone, tpl.name, buildRecompraParams(tpl, order, coupon || CFG.coupon), allTpls);
-        await recordRecompra(order, tpl, "sent", msgId, intervalDays);
-        results.push({ orderId: orderIds[i], ok: true, contact: order.name });
-      } catch (e) { await recordRecompra(order, tpl, "failed", null, intervalDays); results.push({ orderId: orderIds[i], ok: false, error: e.message }); }
-    }
-  } catch (e) { return res.status(500).json({ ok: false, error: e.message }); }
-
-  res.json({ ok: true, sent: results.filter(function(r) { return r.ok; }).length, failed: results.filter(function(r) { return !r.ok; }).length, results: results });
-});
-
-app.get("/api/recompra/history", async function(req, res) {
-  try {
-    var r = await pool.query("SELECT * FROM recompra_sent ORDER BY sent_at DESC LIMIT 50");
-    var data = r.rows.map(function(row) {
-      return {
-        id: row.id,
-        orderId: row.order_id,
-        contact: row.contact_name || "Cliente",
-        phone: row.phone || "",
-        template: row.template_id ? row.template_id.replace(/_/g, " ") : "",
-        templateId: row.template_id,
-        status: row.status || "sent",
-        sentAt: row.sent_at ? new Date(row.sent_at).toISOString() : "",
-        orderValue: row.order_value || "—",
-        waMessageId: row.wa_message_id,
-        intervalDays: row.interval_days,
-        type: "recompra"
-      };
-    });
-    res.json({ data: data, total: r.rowCount });
-  } catch (e) { res.json({ data: [], total: 0 }); }
-});
-
-app.get("/api/recompra/stats", function(req, res) {
-  res.json({
-    stats: recompraStats,
-    config: recompraConfig,
-    cronLog: recompraCronLog.slice(0, 10),
-    byTemplate: RECOMPRA_TEMPLATES.map(function(t) { return { display: t.display, total: 0, sent: 0, failed: 0 }; })
-  });
-});
-
-// ===================== WEBHOOKS =====================
-
-app.get("/api/webhook", function(req, res) { if (req.query["hub.mode"] === "subscribe" && req.query["hub.verify_token"] === "ssj_verify_token") return res.send(req.query["hub.challenge"]); res.sendStatus(403); });
-
-app.post("/api/webhook", async function(req, res) {
-  for (var e = 0; e < (req.body.entry || []).length; e++) {
-    var entry = req.body.entry[e];
-    for (var c = 0; c < (entry.changes || []).length; c++) {
-      var value = entry.changes[c].value || {};
-
-      // Status updates
-      for (var s = 0; s < (value.statuses || []).length; s++) {
-        var st = value.statuses[s];
-        try {
-          // Update in sent_messages
-          await pool.query(
-            "UPDATE sent_messages SET status=$1 WHERE wa_message_id=$2 AND status NOT IN ('read')",
-            [st.status, st.id]
-          );
-          // Update in pix_sent
-          await pool.query(
-            "UPDATE pix_sent SET status=$1 WHERE wa_message_id=$2 AND status NOT IN ('read')",
-            [st.status, st.id]
-          );
-          // Update in recompra_sent
-          await pool.query(
-            "UPDATE recompra_sent SET status=$1 WHERE wa_message_id=$2 AND status NOT IN ('read')",
-            [st.status, st.id]
-          );
-          // Update in messages
-          await pool.query(
-            "UPDATE messages SET status=$1 WHERE wa_message_id=$2",
-            [st.status, st.id]
-          );
-          if (st.status === "delivered") STATS.totalDelivered++;
-          if (st.status === "read") STATS.totalRead++;
-        } catch (err) {
-          console.error("[WEBHOOK] Erro ao atualizar status:", err.message);
-        }
-      }
-
-      // Incoming messages
-      for (var m = 0; m < (value.messages || []).length; m++) {
-        var msg = value.messages[m];
-        var from = msg.from;
-        var contactName = from;
-        if (value.contacts && value.contacts.length > 0) {
-          var contact = value.contacts.find(function(ct) { return ct.wa_id === from; });
-          if (contact && contact.profile && contact.profile.name) {
-            contactName = contact.profile.name;
-          }
-        }
-
-        var text = "";
-        var msgType = msg.type || "text";
-
-        if (msg.type === "text" && msg.text) {
-          text = msg.text.body || "";
-        } else if (msg.type === "image") {
-          text = "Imagem" + (msg.image && msg.image.caption ? ": " + msg.image.caption : "");
-        } else if (msg.type === "audio") {
-          text = "Audio";
-        } else if (msg.type === "video") {
-          text = "Video";
-        } else if (msg.type === "document") {
-          text = "Documento" + (msg.document && msg.document.filename ? ": " + msg.document.filename : "");
-        } else if (msg.type === "sticker") {
-          text = "Sticker";
-        } else if (msg.type === "location") {
-          text = "Localizacao";
-        } else if (msg.type === "button") {
-          text = (msg.button && msg.button.text) || "Botao";
-        } else if (msg.type === "interactive") {
-          text = (msg.interactive && msg.interactive.button_reply && msg.interactive.button_reply.title) || "Resposta interativa";
-        } else {
-          text = "[" + msgType + "]";
-        }
-
-        await addIncomingMsg(from, contactName, text, msg.id, msgType);
-      }
-    }
-  }
-  res.sendStatus(200);
-});
-
-// ===================== INBOX API ROUTES =====================
-
-app.get("/api/inbox/conversations", async function(req, res) {
-  try {
-    var r = await pool.query(`
-      SELECT c.phone, c.name, c.unread, c.last_message_at,
-        (SELECT text FROM messages WHERE phone=c.phone ORDER BY created_at DESC LIMIT 1) as last_message,
-        (SELECT direction FROM messages WHERE phone=c.phone ORDER BY created_at DESC LIMIT 1) as last_direction,
-        (SELECT COUNT(*) FROM messages WHERE phone=c.phone) as message_count
-      FROM conversations c
-      ORDER BY c.last_message_at DESC
-      LIMIT 100
-    `);
-    var totalUnread = r.rows.reduce(function(s, c) { return s + (c.unread || 0); }, 0);
-    res.json({
-      ok: true,
-      data: r.rows.map(function(c) {
-        return {
-          phone: c.phone, name: c.name, lastMessage: c.last_message || "",
-          lastMessageAt: c.last_message_at, lastDirection: c.last_direction,
-          unread: c.unread || 0, messageCount: parseInt(c.message_count) || 0
-        };
-      }),
-      totalUnread: totalUnread
-    });
-  } catch (e) { res.json({ ok: true, data: [], totalUnread: 0 }); }
-});
-
-app.get("/api/inbox/conversation/:phone", async function(req, res) {
-  try {
-    var convo = await pool.query("SELECT * FROM conversations WHERE phone=$1", [req.params.phone]);
-    var msgs = await pool.query("SELECT * FROM messages WHERE phone=$1 ORDER BY created_at ASC LIMIT 200", [req.params.phone]);
-    if (convo.rowCount === 0) {
-      return res.json({ ok: true, data: { phone: req.params.phone, name: req.params.phone, messages: [] } });
-    }
-    res.json({
-      ok: true,
-      data: {
-        phone: convo.rows[0].phone,
-        name: convo.rows[0].name,
-        messages: msgs.rows.map(function(m) {
-          return { id: m.wa_message_id || m.id, direction: m.direction, text: m.text, type: m.msg_type, template: m.template, status: m.status, timestamp: m.created_at };
-        })
-      }
-    });
-  } catch (e) { res.json({ ok: true, data: { phone: req.params.phone, name: req.params.phone, messages: [] } }); }
-});
-
-app.post("/api/inbox/read/:phone", async function(req, res) {
-  try { await pool.query("UPDATE conversations SET unread=0 WHERE phone=$1", [req.params.phone]); } catch (e) {}
-  res.json({ ok: true });
-});
-
-app.post("/api/inbox/send", async function(req, res) {
-  var phone = req.body.phone;
-  var text = req.body.text;
-  if (!phone || !text) return res.status(400).json({ ok: false, error: "phone e text obrigatorios" });
-
-  try {
-    var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId + "/messages", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + CFG.waToken, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to: phone,
-        type: "text",
-        text: { body: text }
-      })
-    });
-    var data = await r.json();
-    if (!r.ok) throw new Error((data.error && data.error.message) || "WA " + r.status);
-    var msgId = (data.messages && data.messages[0] && data.messages[0].id) || null;
-
-    await addOutgoingMsg(phone, null, text, null, msgId);
-
-    res.json({ ok: true, messageId: msgId });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
-
-app.get("/api/inbox/unread", async function(req, res) {
-  try {
-    var r = await pool.query("SELECT COALESCE(SUM(unread), 0) as total FROM conversations");
-    res.json({ ok: true, unread: parseInt(r.rows[0].total) || 0 });
-  } catch (e) { res.json({ ok: true, unread: 0 }); }
-});
-
-// ===================== WA TEMPLATE MANAGEMENT =====================
-
-app.get("/api/wa-templates", async function(req, res) {
-  try {
-    var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.wabaId + "/message_templates?limit=20", {
-      headers: { Authorization: "Bearer " + CFG.waToken }
-    });
-    var data = await r.json();
-    if (!r.ok) throw new Error((data.error && data.error.message) || "Erro " + r.status);
-    res.json({ ok: true, data: data.data || [] });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-app.post("/api/wa-templates", async function(req, res) {
-  try {
-    var bodyText = req.body.bodyText || "";
-    var varMatches = bodyText.match(/\{\{(\d+)\}\}/g) || [];
-    var varCount = 0;
-    varMatches.forEach(function(m) {
-      var num = parseInt(m.replace(/[{}]/g, ""));
-      if (num > varCount) varCount = num;
-    });
-
-    var exampleValues = [];
-    for (var i = 1; i <= varCount; i++) {
-      if (i === 1) exampleValues.push("Maria");
-      else if (i === 2) exampleValues.push("https://exemplo.com");
-      else if (i === 3) exampleValues.push("https://exemplo.com/checkout");
-      else exampleValues.push("valor" + i);
-    }
-
-    var bodyComponent = { type: "BODY", text: bodyText };
-    if (exampleValues.length > 0) {
-      bodyComponent.example = { body_text: [exampleValues] };
-    }
-
-    var body = {
-      name: req.body.name,
-      language: req.body.language || "pt_BR",
-      category: req.body.category || "MARKETING",
-      components: [bodyComponent]
-    };
-    if (req.body.footerText) {
-      body.components.push({ type: "FOOTER", text: req.body.footerText });
-    }
-    if (req.body.buttonText && req.body.buttonUrl) {
-      body.components.push({
-        type: "BUTTONS",
-        buttons: [{
-          type: "URL",
-          text: req.body.buttonText,
-          url: req.body.buttonUrl,
-          example: [req.body.buttonUrlExample || "https://ssjmodafitness.com.br"]
-        }]
-      });
-    }
-    var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.wabaId + "/message_templates", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + CFG.waToken, "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    var data = await r.json();
-    if (!r.ok) {
-      console.error("[TEMPLATE-ERRO] Status:", r.status);
-      console.error("[TEMPLATE-ERRO] Resposta Meta:", JSON.stringify(data, null, 2));
-      console.error("[TEMPLATE-ERRO] Body enviado:", JSON.stringify(body, null, 2));
-      var errMsg = "Erro " + r.status;
-      if (data.error) {
-        errMsg = data.error.message || errMsg;
-        if (data.error.error_user_title) errMsg = data.error.error_user_title + " — " + (data.error.error_user_msg || data.error.message);
-        if (data.error.error_data && data.error.error_data.details) errMsg += " | Detalhe: " + data.error.error_data.details;
-      }
-      throw new Error(errMsg);
-    }
-
-    if (req.body.timing || req.body.tplType) {
-      templateMeta[req.body.name] = {
-        timing: req.body.timing || "",
-        tplType: req.body.tplType || "carrinho",
-        createdAt: new Date().toISOString()
-      };
-    }
-
-    if (req.body.timing && (req.body.tplType === "carrinho" || !req.body.tplType)) {
-      var timingStr = (req.body.timing || "").toLowerCase().trim();
-      var hours = 0;
-      if (timingStr.indexOf("min") !== -1) hours = parseFloat(timingStr) / 60;
-      else if (timingStr.indexOf("h") !== -1) hours = parseFloat(timingStr);
-      else if (timingStr.indexOf("d") !== -1) hours = parseFloat(timingStr) * 24;
-      else hours = parseFloat(timingStr) || 0;
-      if (hours > 0) {
-        var vars = [];
-        if (bodyText.indexOf("{{1}}") !== -1) vars.push("primeiro_nome");
-        if (bodyText.indexOf("{{2}}") !== -1) {
-          if (bodyText.toLowerCase().indexOf("cupom") !== -1 && bodyText.indexOf("{{3}}") !== -1) vars.push("cupom");
-          else vars.push("link_carrinho");
-        }
-        if (bodyText.indexOf("{{3}}") !== -1) vars.push("link_carrinho");
-        if (vars.length === 0) vars = ["primeiro_nome"];
-
-        var minH = Math.max(0, hours * 0.5);
-        var maxH = hours * 1.5;
-
-        var existing = TEMPLATES.find(function(t) { return t.name === req.body.name; });
-        if (existing) {
-          existing.minH = minH; existing.maxH = maxH; existing.timing = req.body.timing; existing.vars = vars;
-        } else {
-          TEMPLATES.push({
-            id: req.body.name, name: req.body.name, display: req.body.name.replace(/_/g, " "),
-            timing: req.body.timing, minH: minH, maxH: maxH, lang: "pt_BR", vars: vars,
-            hasButton: !!(req.body.buttonText && req.body.buttonUrl),
-            preview: req.body.bodyText, custom: true
-          });
-          TEMPLATES.sort(function(a, b) { return a.minH - b.minH; });
-        }
-        console.log("[TEMPLATE] Registrado '" + req.body.name + "' com timing " + req.body.timing + " (" + hours + "h), range " + minH + "-" + maxH + "h");
-      }
-    }
-
-    res.json({ ok: true, id: data.id, status: data.status, name: req.body.name, timing: req.body.timing || null });
-  } catch (e) { res.status(400).json({ ok: false, error: e.message }); }
-});
-
-app.get("/api/template-meta", function(req, res) {
-  res.json({ ok: true, data: templateMeta });
-});
-
-app.delete("/api/wa-templates/:name", async function(req, res) {
-  try {
-    var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.wabaId + "/message_templates?name=" + req.params.name, {
-      method: "DELETE",
-      headers: { Authorization: "Bearer " + CFG.waToken }
-    });
-    var data = await r.json();
-    res.json({ ok: data.success || false });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-// ===================== META ADS + IA =====================
-
-async function fetchMetaCampaigns() {
-  if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("META_AD_ACCOUNT_ID ou META_ADS_TOKEN nao configurado");
-  var fields = "campaign_name,campaign_id,impressions,clicks,spend,cpc,cpm,ctr,actions,action_values,reach,frequency";
-  var url = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&level=campaign&date_preset=last_7d&limit=50&access_token=" + CFG.metaAdsToken;
-  var r = await fetch(url);
-  var data = await r.json();
-  if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta Ads API erro " + r.status);
-  var campaigns = (data.data || []).map(function(c) {
-    var purchases = 0, purchaseValue = 0;
-    var actionMap = {}, valueMap = {};
-    if (c.actions) { c.actions.forEach(function(a) { actionMap[a.action_type] = (actionMap[a.action_type]||0) + (parseInt(a.value)||0); }); }
-    if (c.action_values) { c.action_values.forEach(function(a) { valueMap[a.action_type] = (valueMap[a.action_type]||0) + (parseFloat(a.value)||0); }); }
-    purchases = actionMap["offsite_conversion.fb_pixel_purchase"] || actionMap["purchase"] || 0;
-    purchaseValue = valueMap["offsite_conversion.fb_pixel_purchase"] || valueMap["purchase"] || 0;
-    var spend = parseFloat(c.spend) || 0;
-    var roas = spend > 0 ? (purchaseValue / spend) : 0;
-    return {
-      id: c.campaign_id, name: c.campaign_name,
-      impressions: parseInt(c.impressions) || 0, clicks: parseInt(c.clicks) || 0,
-      reach: parseInt(c.reach) || 0, frequency: parseFloat(c.frequency) || 0,
-      spend: spend, cpc: parseFloat(c.cpc) || 0,
-      cpm: parseFloat(c.cpm) || 0, ctr: parseFloat(c.ctr) || 0,
-      purchases: purchases, purchaseValue: purchaseValue,
-      roas: Math.round(roas * 100) / 100,
-      cpa: purchases > 0 ? Math.round((spend / purchases) * 100) / 100 : 0
-    };
-  });
-  return campaigns;
-}
-
-async function fetchMetaCampaignsToday() {
-  if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("META_AD_ACCOUNT_ID ou META_ADS_TOKEN nao configurado");
-  var fields = "campaign_name,campaign_id,impressions,clicks,spend,cpc,cpm,ctr,actions,action_values";
-  var url = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&level=campaign&date_preset=today&limit=50&access_token=" + CFG.metaAdsToken;
-  var r = await fetch(url);
-  var data = await r.json();
-  if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta Ads API erro " + r.status);
-  return data.data || [];
-}
-
-async function generateIAReport(campaigns) {
-  if (!CFG.anthropicKey) throw new Error("ANTHROPIC_API_KEY nao configurado");
-  var totalSpend = 0, totalPurchaseValue = 0, totalPurchases = 0;
-  campaigns.forEach(function(c) { totalSpend += c.spend; totalPurchaseValue += c.purchaseValue; totalPurchases += c.purchases; });
-  var globalRoas = totalSpend > 0 ? (totalPurchaseValue / totalSpend) : 0;
-
-  var prompt = `Você é um analista de mídia paga especializado em e-commerce de moda fitness feminina 45+. A loja é SSJ Moda Fitness.
-
-Analise os dados das campanhas dos últimos 7 dias e gere um relatório prático e direto.
-
-DADOS DAS CAMPANHAS:
-${JSON.stringify(campaigns, null, 2)}
-
-RESUMO GERAL:
-- Gasto total: R$ ${totalSpend.toFixed(2)}
-- Receita total: R$ ${totalPurchaseValue.toFixed(2)}
-- ROAS geral: ${globalRoas.toFixed(2)}
-- Total de compras: ${totalPurchases}
-
-Gere o relatório no seguinte formato:
-
-## RESUMO EXECUTIVO
-(2-3 linhas do cenário geral)
-
-## CAMPANHAS PRA ESCALAR
-(Quais campanhas estão performando bem e podem receber mais orçamento. Explique por quê.)
-
-## CAMPANHAS PRA PAUSAR OU AJUSTAR
-(Quais campanhas estão com performance ruim. Explique o problema e sugira ação.)
-
-## ALERTAS IMPORTANTES
-(CPAs muito altos, frequência alta, CTR muito baixo, ou qualquer anomalia)
-
-## AÇÕES RECOMENDADAS PARA HOJE
-(Lista de 3-5 ações práticas e específicas)
-
-Seja direto, prático e use números. Fale como um gestor de tráfego experiente.`;
-
-  var models = ["claude-opus-4-6", "claude-sonnet-4-6"];
-  for (var mi = 0; mi < models.length; mi++) {
-    try {
-      var r = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": CFG.anthropicKey, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify({ model: models[mi], max_tokens: 2000, messages: [{ role: "user", content: prompt }] })
-      });
-      var data = await r.json();
-      if (!r.ok) { console.error("[IA-REPORT] Erro " + models[mi] + ":", r.status); continue; }
-      var text = "";
-      if (data.content) { data.content.forEach(function(block) { if (block.type === "text") text += block.text; }); }
-      return text;
-    } catch (e) { console.error("[IA-REPORT] Exception " + models[mi] + ":", e.message); }
-  }
-  throw new Error("IA indisponível");
-}
-
-async function sendAlertWA(text) {
-  if (!CFG.alertPhone || !CFG.waToken) return;
-  try {
-    await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId + "/messages", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + CFG.waToken, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messaging_product: "whatsapp", to: CFG.alertPhone,
-        type: "text", text: { body: text }
-      })
-    });
-    console.log("[ALERT-WA] Alerta enviado para " + CFG.alertPhone);
-  } catch (e) {
-    console.error("[ALERT-WA] Erro ao enviar alerta:", e.message);
+  } else {
+    body.innerHTML = '<div class="empty-state"><p>Não foi possível verificar as integrações</p></div>';
   }
 }
 
-// CRON: Relatório IA diário às 8h
-cron.schedule("0 8 * * *", async function() {
-  console.log("[AUTO-IA] " + new Date().toISOString() + " Gerando relatório IA...");
-  if (!CFG.metaAdAccountId || !CFG.anthropicKey) {
-    console.log("[AUTO-IA] Variáveis não configuradas, pulando.");
-    return;
-  }
-  try {
-    var campaigns = await fetchMetaCampaigns();
-    if (campaigns.length === 0) {
-      console.log("[AUTO-IA] Nenhuma campanha encontrada.");
-      return;
-    }
-    var report = await generateIAReport(campaigns);
-    var today = new Date().toISOString().slice(0, 10);
+function toggleCron(el) {
+  el.classList.toggle('on');
+  const label = el.closest('.toggle-row')?.querySelector('.toggle-label')?.textContent || '';
+  const active = el.classList.contains('on');
+  toast(`${label}: ${active ? 'Ativada' : 'Desativada'}`, active ? 'success' : 'info');
+}
 
-    // Salvar no banco
-    await pool.query(
-      `INSERT INTO ia_reports (report_date, campaigns_data, report_text, alerts_sent)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (report_date) DO UPDATE SET campaigns_data=$2, report_text=$3, alerts_sent=$4`,
-      [today, JSON.stringify(campaigns), report, false]
-    );
+// ═══ MODAL DE ENVIO ═══
+// /api/send → { cartIds: [id], templateId }
+// /api/pix/send → { cartIds: [id], templateId }
+// /api/recompra/send → { orderIds: [id], templateId, coupon, intervalDays }
+let modalContext = {};
 
-    // Extrair alertas e enviar WhatsApp
-    var alertSection = report.match(/## ALERTAS IMPORTANTES[\s\S]*?(?=##|$)/);
-    var acoes = report.match(/## AÇÕES RECOMENDADAS[\s\S]*?(?=##|$)/);
-    var alertText = "📊 *SSJ CRM — Relatório IA Diário*\n\n";
-    var totalSpend = 0, totalRoas = 0;
-    campaigns.forEach(function(c) { totalSpend += c.spend; totalRoas += c.purchaseValue; });
-    var gRoas = totalSpend > 0 ? (totalRoas / totalSpend) : 0;
-    alertText += "💰 Gasto 7d: R$ " + totalSpend.toFixed(2) + "\n";
-    alertText += "📈 ROAS geral: " + gRoas.toFixed(2) + "\n\n";
-    if (alertSection) alertText += alertSection[0].trim().substring(0, 500) + "\n\n";
-    if (acoes) alertText += acoes[0].trim().substring(0, 500);
-    if (alertText.length > 1500) alertText = alertText.substring(0, 1500) + "...";
-
-    await sendAlertWA(alertText);
-    await pool.query("UPDATE ia_reports SET alerts_sent=true WHERE report_date=$1", [today]);
-
-    console.log("[AUTO-IA] Relatório gerado e alerta enviado com sucesso.");
-  } catch (e) {
-    console.error("[AUTO-IA] Erro:", e.message);
-  }
-});
-
-// API: Meta Ads campaigns
-app.get("/api/meta/campaigns", async function(req, res) {
-  try {
-    var campaigns = await fetchMetaCampaigns();
-    var totalSpend = 0, totalRevenue = 0, totalPurchases = 0, totalImpressions = 0, totalClicks = 0;
-    campaigns.forEach(function(c) {
-      totalSpend += c.spend; totalRevenue += c.purchaseValue;
-      totalPurchases += c.purchases; totalImpressions += c.impressions; totalClicks += c.clicks;
-    });
-    res.json({
-      ok: true,
-      data: campaigns,
-      summary: {
-        totalSpend: Math.round(totalSpend * 100) / 100,
-        totalRevenue: Math.round(totalRevenue * 100) / 100,
-        totalPurchases: totalPurchases,
-        totalImpressions: totalImpressions,
-        totalClicks: totalClicks,
-        roas: totalSpend > 0 ? Math.round((totalRevenue / totalSpend) * 100) / 100 : 0,
-        cpa: totalPurchases > 0 ? Math.round((totalSpend / totalPurchases) * 100) / 100 : 0,
-        ctr: totalImpressions > 0 ? Math.round((totalClicks / totalImpressions) * 10000) / 100 : 0
-      }
-    });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-// API: Generate IA report manually
-app.post("/api/meta/report", async function(req, res) {
-  try {
-    var campaigns;
-    if (req.body.campaignsData && req.body.campaignsData.length > 0) campaigns = req.body.campaignsData;
-    else campaigns = await fetchMetaCampaigns();
-    if (campaigns.length === 0) return res.json({ ok: false, error: "Nenhuma campanha encontrada" });
-    var cid = req.body.campaignId;
-    if (cid && cid !== "all") { var f = campaigns.filter(function(c) { return c.id === cid; }); if (f.length > 0) campaigns = f; }
-    var report = await generateIAReport(campaigns);
-    var today = new Date().toISOString().slice(0, 10);
-    await pool.query(`INSERT INTO ia_reports (report_date, campaigns_data, report_text) VALUES ($1, $2, $3) ON CONFLICT (report_date) DO UPDATE SET campaigns_data=$2, report_text=$3`, [today, JSON.stringify(campaigns), report]);
-    res.json({ ok: true, report: report, date: today, campaigns: campaigns.length });
-  } catch (e) { console.error("[META-REPORT] Erro:", e.message); res.status(500).json({ ok: false, error: e.message }); }
-});
-
-// API: Get IA reports history
-app.get("/api/meta/reports", async function(req, res) {
-  try {
-    var r = await pool.query("SELECT id, report_date, report_text, alerts_sent, created_at FROM ia_reports ORDER BY report_date DESC LIMIT 30");
-    res.json({ ok: true, data: r.rows });
-  } catch (e) { res.json({ ok: true, data: [] }); }
-});
-
-// API: Get specific report
-app.get("/api/meta/report/:date", async function(req, res) {
-  try {
-    var r = await pool.query("SELECT * FROM ia_reports WHERE report_date=$1", [req.params.date]);
-    if (r.rowCount === 0) return res.json({ ok: false, error: "Relatório não encontrado" });
-    var row = r.rows[0];
-    res.json({ ok: true, data: { date: row.report_date, report: row.report_text, campaigns: row.campaigns_data, alertsSent: row.alerts_sent, createdAt: row.created_at } });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-// API: Send alert manually
-app.post("/api/meta/alert", async function(req, res) {
-  try {
-    var text = req.body.text || "Teste de alerta SSJ CRM";
-    await sendAlertWA(text);
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-// ===================== HELPERS & NEW ENDPOINTS =====================
-
-function parseActions(c) {
-  var am = {}, vm = {};
-  if (c.actions) c.actions.forEach(function(a) { am[a.action_type] = (am[a.action_type]||0) + (parseInt(a.value)||0); });
-  if (c.action_values) c.action_values.forEach(function(a) { vm[a.action_type] = (vm[a.action_type]||0) + (parseFloat(a.value)||0); });
-  return {
-    purchases: am["offsite_conversion.fb_pixel_purchase"] || am["purchase"] || 0,
-    purchaseValue: vm["offsite_conversion.fb_pixel_purchase"] || vm["purchase"] || 0,
-    addToCart: am["offsite_conversion.fb_pixel_add_to_cart"] || am["add_to_cart"] || 0,
-    initiateCheckout: am["offsite_conversion.fb_pixel_initiate_checkout"] || am["initiate_checkout"] || 0,
-    viewContent: am["offsite_conversion.fb_pixel_view_content"] || am["view_content"] || 0
+function openSendModal(type, id, phone, name, coupon, intervalDays, templateId) {
+  modalContext = { type, id, phone, name, coupon, intervalDays, templateId };
+  document.getElementById('modalPhone').value = phone;
+  document.getElementById('modalName').value = name;
+  const tplSelect = document.getElementById('modalTemplate');
+  const couponGroup = document.getElementById('modalCouponGroup');
+  const templates = {
+    cart: ['lembrete_15min_v2','confianca_2h_v2','social_24h_v2','cupom_48h_v2'],
+    pix: ['pix_5min','pix_30min','pix_1h','pix_24h','pix_48h'],
+    recompra: ['recompra_30dias','recompra_60dias','recompra_90dias']
   };
+  tplSelect.innerHTML = (templates[type] || []).map(t => {
+    const sel = (t === templateId) ? 'selected' : '';
+    return `<option value="${t}" ${sel}>${t}</option>`;
+  }).join('');
+  if (type === 'recompra') {
+    couponGroup.style.display = '';
+    document.getElementById('modalCoupon').value = coupon || 'VOLTECOMSSJ';
+  } else { couponGroup.style.display = 'none'; }
+  document.getElementById('modalTitle').textContent = type === 'cart' ? 'Enviar Carrinho' : type === 'pix' ? 'Enviar PIX' : 'Enviar Recompra';
+  document.getElementById('sendModal').classList.add('show');
 }
 
-var roasTarget = parseFloat(process.env.ROAS_TARGET) || 3.0;
-app.get("/api/meta/roas-target", function(req, res) { res.json({ ok: true, target: roasTarget }); });
-app.post("/api/meta/roas-target", function(req, res) { if (req.body.target !== undefined) roasTarget = parseFloat(req.body.target) || 3.0; res.json({ ok: true, target: roasTarget }); });
+function closeModal() { document.getElementById('sendModal').classList.remove('show'); }
 
-// Campaigns by period with funnel
-app.get("/api/meta/campaigns-period", async function(req, res) {
-  try {
-    if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("Variáveis não configuradas");
-    var preset = req.query.preset || "last_7d";
-    var valid = ["today","yesterday","last_3d","last_7d","last_14d","last_28d","last_30d","this_month","last_month"];
-    if (valid.indexOf(preset) === -1) preset = "last_7d";
-    var fields = "campaign_name,campaign_id,impressions,clicks,spend,cpc,cpm,ctr,actions,action_values,reach,frequency";
-    var url = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&level=campaign&date_preset=" + preset + "&limit=50&access_token=" + CFG.metaAdsToken;
-    var r = await fetch(url); var data = await r.json();
-    if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta API " + r.status);
-    var campaigns = (data.data || []).map(function(c) {
-      var act = parseActions(c); var spend = parseFloat(c.spend) || 0;
-      return { id:c.campaign_id, name:c.campaign_name, impressions:parseInt(c.impressions)||0, clicks:parseInt(c.clicks)||0, reach:parseInt(c.reach)||0, frequency:parseFloat(c.frequency)||0, spend:spend, cpc:parseFloat(c.cpc)||0, cpm:parseFloat(c.cpm)||0, ctr:parseFloat(c.ctr)||0, purchases:act.purchases, purchaseValue:act.purchaseValue, roas:spend>0?Math.round((act.purchaseValue/spend)*100)/100:0, cpa:act.purchases>0?Math.round((spend/act.purchases)*100)/100:0, addToCart:act.addToCart, initiateCheckout:act.initiateCheckout, viewContent:act.viewContent };
-    });
-    var s = {totalSpend:0,totalRevenue:0,totalPurchases:0,totalImpressions:0,totalClicks:0,totalReach:0,totalAddToCart:0,totalInitiateCheckout:0,totalViewContent:0};
-    campaigns.forEach(function(c) { s.totalSpend+=c.spend;s.totalRevenue+=c.purchaseValue;s.totalPurchases+=c.purchases;s.totalImpressions+=c.impressions;s.totalClicks+=c.clicks;s.totalReach+=c.reach;s.totalAddToCart+=c.addToCart;s.totalInitiateCheckout+=c.initiateCheckout;s.totalViewContent+=c.viewContent; });
-    res.json({ ok:true, preset:preset, data:campaigns, summary:{ totalSpend:Math.round(s.totalSpend*100)/100, totalRevenue:Math.round(s.totalRevenue*100)/100, totalPurchases:s.totalPurchases, totalImpressions:s.totalImpressions, totalClicks:s.totalClicks, totalReach:s.totalReach, totalAddToCart:s.totalAddToCart, totalInitiateCheckout:s.totalInitiateCheckout, totalViewContent:s.totalViewContent, roas:s.totalSpend>0?Math.round((s.totalRevenue/s.totalSpend)*100)/100:0, cpa:s.totalPurchases>0?Math.round((s.totalSpend/s.totalPurchases)*100)/100:0, ctr:s.totalImpressions>0?Math.round((s.totalClicks/s.totalImpressions)*10000)/100:0, cpc:s.totalClicks>0?Math.round((s.totalSpend/s.totalClicks)*100)/100:0 }, funnel:{ impressions:s.totalImpressions, clicks:s.totalClicks, viewContent:s.totalViewContent, addToCart:s.totalAddToCart, initiateCheckout:s.totalInitiateCheckout, purchases:s.totalPurchases, revenue:Math.round(s.totalRevenue*100)/100 } });
-  } catch (e) { res.status(500).json({ ok:false, error:e.message }); }
-});
-
-// Ad-level insights
-app.get("/api/meta/ads", async function(req, res) {
-  try {
-    if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("Variáveis não configuradas");
-    var preset = req.query.preset || "last_7d"; var cid = req.query.campaignId;
-    var fields = "ad_name,ad_id,adset_name,adset_id,campaign_name,campaign_id,impressions,clicks,spend,cpc,ctr,actions,action_values,reach,frequency";
-    var url = (cid && cid !== "all") ? "https://graph.facebook.com/v22.0/" + cid + "/insights?fields=" + fields + "&level=ad&date_preset=" + preset + "&limit=100&access_token=" + CFG.metaAdsToken : "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&level=ad&date_preset=" + preset + "&limit=100&access_token=" + CFG.metaAdsToken;
-    var r = await fetch(url); var data = await r.json();
-    if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta API " + r.status);
-    var ads = (data.data || []).map(function(a) { var act = parseActions(a); var spend = parseFloat(a.spend)||0; return { adId:a.ad_id, adName:a.ad_name, adsetId:a.adset_id, adsetName:a.adset_name, campaignId:a.campaign_id, campaignName:a.campaign_name, impressions:parseInt(a.impressions)||0, clicks:parseInt(a.clicks)||0, reach:parseInt(a.reach)||0, frequency:parseFloat(a.frequency)||0, spend:spend, cpc:parseFloat(a.cpc)||0, ctr:parseFloat(a.ctr)||0, purchases:act.purchases, purchaseValue:act.purchaseValue, roas:spend>0?Math.round((act.purchaseValue/spend)*100)/100:0, cpa:act.purchases>0?Math.round((spend/act.purchases)*100)/100:0, addToCart:act.addToCart }; });
-    res.json({ ok:true, data:ads });
-  } catch (e) { res.status(500).json({ ok:false, error:e.message }); }
-});
-
-// Daily breakdown
-app.get("/api/meta/daily", async function(req, res) {
-  try {
-    if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("Variáveis não configuradas");
-    var days = Math.min(parseInt(req.query.days)||7, 30); var preset = days<=1?"today":"last_"+days+"d"; var cid = req.query.campaignId;
-    var fields = "impressions,clicks,spend,actions,action_values";
-    var url = (cid && cid !== "all") ? "https://graph.facebook.com/v22.0/"+cid+"/insights?fields="+fields+"&time_increment=1&date_preset="+preset+"&limit=60&access_token="+CFG.metaAdsToken : "https://graph.facebook.com/v22.0/act_"+CFG.metaAdAccountId+"/insights?fields="+fields+"&time_increment=1&date_preset="+preset+"&limit=60&access_token="+CFG.metaAdsToken;
-    var r = await fetch(url); var data = await r.json();
-    if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta API " + r.status);
-    var daily = (data.data || []).map(function(d) { var act = parseActions(d); var spend = parseFloat(d.spend)||0; return { date:d.date_start, spend:spend, impressions:parseInt(d.impressions)||0, clicks:parseInt(d.clicks)||0, purchases:act.purchases, revenue:Math.round(act.purchaseValue*100)/100, roas:spend>0?Math.round((act.purchaseValue/spend)*100)/100:0 }; });
-    res.json({ ok:true, data:daily });
-  } catch (e) { res.status(500).json({ ok:false, error:e.message }); }
-});
-
-// IA Chat
-app.post("/api/meta/chat", async function(req, res) {
-  try {
-    if (!CFG.anthropicKey) throw new Error("ANTHROPIC_API_KEY não configurada");
-    var msg = req.body.message || ""; if (!msg) return res.status(400).json({ ok:false, error:"Mensagem obrigatória" });
-    var sys = "Você é um analista de mídia paga especializado em e-commerce de moda fitness feminina 45+. Loja: SSJ Moda Fitness. ROAS meta: "+roasTarget+"x.\nResponda de forma prática e direta com números. Formate com markdown.\n\n";
-    if (req.body.summaryData) sys += "RESUMO:\n" + JSON.stringify(req.body.summaryData) + "\n\n";
-    if (req.body.funnelData) sys += "FUNIL:\n" + JSON.stringify(req.body.funnelData) + "\n\n";
-    if (req.body.campaignsData) sys += "CAMPANHAS:\n" + JSON.stringify(req.body.campaignsData) + "\n\n";
-    if (req.body.adsData) sys += "ANÚNCIOS:\n" + JSON.stringify(req.body.adsData) + "\n\n";
-    var models = ["claude-opus-4-6", "claude-sonnet-4-6"];
-    for (var mi = 0; mi < models.length; mi++) {
-      try {
-        var r = await fetch("https://api.anthropic.com/v1/messages", { method:"POST", headers:{"Content-Type":"application/json","x-api-key":CFG.anthropicKey,"anthropic-version":"2023-06-01"}, body:JSON.stringify({model:models[mi],max_tokens:2000,system:sys,messages:[{role:"user",content:msg}]}) });
-        var data = await r.json();
-        if (!r.ok) { console.error("[IA-CHAT] "+models[mi]+" erro:", r.status); continue; }
-        var text = ""; if (data.content) data.content.forEach(function(b) { if (b.type==="text") text+=b.text; });
-        return res.json({ ok:true, response:text, model:models[mi] });
-      } catch (e) { console.error("[IA-CHAT] "+models[mi]+":", e.message); }
-    }
-    throw new Error("IA indisponível");
-  } catch (e) { res.status(500).json({ ok:false, error:e.message }); }
-});
-
-// Comparison (current vs previous period)
-app.get("/api/meta/compare", async function(req, res) {
-  try {
-    if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("Variáveis não configuradas");
-    var fields = "impressions,clicks,spend,actions,action_values,reach";
-    var curUrl = "https://graph.facebook.com/v22.0/act_"+CFG.metaAdAccountId+"/insights?fields="+fields+"&date_preset=last_7d&access_token="+CFG.metaAdsToken;
-    var prevUrl = "https://graph.facebook.com/v22.0/act_"+CFG.metaAdAccountId+"/insights?fields="+fields+"&date_preset=last_14d&access_token="+CFG.metaAdsToken;
-    var [cr,pr] = await Promise.all([fetch(curUrl),fetch(prevUrl)]);
-    var [cd,pd] = await Promise.all([cr.json(),pr.json()]);
-    function sum(d) { var s={spend:0,revenue:0,purchases:0,impressions:0,clicks:0,reach:0};(d.data||[]).forEach(function(x){s.spend+=parseFloat(x.spend)||0;s.impressions+=parseInt(x.impressions)||0;s.clicks+=parseInt(x.clicks)||0;s.reach+=parseInt(x.reach)||0;var a=parseActions(x);s.purchases+=a.purchases;s.revenue+=a.purchaseValue;});s.roas=s.spend>0?Math.round((s.revenue/s.spend)*100)/100:0;s.cpa=s.purchases>0?Math.round((s.spend/s.purchases)*100)/100:0;s.ctr=s.impressions>0?Math.round((s.clicks/s.impressions)*10000)/100:0;return s;}
-    var cur=sum(cd),tot=sum(pd),prev={};Object.keys(cur).forEach(function(k){prev[k]=Math.max(0,(tot[k]||0)-(cur[k]||0));});
-    prev.roas=prev.spend>0?Math.round((prev.revenue/prev.spend)*100)/100:0;prev.cpa=prev.purchases>0?Math.round((prev.spend/prev.purchases)*100)/100:0;prev.ctr=prev.impressions>0?Math.round((prev.clicks/prev.impressions)*10000)/100:0;
-    res.json({ok:true,current:cur,previous:prev});
-  } catch (e) { res.status(500).json({ok:false,error:e.message}); }
-});
-
-// Fatigue detection
-app.get("/api/meta/fatigue", async function(req, res) {
-  try {
-    if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("Variáveis não configuradas");
-    var fields = "ad_name,ad_id,adset_name,campaign_name,impressions,clicks,spend,ctr,reach,frequency,actions,action_values";
-    var url = "https://graph.facebook.com/v22.0/act_"+CFG.metaAdAccountId+"/insights?fields="+fields+"&level=ad&date_preset=last_7d&limit=100&access_token="+CFG.metaAdsToken;
-    var r = await fetch(url); var data = await r.json();
-    if (!r.ok || data.error) throw new Error((data.error&&data.error.message)||"Meta API erro");
-    var ads = (data.data||[]).map(function(a) { var act=parseActions(a);var spend=parseFloat(a.spend)||0;return{name:a.ad_name,id:a.ad_id,adset:a.adset_name,campaign:a.campaign_name,frequency:parseFloat(a.frequency)||0,ctr:parseFloat(a.ctr)||0,spend:spend,roas:spend>0?Math.round((act.purchaseValue/spend)*100)/100:0,fatigueRisk:"low"}; });
-    ads.forEach(function(a){if(a.frequency>=4&&a.ctr<1)a.fatigueRisk="critical";else if(a.frequency>=3&&a.ctr<2)a.fatigueRisk="high";else if(a.frequency>=2.5&&a.ctr<3)a.fatigueRisk="medium";});
-    ads.sort(function(a,b){var o={critical:0,high:1,medium:2,low:3};return(o[a.fatigueRisk]||3)-(o[b.fatigueRisk]||3);});
-    res.json({ok:true,data:ads});
-  } catch (e) { res.status(500).json({ok:false,error:e.message}); }
-});
-
-// Scorecard IA (cached) - GET uses Meta API, POST uses frontend data
-var scorecardCache = { data:null, ts:0 };
-app.get("/api/meta/scorecard", async function(req, res) {
-  try {
-    var now=Date.now(), force=req.query.force==="1";
-    if (!force && scorecardCache.data && (now-scorecardCache.ts)<1800000) return res.json({ok:true,scorecard:scorecardCache.data,cached:true,age:Math.round((now-scorecardCache.ts)/1000)});
-    if (!CFG.metaAdAccountId||!CFG.anthropicKey) throw new Error("Variáveis não configuradas");
-    var fields="campaign_name,campaign_id,impressions,clicks,spend,cpc,ctr,actions,action_values,reach,frequency";
-    var cUrl="https://graph.facebook.com/v22.0/act_"+CFG.metaAdAccountId+"/insights?fields="+fields+"&level=campaign&date_preset=last_7d&limit=50&access_token="+CFG.metaAdsToken;
-    var aUrl="https://graph.facebook.com/v22.0/act_"+CFG.metaAdAccountId+"/insights?fields=ad_name,ad_id,adset_name,campaign_name,impressions,clicks,spend,ctr,actions,action_values,frequency&level=ad&date_preset=last_7d&limit=50&access_token="+CFG.metaAdsToken;
-    var [cr,ar]=await Promise.all([fetch(cUrl),fetch(aUrl)]);var [cd,ad]=await Promise.all([cr.json(),ar.json()]);
-    if (cd.error) { console.error("[SCORECARD] Meta campaigns error:", JSON.stringify(cd.error).substring(0,200)); }
-    if (ad.error) { console.error("[SCORECARD] Meta ads error:", JSON.stringify(ad.error).substring(0,200)); }
-    var camps=(cd.data||[]).map(function(c){var a=parseActions(c);var sp=parseFloat(c.spend)||0;return{name:c.campaign_name,spend:sp,purchases:a.purchases,roas:sp>0?Math.round((a.purchaseValue/sp)*100)/100:0,cpa:a.purchases>0?Math.round((sp/a.purchases)*100)/100:0,ctr:parseFloat(c.ctr)||0,frequency:parseFloat(c.frequency)||0};});
-    var ads=(ad.data||[]).map(function(a){var ac=parseActions(a);var sp=parseFloat(a.spend)||0;return{name:a.ad_name,adset:a.adset_name,campaign:a.campaign_name,spend:sp,roas:sp>0?Math.round((ac.purchaseValue/sp)*100)/100:0,ctr:parseFloat(a.ctr)||0,frequency:parseFloat(a.frequency)||0};});
-    console.log("[SCORECARD] Campanhas encontradas:", camps.length, "Anuncios:", ads.length);
-    var prompt="Você é analista de mídia paga para SSJ Moda Fitness (moda fitness feminina 45+). ROAS meta: "+roasTarget+"x.\n\nAnalise e gere um scorecard. Responda SOMENTE em JSON válido, sem markdown:\n{\"alerts\":[{\"type\":\"success|warning|danger\",\"title\":\"...\",\"detail\":\"...\"}],\"campaigns\":[{\"name\":\"...\",\"verdict\":\"ESCALAR|MANTER|PAUSAR|AJUSTAR\",\"reason\":\"...\"}],\"creatives\":[{\"name\":\"...\",\"verdict\":\"TOP|OK|FADIGA|PAUSAR\",\"reason\":\"...\"}],\"summary\":\"2-3 frases\"}\n\nCAMPANHAS:\n"+JSON.stringify(camps)+"\n\nANÚNCIOS:\n"+JSON.stringify(ads.slice(0,15));
-    var models=["claude-opus-4-6","claude-sonnet-4-6"];var text=null;
-    for(var mi=0;mi<models.length;mi++){try{var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":CFG.anthropicKey,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:models[mi],max_tokens:2000,messages:[{role:"user",content:prompt}]})});var d=await r.json();if(r.ok&&d.content){text="";d.content.forEach(function(b){if(b.type==="text")text+=b.text;});break;}}catch(e){}}
-    if(!text)throw new Error("IA indisponível");
-    var parsed;try{parsed=JSON.parse(text.replace(/```json\s*/g,"").replace(/```\s*/g,"").trim());}catch(e){parsed={summary:text,alerts:[],campaigns:[],creatives:[]};}
-    scorecardCache.data=parsed;scorecardCache.ts=now;
-    res.json({ok:true,scorecard:parsed,cached:false});
-  } catch (e) { console.error("[SCORECARD]",e.message); res.status(500).json({ok:false,error:e.message}); }
-});
-
-app.post("/api/meta/scorecard", async function(req, res) {
-  try {
-    if (!CFG.anthropicKey) throw new Error("ANTHROPIC_API_KEY não configurada");
-    var camps = req.body.campaigns || [];
-    var ads = req.body.ads || [];
-    if (camps.length === 0 && ads.length === 0) return res.json({ok:false,error:"Nenhum dado enviado"});
-    var prompt="Você é analista de mídia paga para SSJ Moda Fitness (moda fitness feminina 45+). ROAS meta: "+roasTarget+"x.\n\nAnalise e gere um scorecard. Responda SOMENTE em JSON válido, sem markdown, sem backticks:\n{\"alerts\":[{\"type\":\"success|warning|danger\",\"title\":\"...\",\"detail\":\"...\"}],\"campaigns\":[{\"name\":\"...\",\"verdict\":\"ESCALAR|MANTER|PAUSAR|AJUSTAR\",\"reason\":\"...\"}],\"creatives\":[{\"name\":\"...\",\"verdict\":\"TOP|OK|FADIGA|PAUSAR\",\"reason\":\"...\"}],\"summary\":\"2-3 frases\"}\n\nCAMPANHAS:\n"+JSON.stringify(camps)+"\n\nANÚNCIOS:\n"+JSON.stringify(ads.slice(0,20));
-    var models=["claude-opus-4-6","claude-sonnet-4-6"];var text=null;
-    for(var mi=0;mi<models.length;mi++){try{var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":CFG.anthropicKey,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:models[mi],max_tokens:2000,messages:[{role:"user",content:prompt}]})});var d=await r.json();if(r.ok&&d.content){text="";d.content.forEach(function(b){if(b.type==="text")text+=b.text;});break;}}catch(e){}}
-    if(!text)throw new Error("IA indisponível");
-    var parsed;try{parsed=JSON.parse(text.replace(/```json\s*/g,"").replace(/```\s*/g,"").trim());}catch(e){parsed={summary:text,alerts:[],campaigns:[],creatives:[]};}
-    scorecardCache.data=parsed;scorecardCache.ts=Date.now();
-    res.json({ok:true,scorecard:parsed,cached:false});
-  } catch (e) { console.error("[SCORECARD-POST]",e.message); res.status(500).json({ok:false,error:e.message}); }
-});
-
-// Real paid orders from Yampi (the truth)
-app.get("/api/meta/real-revenue", async function(req, res) {
-  try {
-    var days = parseInt(req.query.days) || 7;
-    var fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - days);
-    var fromStr = fromDate.toISOString().slice(0, 10);
-    var toStr = new Date().toISOString().slice(0, 10);
-
-    // Fetch orders from Yampi for the period
-    var allOrders = [];
-    var page = 1;
-    var hasMore = true;
-    while (hasMore && page <= 5) {
-      var data = await yampiGet("/orders", {
-        "q[created_at][from]": fromStr,
-        "q[created_at][to]": toStr,
-        include: "customer",
-        limit: "50",
-        page: String(page),
-        orderBy: "created_at",
-        sortedBy: "desc"
-      });
-      var orders = data.data || [];
-      allOrders = allOrders.concat(orders);
-      hasMore = orders.length === 50;
-      page++;
-    }
-
-    // Filter only PAID orders
-    var paidStatuses = ["paid", "invoiced", "shipped", "delivered", "complete", "completed", "pago", "enviado", "entregue"];
-    var paidOrders = allOrders.filter(function(o) {
-      var s = "";
-      if (o.status && o.status.data) s = (o.status.data.alias || o.status.data.name || "").toLowerCase();
-      else if (o.status_alias) s = o.status_alias.toLowerCase();
-      else s = "";
-      for (var i = 0; i < paidStatuses.length; i++) { if (s === paidStatuses[i]) return true; }
-      return false;
-    });
-
-    var totalRevenue = 0;
-    var totalOrders = paidOrders.length;
-    paidOrders.forEach(function(o) {
-      totalRevenue += parseFloat(o.value_total) || 0;
-    });
-
-    // Daily breakdown
-    var dailyMap = {};
-    paidOrders.forEach(function(o) {
-      var d = (o.created_at && o.created_at.date) ? o.created_at.date.slice(0, 10) : ((o.created_at || "").slice(0, 10));
-      if (!dailyMap[d]) dailyMap[d] = { orders: 0, revenue: 0 };
-      dailyMap[d].orders++;
-      dailyMap[d].revenue += parseFloat(o.value_total) || 0;
-    });
-
-    var daily = Object.keys(dailyMap).sort().map(function(d) {
-      return { date: d, orders: dailyMap[d].orders, revenue: Math.round(dailyMap[d].revenue * 100) / 100 };
-    });
-
-    res.json({
-      ok: true,
-      period: { from: fromStr, to: toStr, days: days },
-      totalOrders: totalOrders,
-      totalRevenue: Math.round(totalRevenue * 100) / 100,
-      totalAllOrders: allOrders.length,
-      conversionRate: allOrders.length > 0 ? Math.round((totalOrders / allOrders.length) * 100) : 0,
-      daily: daily
-    });
-  } catch (e) {
-    console.error("[REAL-REVENUE] Erro:", e.message);
-    res.status(500).json({ ok: false, error: e.message });
+async function sendFromModal() {
+  const btn = document.getElementById('modalSendBtn');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  const template = document.getElementById('modalTemplate').value;
+  const { type, id } = modalContext;
+  let endpoint, payload;
+  if (type === 'cart') {
+    endpoint = '/api/send';
+    payload = { cartIds: [id], templateId: template };
+  } else if (type === 'pix') {
+    endpoint = '/api/pix/send';
+    payload = { cartIds: [id], templateId: template };
+  } else {
+    endpoint = '/api/recompra/send';
+    payload = { orderIds: [id], templateId: template, coupon: document.getElementById('modalCoupon').value || 'VOLTECOMSSJ', intervalDays: modalContext.intervalDays || 30 };
   }
+  const res = await api(endpoint, { method: 'POST', body: JSON.stringify(payload) });
+  btn.disabled = false; btn.textContent = 'Enviar';
+  if (res && res.ok && res.sent > 0) { toast('Mensagem enviada!', 'success'); closeModal(); }
+  else { const err = (res?.results && res.results[0]?.error) || res?.error || 'tente novamente'; toast('Erro: ' + err, 'error'); }
+}
+
+document.getElementById('sendModal').addEventListener('click', (e) => { if (e.target.classList.contains('modal-overlay')) closeModal(); });
+// ═══ META ADS v4.0 ═══
+let currentPreset='last_7d',currentCampaignId='all',roasTargetVal=3.0;
+let metaCache={campaigns:[],summary:{},funnel:{},ads:[]};
+let chartSR=null,chartR=null,chartBub=null;
+const presetLabels={today:'Hoje',last_7d:'7 dias',last_14d:'14 dias',last_28d:'28 dias'};
+const presetDays={today:1,last_7d:7,last_14d:14,last_28d:28};
+function changePeriod(p){currentPreset=p;document.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));document.querySelector(`.period-tab[data-preset="${p}"]`)?.classList.add('active');loadMetaAds();}
+function filterByCampaign(){currentCampaignId=document.getElementById('campaignFilter').value;applyFilter();loadDailyCharts();loadAds();loadFatigue();}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function healthBadge(r){if(r>=roasTargetVal*1.5)return'<span class="health-badge health-escalar">ESCALAR</span>';if(r>=roasTargetVal)return'<span class="health-badge health-manter">MANTER</span>';if(r>=roasTargetVal*0.5)return'<span class="health-badge health-ajustar">AJUSTAR</span>';return'<span class="health-badge health-pausar">PAUSAR</span>';}
+function renderDelta(id,c,p,inv){const el=document.getElementById(id);if(!el||!p){if(el)el.textContent='';return;}const d=Math.round(((c-p)/p)*100);const a=d>0?'▲':d<0?'▼':'—';const cl=inv?(d>0?'down':d<0?'up':'neutral'):(d>0?'up':d<0?'down':'neutral');el.className='metric-delta '+cl;el.textContent=a+' '+Math.abs(d)+'%';}
+function applyFilter(){
+  let camps=metaCache.campaigns;if(currentCampaignId&&currentCampaignId!=='all')camps=camps.filter(c=>c.id===currentCampaignId);
+  const s={totalSpend:0,totalRevenue:0,totalPurchases:0,totalImpressions:0,totalClicks:0,totalReach:0,totalAddToCart:0,totalInitiateCheckout:0,totalViewContent:0};
+  camps.forEach(c=>{s.totalSpend+=c.spend;s.totalRevenue+=c.purchaseValue;s.totalPurchases+=c.purchases;s.totalImpressions+=c.impressions;s.totalClicks+=c.clicks;s.totalReach+=c.reach;s.totalAddToCart+=c.addToCart||0;s.totalInitiateCheckout+=c.initiateCheckout||0;s.totalViewContent+=c.viewContent||0;});
+  s.roas=s.totalSpend>0?Math.round((s.totalRevenue/s.totalSpend)*100)/100:0;s.cpa=s.totalPurchases>0?Math.round((s.totalSpend/s.totalPurchases)*100)/100:0;s.ctr=s.totalImpressions>0?Math.round((s.totalClicks/s.totalImpressions)*10000)/100:0;s.cpc=s.totalClicks>0?Math.round((s.totalSpend/s.totalClicks)*100)/100:0;
+  metaCache.filteredSummary=s;
+  document.getElementById('meta-spend2').textContent=fmtMoney(s.totalSpend);document.getElementById('meta-revenue2').textContent=fmtMoney(s.totalRevenue);
+  const re=document.getElementById('meta-roas2');re.textContent=(s.roas||0).toFixed(2)+'x';re.style.color=s.roas>=roasTargetVal?'var(--success)':s.roas>=roasTargetVal*0.7?'var(--warning)':'var(--danger)';
+  document.getElementById('meta-purchases2').textContent=s.totalPurchases||0;document.getElementById('meta-cpa2').textContent=s.cpa>0?fmtMoney(s.cpa):'—';document.getElementById('meta-ctr2').textContent=(s.ctr||0).toFixed(2)+'%';document.getElementById('meta-reach2').textContent=(s.totalReach||0).toLocaleString('pt-BR');document.getElementById('meta-cpc2').textContent=s.cpc>0?fmtMoney(s.cpc):'—';document.getElementById('metaPeriodLabel').textContent=presetLabels[currentPreset]||currentPreset;
+  const pct=Math.min(100,Math.round((s.roas/roasTargetVal)*100));const gc=pct>=100?'var(--success)':pct>=70?'var(--warning)':'var(--danger)';
+  document.getElementById('roasGauge').innerHTML='<div class="roas-gauge"><div class="roas-gauge-fill" style="width:'+pct+'%;background:'+gc+'"></div></div>';
+  renderRoasTarget(camps,s);renderCampaignsTable(camps);
+  renderFunnel({impressions:s.totalImpressions,clicks:s.totalClicks,viewContent:s.totalViewContent,addToCart:s.totalAddToCart,initiateCheckout:s.totalInitiateCheckout,purchases:s.totalPurchases,revenue:Math.round(s.totalRevenue*100)/100});
+  updateSimulator(document.getElementById('scaleSlider')?.value||50);
+}
+function renderRoasTarget(camps,s){const b=document.getElementById('roasTargetBody');const r=s.roas||0;const d=r-roasTargetVal;const sc=d>=0?'var(--success)':'var(--danger)';const pct=roasTargetVal>0?Math.min(Math.round((r/roasTargetVal)*100),150):0;
+  let ch='';if(camps.length>1){const ab=camps.filter(c=>c.roas>=roasTargetVal).sort((a,b)=>b.roas-a.roas);const bl=camps.filter(c=>c.roas<roasTargetVal).sort((a,b)=>a.roas-b.roas);if(ab.length)ch+='<div style="margin-top:6px"><span style="font-size:.68rem;font-weight:700;color:var(--success)">Acima:</span> '+ab.map(c=>c.name+' ('+c.roas.toFixed(1)+'x)').join(', ')+'</div>';if(bl.length)ch+='<div style="margin-top:2px"><span style="font-size:.68rem;font-weight:700;color:var(--danger)">Abaixo:</span> '+bl.map(c=>c.name+' ('+c.roas.toFixed(1)+'x)').join(', ')+'</div>';}
+  b.innerHTML='<div style="display:flex;gap:18px;flex-wrap:wrap"><div style="flex:1;min-width:170px"><div style="font-size:.72rem;color:var(--text-muted);margin-bottom:3px">Atual vs meta '+roasTargetVal+'x</div><div style="display:flex;align-items:baseline;gap:6px"><span style="font-size:1.7rem;font-weight:700;color:'+sc+'">'+r.toFixed(2)+'x</span><span style="font-size:.8rem;color:'+sc+'">'+(d>=0?'+':'')+d.toFixed(2)+'x</span></div><div class="roas-gauge" style="margin-top:5px;height:7px"><div class="roas-gauge-fill" style="width:'+Math.min(pct,100)+'%;background:'+sc+'"></div></div><div style="font-size:.62rem;color:var(--text-muted);margin-top:2px">'+pct+'% da meta</div></div><div style="flex:1;min-width:170px;font-size:.78rem"><div>Receita necessária: <strong>'+fmtMoney(s.totalSpend*roasTargetVal)+'</strong></div><div>Receita atual: <strong>'+fmtMoney(s.totalRevenue)+'</strong></div><div>Gap: <strong style="color:'+sc+'">'+fmtMoney(Math.abs(s.totalRevenue-s.totalSpend*roasTargetVal))+'</strong></div></div></div>'+ch;}
+function updateRoasTarget(v){roasTargetVal=parseFloat(v)||3;document.getElementById('roasTargetBadge').textContent='meta '+roasTargetVal+'x';document.getElementById('roasLineLabel').textContent=roasTargetVal+'x';api('/api/meta/roas-target',{method:'POST',body:JSON.stringify({target:roasTargetVal})});applyFilter();loadDailyCharts();}
+function renderCampaignsTable(camps){const tb=document.getElementById('metaCampaignsTable2');camps.sort((a,b)=>b.roas-a.roas);if(camps.length)tb.innerHTML=camps.map(c=>'<tr><td><strong>'+c.name+'</strong></td><td>R$ '+c.spend.toFixed(2)+'</td><td>'+c.clicks.toLocaleString('pt-BR')+'</td><td>'+c.ctr.toFixed(2)+'%</td><td>'+(c.addToCart||0)+'</td><td>'+c.purchases+'</td><td><strong style="color:'+(c.roas>=roasTargetVal?'var(--success)':c.roas>=roasTargetVal*0.7?'var(--warning)':'var(--danger)')+'">'+c.roas.toFixed(2)+'x</strong></td><td>'+(c.cpa>0?'R$ '+c.cpa.toFixed(2):'—')+'</td><td>'+healthBadge(c.roas)+'</td></tr>').join('');else tb.innerHTML='<tr><td colspan="9" class="empty-state"><p>Nenhuma</p></td></tr>';}
+function updateSimulator(v){const p=parseInt(v);document.getElementById('scaleLabel').textContent='+'+p+'%';const s=metaCache.realSummary||metaCache.filteredSummary||metaCache.summary;if(!s||!s.totalSpend)return;const f=1+(p/100);const dim=Math.pow(f,0.85);document.getElementById('sim-spend').textContent=fmtMoney(s.totalSpend*f);const np=Math.round((s.totalPurchases||0)*dim);document.getElementById('sim-purchases').textContent=np;const nc=np>0?(s.totalSpend*f)/np:0;document.getElementById('sim-cpa').textContent=fmtMoney(nc);document.getElementById('sim-cpa').style.color=nc>(s.cpa||0)*1.2?'var(--danger)':'inherit';document.getElementById('sim-revenue').textContent=fmtMoney((s.totalRevenue||0)*dim);}
+async function loadMetaAds(){await loadMetaCampaignsPeriod();loadDailyCharts();await loadAds();loadFatigue();loadComparison();loadRealRevenue();loadScorecard(false);loadLatestReport();}
+
+async function loadRealRevenue(){
+  const days=presetDays[currentPreset]||7;
+  const r=await api('/api/meta/real-revenue?days='+days);
+  if(r&&r.ok){
+    metaCache.realRevenue=r;
+    const s=metaCache.filteredSummary||metaCache.summary;
+    if(!s)return;
+    const realRoas=s.totalSpend>0?Math.round((r.totalRevenue/s.totalSpend)*100)/100:0;
+    const realCpa=r.totalOrders>0?Math.round((s.totalSpend/r.totalOrders)*100)/100:0;
+    // Override display with REAL data
+    document.getElementById('meta-revenue2').innerHTML=fmtMoney(r.totalRevenue)+'<div style="font-size:.56rem;color:var(--success);margin-top:1px">YAMPI (pago)</div>';
+    document.getElementById('meta-purchases2').innerHTML=r.totalOrders+'<div style="font-size:.56rem;color:var(--success);margin-top:1px">pedidos pagos</div>';
+    const re=document.getElementById('meta-roas2');re.innerHTML=realRoas.toFixed(2)+'x<div style="font-size:.56rem;color:var(--success);margin-top:1px">ROAS real</div>';re.style.color=realRoas>=roasTargetVal?'var(--success)':realRoas>=roasTargetVal*0.7?'var(--warning)':'var(--danger)';
+    document.getElementById('meta-cpa2').innerHTML=(realCpa>0?fmtMoney(realCpa):'—')+'<div style="font-size:.56rem;color:var(--success);margin-top:1px">CPA real</div>';
+    // Update ROAS gauge with real
+    const pct=Math.min(100,Math.round((realRoas/roasTargetVal)*100));const gc=pct>=100?'var(--success)':pct>=70?'var(--warning)':'var(--danger)';
+    document.getElementById('roasGauge').innerHTML='<div class="roas-gauge"><div class="roas-gauge-fill" style="width:'+pct+'%;background:'+gc+'"></div></div>';
+    // Update ROAS target section with real data
+    const diff=realRoas-roasTargetVal;const sc=diff>=0?'var(--success)':'var(--danger)';
+    document.getElementById('roasTargetBody').innerHTML='<div style="display:flex;gap:18px;flex-wrap:wrap"><div style="flex:1;min-width:170px"><div style="font-size:.72rem;color:var(--text-muted);margin-bottom:3px">ROAS real (Yampi) vs meta '+roasTargetVal+'x</div><div style="display:flex;align-items:baseline;gap:6px"><span style="font-size:1.7rem;font-weight:700;color:'+sc+'">'+realRoas.toFixed(2)+'x</span><span style="font-size:.8rem;color:'+sc+'">'+(diff>=0?'+':'')+diff.toFixed(2)+'x</span></div><div class="roas-gauge" style="margin-top:5px;height:7px"><div class="roas-gauge-fill" style="width:'+Math.min(pct,100)+'%;background:'+sc+'"></div></div><div style="font-size:.62rem;color:var(--text-muted);margin-top:2px">'+pct+'% da meta</div></div><div style="flex:1;min-width:170px;font-size:.78rem"><div>Receita REAL (paga): <strong style="color:var(--success)">'+fmtMoney(r.totalRevenue)+'</strong></div><div>Receita Meta (pixel): <strong style="color:var(--text-muted)">'+fmtMoney(s.totalRevenue)+'</strong></div><div>Diferença: <strong style="color:var(--danger)">'+fmtMoney(Math.abs(r.totalRevenue-s.totalRevenue))+'</strong></div><div style="margin-top:4px">Pedidos pagos: <strong>'+r.totalOrders+'</strong> de '+r.totalAllOrders+' total ('+r.conversionRate+'% confirmados)</div></div></div>';
+    // Update simulator with real data
+    metaCache.realSummary={totalSpend:s.totalSpend,totalRevenue:r.totalRevenue,totalPurchases:r.totalOrders,roas:realRoas,cpa:realCpa};
+  }
+}
+async function loadMetaCampaignsPeriod(){const res=await api('/api/meta/campaigns-period?preset='+currentPreset);if(res&&res.ok){metaCache.campaigns=res.data||[];metaCache.summary=res.summary||{};metaCache.funnel=res.funnel||{};const sel=document.getElementById('campaignFilter');const pv=sel.value;sel.innerHTML='<option value="all">Todas as campanhas</option>';metaCache.campaigns.forEach(c=>{sel.innerHTML+='<option value="'+c.id+'">'+c.name+'</option>';});sel.value=pv&&sel.querySelector('option[value="'+pv+'"]')?pv:'all';currentCampaignId=sel.value;applyFilter();}}
+async function loadAds(){let u='/api/meta/ads?preset='+currentPreset;if(currentCampaignId&&currentCampaignId!=='all')u+='&campaignId='+currentCampaignId;const res=await api(u);const tb=document.getElementById('metaAdsTable');if(res&&res.ok&&res.data&&res.data.length){metaCache.ads=res.data;res.data.sort((a,b)=>b.roas-a.roas);tb.innerHTML=res.data.map(a=>'<tr><td><strong style="font-size:.74rem">'+(a.adName||'—')+'</strong></td><td style="font-size:.7rem;color:var(--text-muted)">'+(a.adsetName||'—')+'</td><td>R$ '+a.spend.toFixed(2)+'</td><td>'+a.ctr.toFixed(2)+'%</td><td>'+(a.addToCart||0)+'</td><td>'+a.purchases+'</td><td><strong style="color:'+(a.roas>=roasTargetVal?'var(--success)':a.roas>=roasTargetVal*0.7?'var(--warning)':'var(--danger)')+'">'+a.roas.toFixed(2)+'x</strong></td><td>'+(a.cpa>0?'R$ '+a.cpa.toFixed(2):'—')+'</td><td>'+healthBadge(a.roas)+'</td></tr>').join('');renderBubble(res.data);}else{metaCache.ads=[];tb.innerHTML='<tr><td colspan="9" class="empty-state"><p>—</p></td></tr>';}}
+async function loadComparison(){const r=await api('/api/meta/compare');if(r&&r.ok){renderDelta('meta-spend-delta',r.current.spend,r.previous.spend,true);renderDelta('meta-revenue-delta',r.current.revenue,r.previous.revenue,false);renderDelta('meta-roas-delta',r.current.roas,r.previous.roas,false);renderDelta('meta-purchases-delta',r.current.purchases,r.previous.purchases,false);renderDelta('meta-cpa-delta',r.current.cpa,r.previous.cpa,true);renderDelta('meta-ctr-delta',r.current.ctr,r.previous.ctr,false);}}
+async function loadFatigue(){const r=await api('/api/meta/fatigue');const tb=document.getElementById('fatigueTable');if(r&&r.ok&&r.data&&r.data.length){tb.innerHTML=r.data.map(a=>{const l={critical:'CRÍTICO',high:'ALTO',medium:'MÉDIO',low:'BAIXO'}[a.fatigueRisk]||'—';return'<tr><td><strong style="font-size:.74rem">'+(a.name||'—')+'</strong></td><td style="font-size:.7rem;color:var(--text-muted)">'+(a.adset||'—')+'</td><td style="font-weight:600;color:'+(a.frequency>=3?'var(--danger)':a.frequency>=2?'var(--warning)':'var(--text)')+'">'+a.frequency.toFixed(1)+'</td><td>'+a.ctr.toFixed(2)+'%</td><td>'+a.roas.toFixed(2)+'x</td><td><span class="fatigue-badge fatigue-'+a.fatigueRisk+'">'+l+'</span></td></tr>';}).join('');}else tb.innerHTML='<tr><td colspan="6" class="empty-state"><p>—</p></td></tr>';}
+async function loadScorecard(force){const b=document.getElementById('scorecardBody');b.innerHTML='<div class="loading" style="padding:14px">Analisando com IA...</div>';
+  if(!force&&metaCache.campaigns.length===0){b.innerHTML='<div style="font-size:.78rem;color:var(--text-muted)">Aguardando dados das campanhas...</div>';return;}
+  var payload={campaigns:metaCache.campaigns,ads:metaCache.ads};
+  var r;
+  if(force||metaCache.campaigns.length>0){r=await api('/api/meta/scorecard',{method:'POST',body:JSON.stringify(payload)});}
+  else{r=await api('/api/meta/scorecard'+(force?'?force=1':''));}
+  if(r&&r.ok&&r.scorecard){const sc=r.scorecard;let h='';if(sc.summary)h+='<div style="font-size:.8rem;line-height:1.55;margin-bottom:8px">'+sc.summary+'</div>';const ac=document.getElementById('alertsContainer');if(sc.alerts&&sc.alerts.length)ac.innerHTML=sc.alerts.map(a=>'<div class="alert-card alert-'+(a.type||'warning')+'"><div><div class="alert-title">'+(a.title||'')+'</div><div class="alert-detail">'+(a.detail||'')+'</div></div></div>').join('');else ac.innerHTML='';if(sc.campaigns&&sc.campaigns.length){h+='<div style="margin-top:4px">';sc.campaigns.forEach(c=>{const cl=c.verdict==='ESCALAR'?'health-escalar':c.verdict==='MANTER'?'health-manter':c.verdict==='PAUSAR'?'health-pausar':'health-ajustar';h+='<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border-light)"><span class="health-badge '+cl+'">'+c.verdict+'</span><strong style="font-size:.78rem;flex:1">'+c.name+'</strong><span style="font-size:.7rem;color:var(--text-muted)">'+(c.reason||'')+'</span></div>';});h+='</div>';}if(sc.creatives&&sc.creatives.length){h+='<div style="margin-top:6px;font-size:.66rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Criativos</div>';sc.creatives.forEach(c=>{const cl=c.verdict==='TOP'?'health-escalar':c.verdict==='OK'?'health-manter':c.verdict==='FADIGA'?'health-ajustar':'health-pausar';h+='<div style="display:flex;align-items:center;gap:8px;padding:3px 0"><span class="health-badge '+cl+'">'+c.verdict+'</span><span style="font-size:.74rem">'+c.name+'</span><span style="font-size:.68rem;color:var(--text-muted)">'+(c.reason||'')+'</span></div>';});}b.innerHTML=h+(r.cached?'<div style="font-size:.58rem;color:var(--text-muted);margin-top:5px">Cache: '+r.age+'s</div>':'');}else b.innerHTML='<div style="font-size:.78rem;color:var(--text-muted)">Indisponível: '+(r?.error||'')+'</div>';}
+async function loadDailyCharts(){const days=presetDays[currentPreset]||7;if(days<=1){document.getElementById('chartsRow').style.display='none';return;}document.getElementById('chartsRow').style.display='';let u='/api/meta/daily?days='+days;if(currentCampaignId&&currentCampaignId!=='all')u+='&campaignId='+currentCampaignId;const r=await api(u);if(!r||!r.ok||!r.data||!r.data.length)return;const d=r.data,lb=d.map(x=>{const dt=new Date(x.date+'T12:00:00');return dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});});const cf={family:"'Outfit',sans-serif",size:11},gc='rgba(218,227,237,.4)';if(chartSR)chartSR.destroy();if(chartR)chartR.destroy();chartSR=new Chart(document.getElementById('chartSpendRevenue').getContext('2d'),{type:'bar',data:{labels:lb,datasets:[{label:'Gasto',data:d.map(x=>x.spend),backgroundColor:'rgba(74,159,229,.7)',borderRadius:4,barPercentage:.5},{label:'Receita',data:d.map(x=>x.revenue),backgroundColor:'rgba(58,175,118,.7)',borderRadius:4,barPercentage:.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:cf,boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:cf}},y:{grid:{color:gc},ticks:{font:cf,callback:v=>'R$'+v.toFixed(0)}}}}});chartR=new Chart(document.getElementById('chartRoas').getContext('2d'),{type:'line',data:{labels:lb,datasets:[{label:'ROAS',data:d.map(x=>x.roas),borderColor:'#7C5CBF',backgroundColor:'rgba(124,92,191,.08)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#7C5CBF',pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5},{label:'Meta',data:d.map(()=>roasTargetVal),borderColor:'rgba(216,84,84,.6)',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:cf,boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:cf}},y:{grid:{color:gc},ticks:{font:cf,callback:v=>v.toFixed(1)+'x'},suggestedMin:0}}}});}
+function renderBubble(ads){if(chartBub)chartBub.destroy();const ctx=document.getElementById('chartBubble').getContext('2d');const d=ads.filter(a=>a.spend>0).map(a=>({x:a.spend,y:a.roas,r:Math.max(5,Math.min(22,(a.purchases||0)*6+5)),label:a.adName||'—'}));chartBub=new Chart(ctx,{type:'bubble',data:{datasets:[{data:d,backgroundColor:d.map(x=>x.y>=roasTargetVal?'rgba(58,175,118,.5)':'rgba(216,84,84,.4)'),borderColor:d.map(x=>x.y>=roasTargetVal?'#3AAF76':'#D85454'),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const p=c.raw;return p.label+' | R$'+p.x.toFixed(2)+' | '+p.y.toFixed(2)+'x';}}}},scales:{x:{title:{display:true,text:'Gasto (R$)',font:{size:11}},grid:{color:'rgba(218,227,237,.3)'}},y:{title:{display:true,text:'ROAS',font:{size:11}},grid:{color:'rgba(218,227,237,.3)'},suggestedMin:0}}}});}
+function renderFunnel(f){const el=document.getElementById('funnelContainer');if(!f||!f.impressions){el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text-muted)">Sem dados</div>';return;}const steps=[{l:'Impressões',v:f.impressions,c:'#4A9FE5'},{l:'Cliques',v:f.clicks,c:'#5AAAE0'},{l:'Visualização',v:f.viewContent,c:'#E8A33D'},{l:'Add Carrinho',v:f.addToCart,c:'#E8B84B'},{l:'Checkout',v:f.initiateCheckout,c:'#7C5CBF'},{l:'Compras',v:f.purchases,c:'#3AAF76'}];const bm={1:{g:5,o:2},2:{g:50,o:20},3:{g:20,o:8},4:{g:30,o:15},5:{g:40,o:20}};const mx=steps[0].v||1;let h='';steps.forEach((s,i)=>{const ht=Math.max(25,(s.v/mx)*100);const p=i>0&&steps[i-1].v>0?((s.v/steps[i-1].v)*100):0;let rc='var(--text-muted)',an='';if(i>0&&bm[i]){const b=bm[i];if(p>=b.g){rc='var(--success)';an='OK';}else if(p>=b.o){rc='var(--warning)';an='Atenção';}else{rc='var(--danger)';an='Problema';}}if(i>0)h+='<div class="funnel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>';h+='<div class="funnel-step"><div class="funnel-bar-wrap"><div class="funnel-bar" style="height:'+ht+'px;background:'+s.c+'"></div></div><div class="funnel-value">'+(s.v>=1000?(s.v/1000).toFixed(1)+'k':s.v)+'</div><div class="funnel-label">'+s.l+'</div>'+(i>0?'<div class="funnel-rate" style="color:'+rc+'">'+p.toFixed(1)+'% '+(an?an:'')+'</div>':'')+'</div>';});h+='<div class="funnel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div><div class="funnel-step"><div class="funnel-bar-wrap"><div class="funnel-bar" style="height:65px;background:linear-gradient(180deg,#2D8F60,#3AAF76)"></div></div><div class="funnel-value" style="color:var(--success)">'+fmtMoney(f.revenue)+'</div><div class="funnel-label">Receita</div></div>';el.innerHTML=h;}
+async function loadLatestReport(){const r=await api('/api/meta/reports');if(r&&r.ok&&r.data&&r.data.length)showReport(r.data[0].report_text,r.data[0].report_date);}
+function showReport(t,d){const b=document.getElementById('iaReportBody2');if(!t){b.innerHTML='<div class="empty-state"><p>—</p></div>';return;}let h=t.replace(/## (.*)/g,'<h3 style="margin:10px 0 4px;font-size:.88rem;font-weight:700;color:var(--primary-dark)">$1</h3>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n- /g,'\n• ').replace(/\n/g,'<br>');b.innerHTML='<div style="font-size:.66rem;color:var(--text-muted);margin-bottom:5px">'+(d?new Date(d).toLocaleDateString('pt-BR'):'Hoje')+'</div><div style="font-size:.78rem;line-height:1.65">'+h+'</div>';}
+async function generateReport(){const btn=document.getElementById('genReportBtn2');btn.disabled=true;btn.textContent='Gerando...';document.getElementById('iaReportBody2').innerHTML='<div class="loading">IA analisando...</div>';const p={campaignsData:metaCache.campaigns};if(currentCampaignId&&currentCampaignId!=='all')p.campaignId=currentCampaignId;const r=await api('/api/meta/report',{method:'POST',body:JSON.stringify(p)});btn.disabled=false;btn.textContent='Gerar';if(r&&r.ok){showReport(r.report,r.date);toast('Relatório gerado!','success');}else{document.getElementById('iaReportBody2').innerHTML='<div class="empty-state"><p>Erro: '+(r?.error||'')+'</p></div>';toast('Erro','error');}}
+async function loadReportHistory(){document.getElementById('reportHistoryCard2').style.display='';const r=await api('/api/meta/reports');const tb=document.getElementById('reportHistoryTable2');if(r&&r.ok&&r.data&&r.data.length)tb.innerHTML=r.data.map(x=>'<tr><td>'+new Date(x.report_date).toLocaleDateString('pt-BR')+'</td><td>'+(x.alerts_sent?'<span class="badge-status badge-delivered">Sim</span>':'<span class="badge-status badge-pending">Não</span>')+'</td><td><button class="btn btn-outline btn-sm" onclick="viewReport(\''+x.report_date+'\')">Ver</button></td></tr>').join('');else tb.innerHTML='<tr><td colspan="3">—</td></tr>';}
+async function viewReport(d){const r=await api('/api/meta/report/'+d);if(r&&r.ok&&r.data){showReport(r.data.report,r.data.date);window.scrollTo({top:0,behavior:'smooth'});}else toast('Erro','error');}
+function iaAsk(q){document.getElementById('iaChatInput').value=q;iaSend();}
+async function iaSend(){const input=document.getElementById('iaChatInput');const t=input?.value?.trim();if(!t)return;input.value='';const msgs=document.getElementById('iaChatMessages');msgs.innerHTML+='<div class="ia-msg ia-msg-user"><div class="ia-msg-avatar">Eu</div><div class="ia-msg-content">'+escHtml(t)+'</div></div>';msgs.innerHTML+='<div class="ia-msg ia-msg-bot" id="iaTyping"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content"><div class="ia-msg-typing"><span></span><span></span><span></span></div></div></div>';msgs.scrollTop=msgs.scrollHeight;document.getElementById('iaChatSuggestions').style.display='none';const btn=document.getElementById('iaSendBtn');btn.disabled=true;btn.textContent='...';let cs=metaCache.campaigns;if(currentCampaignId&&currentCampaignId!=='all')cs=cs.filter(c=>c.id===currentCampaignId);const r=await api('/api/meta/chat',{method:'POST',body:JSON.stringify({message:t,campaignsData:cs,summaryData:metaCache.summary,funnelData:metaCache.funnel,adsData:metaCache.ads})});btn.disabled=false;btn.textContent='Enviar';document.getElementById('iaTyping')?.remove();let rp='Erro.';if(r&&r.ok&&r.response)rp=r.response;else if(r&&r.error)rp='Erro: '+r.error;let hr=rp.replace(/## (.*)/g,'<h3>$1</h3>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^- (.+)$/gm,'<li>$1</li>').replace(/\n/g,'<br>').replace(/<\/li><br><li>/g,'</li><li>').replace(/((?:<li>.*?<\/li>)+)/g,'<ul>$1</ul>');msgs.innerHTML+='<div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">'+hr+'</div></div>';msgs.scrollTop=msgs.scrollHeight;}
+
+// ═══ TEMPLATE CREATION MODAL ═══
+// POST /api/wa-templates → { name, bodyText, footerText, buttonText, buttonUrl, category, language, timing, tplType }
+function openTemplateModal() {
+  document.getElementById('tplName').value = '';
+  document.getElementById('tplBody').value = '';
+  document.getElementById('tplFooter').value = '';
+  document.getElementById('tplBtnText').value = '';
+  document.getElementById('tplBtnUrl').value = '';
+  document.getElementById('tplTiming').value = '';
+  document.getElementById('tplCategory').value = 'MARKETING';
+  document.getElementById('tplType').value = 'carrinho';
+  document.getElementById('templateModal').classList.add('show');
+}
+
+function closeTemplateModal() {
+  document.getElementById('templateModal').classList.remove('show');
+}
+
+document.getElementById('templateModal').addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) closeTemplateModal();
 });
 
-// ===================== START SERVER =====================
-// IMPORTANTE: escutar na porta PRIMEIRO pra healthcheck do Railway passar
-// Depois inicializar o banco em background
+async function submitTemplate() {
+  const name = document.getElementById('tplName').value.trim();
+  const bodyText = document.getElementById('tplBody').value.trim();
+  if (!name || !bodyText) { toast('Nome e texto do corpo são obrigatórios', 'error'); return; }
 
-var server = app.listen(CFG.port, function() {
-  console.log("SSJ Recovery rodando na porta " + CFG.port);
-});
+  const btn = document.getElementById('tplSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Enviando...';
 
-// Inicializar PostgreSQL em background (não bloqueia o healthcheck)
-initDB().then(function() {
-  console.log("[STARTUP] Banco pronto, servidor operacional");
-}).catch(function(e) {
-  console.error("[STARTUP] Erro ao conectar PostgreSQL:", e.message);
-  console.error("[STARTUP] Servidor rodando sem persistencia!");
-});
+  const payload = {
+    name: name,
+    bodyText: bodyText,
+    category: document.getElementById('tplCategory').value,
+    language: 'pt_BR',
+    timing: document.getElementById('tplTiming').value.trim() || null,
+    tplType: document.getElementById('tplType').value
+  };
 
-// Prevent crashes from unhandled errors
-process.on("uncaughtException", function(err) { console.error("[CRASH-PREVENTED] uncaughtException:", err.message); });
-process.on("unhandledRejection", function(err) { console.error("[CRASH-PREVENTED] unhandledRejection:", err && err.message ? err.message : err); });
+  const footer = document.getElementById('tplFooter').value.trim();
+  if (footer) payload.footerText = footer;
 
-// Graceful shutdown
-process.on("SIGTERM", function() {
-  console.log("[SHUTDOWN] Recebeu SIGTERM, fechando...");
-  server.close(function() {
-    pool.end().then(function() {
-      console.log("[SHUTDOWN] Encerrado com sucesso");
-      process.exit(0);
-    });
-  });
-  // Force close after 5s
-  setTimeout(function() { process.exit(0); }, 5000);
-});
+  const btnText = document.getElementById('tplBtnText').value.trim();
+  const btnUrl = document.getElementById('tplBtnUrl').value.trim();
+  if (btnText && btnUrl) {
+    payload.buttonText = btnText;
+    payload.buttonUrl = btnUrl;
+    payload.buttonUrlExample = btnUrl.replace('{{1}}', 'exemplo');
+  }
+
+  const res = await api('/api/wa-templates', { method: 'POST', body: JSON.stringify(payload) });
+  btn.disabled = false; btn.textContent = 'Enviar para Aprovação';
+
+  if (res && res.ok) {
+    toast('Template enviado para aprovação do Meta!', 'success');
+    closeTemplateModal();
+    loadTemplates();
+  } else {
+    toast('Erro: ' + (res?.error || 'tente novamente'), 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => { loadDashboard(); loadUnread(); setInterval(loadUnread, 30000); });
+</script>
+</body>
+</html>
