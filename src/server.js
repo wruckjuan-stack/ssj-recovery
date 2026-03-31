@@ -727,8 +727,25 @@ app.post("/api/send", async function(req, res) {
 app.get("/api/history", async function(req, res) {
   try {
     var r = await pool.query("SELECT * FROM sent_messages ORDER BY sent_at DESC LIMIT 50");
-    res.json({ data: r.rows, total: r.rowCount });
-  } catch (e) { res.json({ data: [], total: 0 }); }
+    var data = r.rows.map(function(row) {
+      return {
+        id: row.id,
+        cartId: row.cart_id,
+        contact: row.contact_name || "Cliente",
+        phone: row.phone || "",
+        template: row.template_id ? row.template_id.replace(/_/g, " ").replace(/\bv2\b/, "").trim() : "",
+        templateId: row.template_id,
+        status: row.status || "sent",
+        sentAt: row.sent_at ? new Date(row.sent_at).toISOString() : "",
+        cartValue: row.cart_value ? "R$ " + Number(row.cart_value).toFixed(2) : "—",
+        cartValueRaw: Number(row.cart_value) || 0,
+        waMessageId: row.wa_message_id,
+        automated: row.automated || false,
+        type: row.msg_type || "carrinho"
+      };
+    });
+    res.json({ data: data, total: r.rowCount });
+  } catch (e) { console.error("[HISTORY] Erro:", e.message); res.json({ data: [], total: 0 }); }
 });
 
 app.get("/api/stats", async function(req, res) {
@@ -812,7 +829,22 @@ app.post("/api/pix/send", async function(req, res) {
 app.get("/api/pix/history", async function(req, res) {
   try {
     var r = await pool.query("SELECT * FROM pix_sent ORDER BY sent_at DESC LIMIT 50");
-    res.json({ data: r.rows, total: r.rowCount });
+    var data = r.rows.map(function(row) {
+      return {
+        id: row.id,
+        cartId: row.cart_id,
+        contact: row.contact_name || "Cliente",
+        phone: row.phone || "",
+        template: row.template_id ? row.template_id.replace(/_/g, " ") : "",
+        templateId: row.template_id,
+        status: row.status || "sent",
+        sentAt: row.sent_at ? new Date(row.sent_at).toISOString() : "",
+        cartValue: row.cart_value || "—",
+        waMessageId: row.wa_message_id,
+        type: "pix"
+      };
+    });
+    res.json({ data: data, total: r.rowCount });
   } catch (e) { res.json({ data: [], total: 0 }); }
 });
 
@@ -912,7 +944,23 @@ app.post("/api/recompra/send", async function(req, res) {
 app.get("/api/recompra/history", async function(req, res) {
   try {
     var r = await pool.query("SELECT * FROM recompra_sent ORDER BY sent_at DESC LIMIT 50");
-    res.json({ data: r.rows, total: r.rowCount });
+    var data = r.rows.map(function(row) {
+      return {
+        id: row.id,
+        orderId: row.order_id,
+        contact: row.contact_name || "Cliente",
+        phone: row.phone || "",
+        template: row.template_id ? row.template_id.replace(/_/g, " ") : "",
+        templateId: row.template_id,
+        status: row.status || "sent",
+        sentAt: row.sent_at ? new Date(row.sent_at).toISOString() : "",
+        orderValue: row.order_value || "—",
+        waMessageId: row.wa_message_id,
+        intervalDays: row.interval_days,
+        type: "recompra"
+      };
+    });
+    res.json({ data: data, total: r.rowCount });
   } catch (e) { res.json({ data: [], total: 0 }); }
 });
 
