@@ -49,6 +49,8 @@ const DB = {
   },
   // Inbox / Conversations
   conversations: {},  // keyed by phone number: { phone, name, messages[], lastMessageAt, unread }
+  // Custom template metadata (timing, type)
+  templateMeta: {},   // keyed by template name: { timing, tplType, createdAt }
 };
 
 // ===================== TEMPLATES =====================
@@ -807,8 +809,78 @@ app.post("/api/wa-templates", async function(req, res) {
     });
     var data = await r.json();
     if (!r.ok) throw new Error((data.error && data.error.message) || "Erro " + r.status);
-    res.json({ ok: true, id: data.id, status: data.status, name: req.body.name });
+
+    // Save timing metadata locally
+    if (req.body.timing || req.body.tplType) {
+      DB.templateMeta[req.body.name] = {
+        timing: req.body.timing || "",
+        tplType: req.body.tplType || "carrinho",
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    // If it's a cart template with timing, register it in the TEMPLATES array for the cron
+    if (req.body.timing && (req.body.tplType === "carrinho" || !req.body.tplType)) {
+      var timingStr = (req.body.timing || "").toLowerCase().trim();
+      var hours = 0;
+      if (timingStr.indexOf("min") !== -1) {
+        hours = parseFloat(timingStr) / 60;
+      } else if (timingStr.indexOf("h") !== -1) {
+        hours = parseFloat(timingStr);
+      } else if (timingStr.indexOf("d") !== -1) {
+        hours = parseFloat(timingStr) * 24;
+      } else {
+        hours = parseFloat(timingStr) || 0;
+      }
+      if (hours > 0) {
+        // Detect variables used in the body text
+        var bodyText = req.body.bodyText || "";
+        var vars = [];
+        if (bodyText.indexOf("{{1}}") !== -1) vars.push("primeiro_nome");
+        if (bodyText.indexOf("{{2}}") !== -1) {
+          if (bodyText.toLowerCase().indexOf("cupom") !== -1 && bodyText.indexOf("{{3}}") !== -1) vars.push("cupom");
+          else vars.push("link_carrinho");
+        }
+        if (bodyText.indexOf("{{3}}") !== -1) vars.push("link_carrinho");
+        if (vars.length === 0) vars = ["primeiro_nome", "link_carrinho"];
+
+        // Find range: set minH slightly below hours, maxH slightly above
+        var minH = Math.max(0, hours * 0.5);
+        var maxH = hours * 1.5;
+
+        // Check if template already exists in TEMPLATES
+        var existing = TEMPLATES.find(function(t) { return t.name === req.body.name; });
+        if (existing) {
+          existing.minH = minH;
+          existing.maxH = maxH;
+          existing.timing = req.body.timing;
+          existing.vars = vars;
+        } else {
+          TEMPLATES.push({
+            id: req.body.name,
+            name: req.body.name,
+            display: req.body.name.replace(/_/g, " "),
+            timing: req.body.timing,
+            minH: minH,
+            maxH: maxH,
+            lang: "pt_BR",
+            vars: vars,
+            preview: req.body.bodyText,
+            custom: true
+          });
+          // Sort templates by minH
+          TEMPLATES.sort(function(a, b) { return a.minH - b.minH; });
+        }
+        console.log("[TEMPLATE] Registrado '" + req.body.name + "' com timing " + req.body.timing + " (" + hours + "h), range " + minH + "-" + maxH + "h");
+      }
+    }
+
+    res.json({ ok: true, id: data.id, status: data.status, name: req.body.name, timing: req.body.timing || null });
   } catch (e) { res.status(400).json({ ok: false, error: e.message }); }
+});
+
+app.get("/api/template-meta", function(req, res) {
+  res.json({ ok: true, data: DB.templateMeta });
 });
 
 app.delete("/api/wa-templates/:name", async function(req, res) {
