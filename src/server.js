@@ -1891,6 +1891,187 @@ app.get("/api/meta/ia-test", async function(req, res) {
   res.json({ ok: results.some(function(r) { return r.ok; }), key_preview: keyPreview, results: results });
 });
 
+// ===================== META ADS: ADVANCED ANALYTICS =====================
+
+// ROAS Target (configurable)
+var roasTarget = parseFloat(process.env.ROAS_TARGET) || 3.0;
+
+app.get("/api/meta/roas-target", function(req, res) { res.json({ ok: true, target: roasTarget }); });
+app.post("/api/meta/roas-target", function(req, res) {
+  if (req.body.target !== undefined) roasTarget = parseFloat(req.body.target) || 3.0;
+  res.json({ ok: true, target: roasTarget });
+});
+
+// Scorecard cache (avoid calling IA on every page load)
+var scorecardCache = { text: null, ts: 0, ttl: 1800000 }; // 30min TTL
+
+app.get("/api/meta/scorecard", async function(req, res) {
+  try {
+    var now = Date.now();
+    var force = req.query.force === "1";
+    if (!force && scorecardCache.text && (now - scorecardCache.ts) < scorecardCache.ttl) {
+      return res.json({ ok: true, scorecard: scorecardCache.text, cached: true, age: Math.round((now - scorecardCache.ts) / 1000) });
+    }
+    if (!CFG.metaAdAccountId || !CFG.anthropicKey) throw new Error("Variáveis não configuradas");
+
+    // Fetch campaigns + ads data
+    var fields = "campaign_name,campaign_id,impressions,clicks,spend,cpc,ctr,actions,action_values,reach,frequency";
+    var campUrl = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&level=campaign&date_preset=last_7d&limit=50&access_token=" + CFG.metaAdsToken;
+    var adUrl = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=ad_name,ad_id,adset_name,campaign_name,impressions,clicks,spend,ctr,actions,action_values,reach,frequency&level=ad&date_preset=last_7d&limit=100&access_token=" + CFG.metaAdsToken;
+
+    var [campRes, adRes] = await Promise.all([fetch(campUrl), fetch(adUrl)]);
+    var [campData, adData] = await Promise.all([campRes.json(), adRes.json()]);
+
+    var campaigns = (campData.data || []).map(function(c) {
+      var act = parseMetaActions(c);
+      var spend = parseFloat(c.spend) || 0;
+      return { name: c.campaign_name, id: c.campaign_id, spend: spend, purchases: act.purchases, purchaseValue: act.purchaseValue, roas: spend > 0 ? Math.round((act.purchaseValue / spend) * 100) / 100 : 0, cpa: act.purchases > 0 ? Math.round((spend / act.purchases) * 100) / 100 : 0, ctr: parseFloat(c.ctr) || 0, frequency: parseFloat(c.frequency) || 0, impressions: parseInt(c.impressions) || 0, clicks: parseInt(c.clicks) || 0 };
+    });
+
+    var ads = (adData.data || []).map(function(a) {
+      var act = parseMetaActions(a);
+      var spend = parseFloat(a.spend) || 0;
+      return { name: a.ad_name, id: a.ad_id, adset: a.adset_name, campaign: a.campaign_name, spend: spend, purchases: act.purchases, roas: spend > 0 ? Math.round((act.purchaseValue / spend) * 100) / 100 : 0, ctr: parseFloat(a.ctr) || 0, frequency: parseFloat(a.frequency) || 0 };
+    });
+
+    var prompt = `Você é um analista de mídia paga especializado em e-commerce de moda fitness feminina 45+. A loja é SSJ Moda Fitness. ROAS meta: ${roasTarget}x.
+
+Analise os dados abaixo e gere um SCORECARD rápido e direto. Para cada campanha e para os top 5 criativos, dê um veredicto.
+
+CAMPANHAS: ${JSON.stringify(campaigns)}
+ANÚNCIOS: ${JSON.stringify(ads.slice(0, 20))}
+
+Responda EXATAMENTE neste formato JSON (sem markdown, sem backticks):
+{"alerts":[{"type":"success|warning|danger","title":"texto curto","detail":"explicação 1 linha"}],"campaigns":[{"name":"nome","verdict":"ESCALAR|MANTER|PAUSAR|AJUSTAR","reason":"1 linha","roas":0,"cpa":0}],"creatives":[{"name":"nome","verdict":"TOP|OK|FADIGA|PAUSAR","reason":"1 linha"}],"summary":"2-3 frases resumo geral"}`;
+
+    var models = ["claude-opus-4-6", "claude-sonnet-4-6"];
+    var text = null;
+    for (var mi = 0; mi < models.length; mi++) {
+      try {
+        var r = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-api-key": CFG.anthropicKey, "anthropic-version": "2023-06-01" },
+          body: JSON.stringify({ model: models[mi], max_tokens: 2000, messages: [{ role: "user", content: prompt }] })
+        });
+        var data = await r.json();
+        if (r.ok && data.content) {
+          text = "";
+          data.content.forEach(function(b) { if (b.type === "text") text += b.text; });
+          break;
+        }
+      } catch (e) {}
+    }
+    if (!text) throw new Error("IA indisponível");
+
+    // Try parse JSON, fallback to raw text
+    var parsed = null;
+    try {
+      var cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+      parsed = JSON.parse(cleaned);
+    } catch (e) {
+      parsed = { summary: text, alerts: [], campaigns: [], creatives: [] };
+    }
+
+    scorecardCache.text = parsed;
+    scorecardCache.ts = now;
+    res.json({ ok: true, scorecard: parsed, cached: false });
+  } catch (e) {
+    console.error("[SCORECARD] Erro:", e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Comparative: current period vs previous period
+app.get("/api/meta/compare", async function(req, res) {
+  try {
+    if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("Variáveis não configuradas");
+    var fields = "impressions,clicks,spend,actions,action_values,reach";
+
+    var currentUrl = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&date_preset=last_7d&access_token=" + CFG.metaAdsToken;
+    var previousUrl = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&date_preset=last_14d&access_token=" + CFG.metaAdsToken;
+
+    var [curRes, prevRes] = await Promise.all([fetch(currentUrl), fetch(previousUrl)]);
+    var [curData, prevData] = await Promise.all([curRes.json(), prevRes.json()]);
+
+    function sumPeriod(data) {
+      var s = { spend: 0, revenue: 0, purchases: 0, impressions: 0, clicks: 0, reach: 0 };
+      (data.data || []).forEach(function(d) {
+        s.spend += parseFloat(d.spend) || 0;
+        s.impressions += parseInt(d.impressions) || 0;
+        s.clicks += parseInt(d.clicks) || 0;
+        s.reach += parseInt(d.reach) || 0;
+        var act = parseMetaActions(d);
+        s.purchases += act.purchases;
+        s.revenue += act.purchaseValue;
+      });
+      s.roas = s.spend > 0 ? Math.round((s.revenue / s.spend) * 100) / 100 : 0;
+      s.cpa = s.purchases > 0 ? Math.round((s.spend / s.purchases) * 100) / 100 : 0;
+      s.ctr = s.impressions > 0 ? Math.round((s.clicks / s.impressions) * 10000) / 100 : 0;
+      return s;
+    }
+
+    var current = sumPeriod(curData);
+    // Previous = last_14d minus last_7d (approximate)
+    var total14d = sumPeriod(prevData);
+    var previous = {};
+    Object.keys(current).forEach(function(k) {
+      previous[k] = Math.max(0, (total14d[k] || 0) - (current[k] || 0));
+    });
+    // Recalculate ratios for previous
+    previous.roas = previous.spend > 0 ? Math.round((previous.revenue / previous.spend) * 100) / 100 : 0;
+    previous.cpa = previous.purchases > 0 ? Math.round((previous.spend / previous.purchases) * 100) / 100 : 0;
+    previous.ctr = previous.impressions > 0 ? Math.round((previous.clicks / previous.impressions) * 10000) / 100 : 0;
+
+    // Calculate deltas
+    var deltas = {};
+    Object.keys(current).forEach(function(k) {
+      var c = current[k] || 0, p = previous[k] || 0;
+      deltas[k] = p > 0 ? Math.round(((c - p) / p) * 100) : (c > 0 ? 100 : 0);
+    });
+
+    res.json({ ok: true, current: current, previous: previous, deltas: deltas });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Fatigue detection: ads with high frequency + declining CTR
+app.get("/api/meta/fatigue", async function(req, res) {
+  try {
+    if (!CFG.metaAdAccountId || !CFG.metaAdsToken) throw new Error("Variáveis não configuradas");
+    var fields = "ad_name,ad_id,adset_name,campaign_name,impressions,clicks,spend,ctr,reach,frequency,actions,action_values";
+    var url = "https://graph.facebook.com/v22.0/act_" + CFG.metaAdAccountId + "/insights?fields=" + fields + "&level=ad&date_preset=last_7d&limit=100&access_token=" + CFG.metaAdsToken;
+    var r = await fetch(url);
+    var data = await r.json();
+    if (!r.ok || data.error) throw new Error((data.error && data.error.message) || "Meta API erro");
+
+    var ads = (data.data || []).map(function(a) {
+      var act = parseMetaActions(a);
+      var spend = parseFloat(a.spend) || 0;
+      return {
+        name: a.ad_name, id: a.ad_id, adset: a.adset_name, campaign: a.campaign_name,
+        frequency: parseFloat(a.frequency) || 0, ctr: parseFloat(a.ctr) || 0,
+        spend: spend, impressions: parseInt(a.impressions) || 0, reach: parseInt(a.reach) || 0,
+        purchases: act.purchases,
+        roas: spend > 0 ? Math.round((act.purchaseValue / spend) * 100) / 100 : 0,
+        fatigueRisk: "low"
+      };
+    });
+
+    // Classify fatigue risk
+    ads.forEach(function(a) {
+      if (a.frequency >= 4 && a.ctr < 1) a.fatigueRisk = "critical";
+      else if (a.frequency >= 3 && a.ctr < 2) a.fatigueRisk = "high";
+      else if (a.frequency >= 2.5 && a.ctr < 3) a.fatigueRisk = "medium";
+      else a.fatigueRisk = "low";
+    });
+
+    // Sort by fatigue risk
+    var order = { critical: 0, high: 1, medium: 2, low: 3 };
+    ads.sort(function(a, b) { return (order[a.fatigueRisk] || 3) - (order[b.fatigueRisk] || 3); });
+
+    res.json({ ok: true, data: ads });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
 // ===================== START SERVER =====================
 // IMPORTANTE: escutar na porta PRIMEIRO pra healthcheck do Railway passar
 // Depois inicializar o banco em background
