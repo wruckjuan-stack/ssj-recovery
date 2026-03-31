@@ -1776,6 +1776,80 @@ app.post("/api/meta/scorecard", async function(req, res) {
   } catch (e) { console.error("[SCORECARD-POST]",e.message); res.status(500).json({ok:false,error:e.message}); }
 });
 
+// Real paid orders from Yampi (the truth)
+app.get("/api/meta/real-revenue", async function(req, res) {
+  try {
+    var days = parseInt(req.query.days) || 7;
+    var fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - days);
+    var fromStr = fromDate.toISOString().slice(0, 10);
+    var toStr = new Date().toISOString().slice(0, 10);
+
+    // Fetch orders from Yampi for the period
+    var allOrders = [];
+    var page = 1;
+    var hasMore = true;
+    while (hasMore && page <= 5) {
+      var data = await yampiGet("/orders", {
+        "q[created_at][from]": fromStr,
+        "q[created_at][to]": toStr,
+        include: "customer",
+        limit: "50",
+        page: String(page),
+        orderBy: "created_at",
+        sortedBy: "desc"
+      });
+      var orders = data.data || [];
+      allOrders = allOrders.concat(orders);
+      hasMore = orders.length === 50;
+      page++;
+    }
+
+    // Filter only PAID orders
+    var paidStatuses = ["paid", "invoiced", "shipped", "delivered", "complete", "completed", "pago", "enviado", "entregue"];
+    var paidOrders = allOrders.filter(function(o) {
+      var s = "";
+      if (o.status && o.status.data) s = (o.status.data.alias || o.status.data.name || "").toLowerCase();
+      else if (o.status_alias) s = o.status_alias.toLowerCase();
+      else s = "";
+      for (var i = 0; i < paidStatuses.length; i++) { if (s === paidStatuses[i]) return true; }
+      return false;
+    });
+
+    var totalRevenue = 0;
+    var totalOrders = paidOrders.length;
+    paidOrders.forEach(function(o) {
+      totalRevenue += parseFloat(o.value_total) || 0;
+    });
+
+    // Daily breakdown
+    var dailyMap = {};
+    paidOrders.forEach(function(o) {
+      var d = (o.created_at && o.created_at.date) ? o.created_at.date.slice(0, 10) : ((o.created_at || "").slice(0, 10));
+      if (!dailyMap[d]) dailyMap[d] = { orders: 0, revenue: 0 };
+      dailyMap[d].orders++;
+      dailyMap[d].revenue += parseFloat(o.value_total) || 0;
+    });
+
+    var daily = Object.keys(dailyMap).sort().map(function(d) {
+      return { date: d, orders: dailyMap[d].orders, revenue: Math.round(dailyMap[d].revenue * 100) / 100 };
+    });
+
+    res.json({
+      ok: true,
+      period: { from: fromStr, to: toStr, days: days },
+      totalOrders: totalOrders,
+      totalRevenue: Math.round(totalRevenue * 100) / 100,
+      totalAllOrders: allOrders.length,
+      conversionRate: allOrders.length > 0 ? Math.round((totalOrders / allOrders.length) * 100) : 0,
+      daily: daily
+    });
+  } catch (e) {
+    console.error("[REAL-REVENUE] Erro:", e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // ===================== START SERVER =====================
 // IMPORTANTE: escutar na porta PRIMEIRO pra healthcheck do Railway passar
 // Depois inicializar o banco em background
