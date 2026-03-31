@@ -8,6 +8,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname + "/public"));
 
+// Health check for Railway
+app.get("/healthz", function(req, res) { res.send("ok"); });
+
 const CFG = {
   yampiAlias: process.env.YAMPI_ALIAS || "",
   yampiToken: process.env.YAMPI_TOKEN || "",
