@@ -791,13 +791,34 @@ app.get("/api/wa-templates", async function(req, res) {
 
 app.post("/api/wa-templates", async function(req, res) {
   try {
+    // Count variables in body text ({{1}}, {{2}}, {{3}}, etc)
+    var bodyText = req.body.bodyText || "";
+    var varMatches = bodyText.match(/\{\{(\d+)\}\}/g) || [];
+    var varCount = 0;
+    varMatches.forEach(function(m) {
+      var num = parseInt(m.replace(/[{}]/g, ""));
+      if (num > varCount) varCount = num;
+    });
+
+    // Build example values for each variable
+    var exampleValues = [];
+    for (var i = 1; i <= varCount; i++) {
+      if (i === 1) exampleValues.push("Maria");
+      else if (i === 2) exampleValues.push("https://exemplo.com");
+      else if (i === 3) exampleValues.push("https://exemplo.com/checkout");
+      else exampleValues.push("valor" + i);
+    }
+
+    var bodyComponent = { type: "BODY", text: bodyText };
+    if (exampleValues.length > 0) {
+      bodyComponent.example = { body_text: [exampleValues] };
+    }
+
     var body = {
       name: req.body.name,
       language: req.body.language || "pt_BR",
       category: req.body.category || "MARKETING",
-      components: [
-        { type: "BODY", text: req.body.bodyText }
-      ]
+      components: [bodyComponent]
     };
     if (req.body.footerText) {
       body.components.push({ type: "FOOTER", text: req.body.footerText });
