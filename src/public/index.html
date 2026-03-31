@@ -323,6 +323,47 @@ tr:hover td { background: var(--primary-lighter); }
 .ia-chat-input-row{display:flex;gap:10px;padding:12px 18px;border-top:1px solid var(--border-light);background:var(--surface)}
 .ia-chat-input-row .input{flex:1}
 
+.metric-delta{font-size:.68rem;font-weight:600;margin-top:4px}
+.metric-delta.up{color:var(--success)}.metric-delta.down{color:var(--danger)}.metric-delta.neutral{color:var(--text-muted)}
+.roas-gauge{height:6px;border-radius:3px;background:var(--border-light);overflow:hidden}
+.roas-gauge-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.alert-card{padding:12px 18px;border-radius:var(--radius-sm);margin-bottom:8px;display:flex;gap:10px;font-size:.82rem;border-left:3px solid;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.alert-success{background:var(--success-light);border-color:var(--success)}
+.alert-warning{background:var(--warning-light);border-color:var(--warning)}
+.alert-danger{background:var(--danger-light);border-color:var(--danger)}
+.alert-title{font-weight:700;font-size:.8rem}
+.alert-detail{font-size:.74rem;color:var(--text-secondary);margin-top:2px}
+.health-badge{display:inline-flex;padding:3px 10px;border-radius:12px;font-size:.66rem;font-weight:700}
+.health-escalar{background:var(--success-light);color:#1a6b3f}
+.health-manter{background:var(--info-light);color:#2a6090}
+.health-ajustar{background:var(--warning-light);color:#8a5a1e}
+.health-pausar{background:var(--danger-light);color:#8b2e2e}
+.fatigue-badge{display:inline-flex;padding:3px 10px;border-radius:12px;font-size:.66rem;font-weight:700}
+.fatigue-critical{background:var(--danger-light);color:#8b2e2e}
+.fatigue-high{background:var(--warning-light);color:#8a5a1e}
+.fatigue-medium{background:#FEF3E2;color:#8a6d1e}
+.fatigue-low{background:var(--success-light);color:#1a6b3f}
+
+.metric-delta{font-size:.68rem;font-weight:600;margin-top:4px}
+.metric-delta.up{color:var(--success)}.metric-delta.down{color:var(--danger)}.metric-delta.neutral{color:var(--text-muted)}
+.roas-gauge{height:6px;border-radius:3px;background:var(--border-light);overflow:hidden}
+.roas-gauge-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.alert-card{padding:10px 16px;margin-bottom:8px;display:flex;gap:10px;font-size:.82rem;border-left:3px solid;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.alert-success{background:var(--success-light);border-color:var(--success)}
+.alert-warning{background:var(--warning-light);border-color:var(--warning)}
+.alert-danger{background:var(--danger-light);border-color:var(--danger)}
+.alert-title{font-weight:700;font-size:.8rem}.alert-detail{font-size:.74rem;color:var(--text-secondary);margin-top:2px}
+.health-badge{display:inline-flex;padding:3px 10px;border-radius:12px;font-size:.66rem;font-weight:700}
+.health-escalar{background:var(--success-light);color:#1a6b3f}
+.health-manter{background:var(--info-light);color:#2a6090}
+.health-ajustar{background:var(--warning-light);color:#8a5a1e}
+.health-pausar{background:var(--danger-light);color:#8b2e2e}
+.fatigue-badge{display:inline-flex;padding:3px 10px;border-radius:12px;font-size:.66rem;font-weight:700}
+.fatigue-critical{background:var(--danger-light);color:#8b2e2e}
+.fatigue-high{background:var(--warning-light);color:#8a5a1e}
+.fatigue-medium{background:#FEF3E2;color:#8a6d1e}
+.fatigue-low{background:var(--success-light);color:#1a6b3f}
+
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
@@ -544,61 +585,111 @@ tr:hover td { background: var(--primary-lighter); }
       </div>
     </div>
 
-    <!-- META ADS -->
+    <!-- META ADS DASHBOARD v4.0 -->
     <div class="view" id="view-metaads">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
           <div class="period-tabs" id="periodTabs">
             <button class="period-tab" data-preset="today" onclick="changePeriod('today')">Hoje</button>
             <button class="period-tab active" data-preset="last_7d" onclick="changePeriod('last_7d')">7 dias</button>
             <button class="period-tab" data-preset="last_14d" onclick="changePeriod('last_14d')">14 dias</button>
             <button class="period-tab" data-preset="last_28d" onclick="changePeriod('last_28d')">28 dias</button>
-            <button class="period-tab" data-preset="this_month" onclick="changePeriod('this_month')">Mês atual</button>
           </div>
-          <select id="campaignFilter" onchange="filterByCampaign()" style="min-width:220px;padding:7px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.8rem;font-family:var(--font);font-weight:500;color:var(--text);background:var(--surface)">
+          <select id="campaignFilter" onchange="filterByCampaign()" style="min-width:220px;padding:7px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.8rem;font-family:var(--font);font-weight:500">
             <option value="all">Todas as campanhas</option>
           </select>
         </div>
         <button class="btn btn-outline btn-sm" onclick="loadMetaAds()">Atualizar</button>
       </div>
-      <div class="metrics-grid" style="grid-template-columns:repeat(auto-fit,minmax(155px,1fr))">
-        <div class="metric-card"><div class="metric-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="metric-label">Investimento</div><div class="metric-value" id="meta-spend2">—</div></div>
-        <div class="metric-card"><div class="metric-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="metric-label">Receita</div><div class="metric-value" id="meta-revenue2">—</div></div>
-        <div class="metric-card"><div class="metric-icon" style="background:#E6F9ED;color:#1A9F53"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div><div class="metric-label">ROAS</div><div class="metric-value" id="meta-roas2">—</div></div>
-        <div class="metric-card"><div class="metric-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg></div><div class="metric-label">Compras</div><div class="metric-value" id="meta-purchases2">—</div></div>
-        <div class="metric-card"><div class="metric-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div><div class="metric-label">CPA</div><div class="metric-value" id="meta-cpa2">—</div></div>
-        <div class="metric-card"><div class="metric-icon" style="background:#FFF3E0;color:#E67E22"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg></div><div class="metric-label">CTR</div><div class="metric-value" id="meta-ctr2">—</div></div>
-        <div class="metric-card"><div class="metric-icon" style="background:#E8EAF6;color:#5C6BC0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="metric-label">Alcance</div><div class="metric-value" id="meta-reach2">—</div></div>
-        <div class="metric-card"><div class="metric-icon" style="background:#FCE4EC;color:#E91E63"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="metric-label">CPC</div><div class="metric-value" id="meta-cpc2">—</div></div>
+
+      <div class="card" style="margin-bottom:16px;border-left:3px solid var(--primary);border-radius:0 var(--radius) var(--radius) 0" id="scorecardCard">
+        <div class="card-header" style="border:none;padding-bottom:0">
+          <span class="card-title"><span style="background:var(--primary);color:white;font-size:.6rem;padding:2px 8px;border-radius:10px;font-weight:700;margin-right:6px">IA</span>Scorecard Automático</span>
+          <button class="btn btn-outline btn-sm" onclick="loadScorecard(true)" style="font-size:.7rem">Regenerar</button>
+        </div>
+        <div class="card-body" id="scorecardBody" style="padding-top:10px"><div class="loading" style="padding:20px">Analisando campanhas com IA...</div></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" id="chartsRow">
-        <div class="card"><div class="card-header"><span class="card-title">Gasto vs Receita (diário)</span></div><div class="card-body" style="height:260px;position:relative"><canvas id="chartSpendRevenue"></canvas></div></div>
-        <div class="card"><div class="card-header"><span class="card-title">ROAS Diário</span></div><div class="card-body" style="height:260px;position:relative"><canvas id="chartRoas"></canvas></div></div>
+
+      <div id="alertsContainer" style="margin-bottom:16px"></div>
+
+      <div class="metrics-grid" style="grid-template-columns:repeat(auto-fit,minmax(155px,1fr));margin-bottom:16px">
+        <div class="metric-card"><div class="metric-label">Investimento</div><div class="metric-value" id="meta-spend2">—</div><div class="metric-delta" id="meta-spend-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">Receita</div><div class="metric-value" id="meta-revenue2">—</div><div class="metric-delta" id="meta-revenue-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">ROAS <span style="font-size:.6rem;background:var(--primary-light);color:var(--primary-dark);padding:1px 6px;border-radius:8px;margin-left:4px" id="roasTargetBadge">meta: 3x</span></div><div class="metric-value" id="meta-roas2">—</div><div class="metric-delta" id="meta-roas-delta"></div><div id="roasGauge" style="margin-top:6px"></div></div>
+        <div class="metric-card"><div class="metric-label">Compras</div><div class="metric-value" id="meta-purchases2">—</div><div class="metric-delta" id="meta-purchases-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">CPA</div><div class="metric-value" id="meta-cpa2">—</div><div class="metric-delta" id="meta-cpa-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">CTR</div><div class="metric-value" id="meta-ctr2">—</div><div class="metric-delta" id="meta-ctr-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">Alcance</div><div class="metric-value" id="meta-reach2">—</div></div>
+        <div class="metric-card"><div class="metric-label">CPC</div><div class="metric-value" id="meta-cpc2">—</div></div>
       </div>
-      <div class="card" style="margin-bottom:20px"><div class="card-header"><span class="card-title">Funil de Conversão</span></div><div class="card-body"><div class="funnel-container" id="funnelContainer"><div style="text-align:center;padding:40px;color:var(--text-muted)">Carregando funil...</div></div></div></div>
-      <div class="card" style="margin-bottom:20px"><div class="card-header"><span class="card-title">Campanhas</span><span id="metaPeriodLabel" style="font-size:.75rem;color:var(--text-muted)">7 dias</span></div>
-        <div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Campanha</th><th>Gasto</th><th>Impressões</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Add Cart</th><th>Compras</th><th>ROAS</th><th>CPA</th></tr></thead><tbody id="metaCampaignsTable2"><tr><td colspan="10" class="loading">Carregando...</td></tr></tbody></table></div></div></div>
-      <!-- Ad-level (criativos) table -->
-      <div class="card" style="margin-bottom:20px"><div class="card-header"><span class="card-title">Anúncios / Criativos</span><span style="font-size:.72rem;color:var(--text-muted)">Detalhamento por anúncio individual</span></div>
-        <div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Anúncio</th><th>Conjunto</th><th>Campanha</th><th>Gasto</th><th>Impr.</th><th>Cliques</th><th>CTR</th><th>Add Cart</th><th>Compras</th><th>ROAS</th><th>CPA</th></tr></thead><tbody id="metaAdsTable"><tr><td colspan="11" class="loading">Carregando...</td></tr></tbody></table></div></div></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" id="iaRow">
-        <div class="card"><div class="card-header"><span class="card-title">Relatório IA</span><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" id="genReportBtn2" onclick="generateReport()">Gerar Relatório</button><button class="btn btn-outline btn-sm" onclick="loadReportHistory()">Histórico</button><button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="diagnoseIA()">Diagnosticar IA</button></div></div><div class="card-body" id="iaReportBody2" style="max-height:480px;overflow-y:auto"><div class="empty-state"><p>Clique em "Gerar Relatório"</p></div></div></div>
-        <div class="card ia-chat-card"><div class="card-header"><span class="card-title">Chat IA — Analista de Tráfego</span><span class="ia-chat-status">Online</span></div>
-          <div class="ia-chat-body">
-            <div class="ia-chat-messages" id="iaChatMessages"><div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">Olá! Sou seu analista de tráfego IA. Posso analisar campanhas, criativos, sugerir otimizações e criar copies. Use os botões ou me pergunte qualquer coisa!<br><br><button class="ia-suggestion" onclick="testIA()" style="background:var(--warning-light);color:#B07A2B;border-color:rgba(232,163,61,.2)">🔧 Testar conexão IA</button></div></div></div>
-            <div class="ia-chat-suggestions" id="iaChatSuggestions">
-              <button class="ia-suggestion" onclick="iaAsk('Analise o desempenho geral e me diga quais campanhas escalar e quais pausar')">📊 Análise geral</button>
-              <button class="ia-suggestion" onclick="iaAsk('Analise os criativos/anúncios individualmente e identifique quais estão performando melhor e por quê')">🎯 Análise de criativos</button>
-              <button class="ia-suggestion" onclick="iaAsk('Sugira 3 ideias de criativos para moda fitness feminina 45+ baseado nos dados')">🎨 Ideias criativos</button>
-              <button class="ia-suggestion" onclick="iaAsk('Crie 5 copies persuasivas para anúncios de moda fitness feminina 45+')">✍️ Copies</button>
-              <button class="ia-suggestion" onclick="iaAsk('Analise o funil de conversão e onde estamos perdendo mais clientes')">🔍 Funil</button>
-              <button class="ia-suggestion" onclick="iaAsk('Quais conjuntos de anúncios e criativos devo pausar por CPA alto?')">💰 CPA alto</button>
-            </div>
-            <div class="ia-chat-input-row"><input class="input" id="iaChatInput" placeholder="Pergunte sobre campanhas, criativos..." onkeypress="if(event.key==='Enter')iaSend()"><button class="btn btn-primary" onclick="iaSend()" id="iaSendBtn">Enviar</button></div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-title">ROAS: Meta vs Real</span>
+          <div style="display:flex;align-items:center;gap:8px"><label style="font-size:.72rem;color:var(--text-muted)">Meta:</label><input type="number" id="roasTargetInput" value="3" min="1" max="20" step="0.5" style="width:55px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius-xs);font-size:.8rem;font-family:var(--font)" onchange="updateRoasTarget(this.value)"><span style="font-size:.72rem;color:var(--text-muted)">x</span></div>
+        </div>
+        <div class="card-body" id="roasTargetBody"><div class="loading">Carregando...</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" id="chartsRow">
+        <div class="card"><div class="card-header"><span class="card-title">Gasto vs Receita</span></div><div class="card-body" style="height:240px;position:relative"><canvas id="chartSpendRevenue"></canvas></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">ROAS Diário <span style="font-size:.7rem;color:var(--text-muted)">(linha vermelha = meta <span id="roasLineLabel">3x</span>)</span></span></div><div class="card-body" style="height:240px;position:relative"><canvas id="chartRoas"></canvas></div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-title">Mapa de Eficiência dos Criativos</span><span style="font-size:.7rem;color:var(--text-muted)">X=Gasto | Y=ROAS | Tamanho=Compras</span></div>
+        <div class="card-body" style="height:300px;position:relative"><canvas id="chartBubble"></canvas></div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-title">Simulador de Escala</span></div>
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+            <label style="font-size:.82rem;font-weight:600;white-space:nowrap">Aumento:</label>
+            <input type="range" id="scaleSlider" min="0" max="200" value="50" style="flex:1" oninput="updateSimulator(this.value)">
+            <span id="scaleLabel" style="font-size:1.1rem;font-weight:700;color:var(--primary);min-width:50px">+50%</span>
+          </div>
+          <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr)">
+            <div class="metric-card" style="text-align:center"><div class="metric-label">Gasto projetado</div><div class="metric-value" id="sim-spend" style="font-size:1.2rem">—</div></div>
+            <div class="metric-card" style="text-align:center"><div class="metric-label">CPA projetado</div><div class="metric-value" id="sim-cpa" style="font-size:1.2rem">—</div></div>
+            <div class="metric-card" style="text-align:center"><div class="metric-label">Compras proj.</div><div class="metric-value" id="sim-purchases" style="font-size:1.2rem">—</div></div>
+            <div class="metric-card" style="text-align:center"><div class="metric-label">Receita proj.</div><div class="metric-value" id="sim-revenue" style="font-size:1.2rem">—</div></div>
           </div>
         </div>
       </div>
-      <div class="card" id="reportHistoryCard2" style="display:none"><div class="card-header"><span class="card-title">Histórico de Relatórios</span></div><div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Alerta</th><th>Ação</th></tr></thead><tbody id="reportHistoryTable2"></tbody></table></div></div></div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-title">Detector de Fadiga Criativa</span><span style="font-size:.7rem;color:var(--text-muted)">Frequência x CTR</span></div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Anúncio</th><th>Conjunto</th><th>Freq.</th><th>CTR</th><th>ROAS</th><th>Risco</th></tr></thead>
+          <tbody id="fatigueTable"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px"><div class="card-header"><span class="card-title">Funil de Conversão</span></div><div class="card-body"><div class="funnel-container" id="funnelContainer"><div style="text-align:center;padding:30px;color:var(--text-muted)">Carregando...</div></div></div></div>
+
+      <div class="card" style="margin-bottom:16px"><div class="card-header"><span class="card-title">Campanhas</span><span id="metaPeriodLabel" style="font-size:.75rem;color:var(--text-muted)">7 dias</span></div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Campanha</th><th>Gasto</th><th>Cliques</th><th>CTR</th><th>Add Cart</th><th>Compras</th><th>ROAS</th><th>CPA</th><th>Saúde</th></tr></thead><tbody id="metaCampaignsTable2"><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody></table></div></div></div>
+
+      <div class="card" style="margin-bottom:16px"><div class="card-header"><span class="card-title">Criativos / Anúncios</span></div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Anúncio</th><th>Conjunto</th><th>Gasto</th><th>CTR</th><th>Add Cart</th><th>Compras</th><th>ROAS</th><th>CPA</th><th>Saúde</th></tr></thead><tbody id="metaAdsTable"><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody></table></div></div></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" id="iaRow">
+        <div class="card"><div class="card-header"><span class="card-title">Relatório IA</span><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" id="genReportBtn2" onclick="generateReport()">Gerar Relatório</button><button class="btn btn-outline btn-sm" onclick="loadReportHistory()">Histórico</button></div></div><div class="card-body" id="iaReportBody2" style="max-height:480px;overflow-y:auto"><div class="empty-state"><p>Clique em "Gerar Relatório"</p></div></div></div>
+        <div class="card ia-chat-card"><div class="card-header"><span class="card-title">Chat IA</span><span class="ia-chat-status">Online</span></div>
+          <div class="ia-chat-body">
+            <div class="ia-chat-messages" id="iaChatMessages"><div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">Posso analisar campanhas, criativos, sugerir otimizações e criar copies. Use os botões ou pergunte!</div></div></div>
+            <div class="ia-chat-suggestions" id="iaChatSuggestions">
+              <button class="ia-suggestion" onclick="iaAsk('Analise o desempenho geral e diga quais campanhas escalar/pausar')">📊 Análise</button>
+              <button class="ia-suggestion" onclick="iaAsk('Analise os criativos individualmente')">🎯 Criativos</button>
+              <button class="ia-suggestion" onclick="iaAsk('Sugira 3 ideias de criativos para moda fitness feminina 45+')">🎨 Ideias</button>
+              <button class="ia-suggestion" onclick="iaAsk('Crie 5 copies persuasivas')">✍️ Copies</button>
+              <button class="ia-suggestion" onclick="iaAsk('Analise o funil de conversão')">🔍 Funil</button>
+            </div>
+            <div class="ia-chat-input-row"><input class="input" id="iaChatInput" placeholder="Pergunte sobre campanhas..." onkeypress="if(event.key==='Enter')iaSend()"><button class="btn btn-primary" onclick="iaSend()" id="iaSendBtn">Enviar</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="reportHistoryCard2" style="display:none"><div class="card-header"><span class="card-title">Histórico</span></div><div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Alerta</th><th>Ação</th></tr></thead><tbody id="reportHistoryTable2"></tbody></table></div></div></div>
     </div>
 
     <!-- TEMPLATES -->
@@ -1130,187 +1221,737 @@ async function sendFromModal() {
 
 document.getElementById('sendModal').addEventListener('click', (e) => { if (e.target.classList.contains('modal-overlay')) closeModal(); });
 
-// ═══ META ADS v4.0 ═══
-let currentPreset='last_7d', currentCampaignId='all';
+    <!-- META ADS DASHBOARD v4.0 -->
+    <div class="view" id="view-metaads">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <div class="period-tabs" id="periodTabs">
+            <button class="period-tab" data-preset="today" onclick="changePeriod('today')">Hoje</button>
+            <button class="period-tab active" data-preset="last_7d" onclick="changePeriod('last_7d')">7d</button>
+            <button class="period-tab" data-preset="last_14d" onclick="changePeriod('last_14d')">14d</button>
+            <button class="period-tab" data-preset="last_28d" onclick="changePeriod('last_28d')">28d</button>
+          </div>
+          <select id="campaignFilter" onchange="filterByCampaign()" style="min-width:200px;padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.8rem;font-family:var(--font)"><option value="all">Todas as campanhas</option></select>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="loadMetaAds()">Atualizar</button>
+      </div>
+
+      <!-- IA SCORECARD -->
+      <div class="card" style="margin-bottom:14px;border-left:3px solid var(--primary);border-radius:0 var(--radius) var(--radius) 0">
+        <div class="card-header" style="border:none;padding-bottom:0"><span class="card-title"><span style="background:var(--primary);color:#fff;font-size:.58rem;padding:2px 8px;border-radius:10px;font-weight:700;margin-right:6px">IA</span>Scorecard Automático</span><button class="btn btn-outline btn-sm" onclick="loadScorecard(true)" style="font-size:.68rem">Regenerar</button></div>
+        <div class="card-body" id="scorecardBody" style="padding-top:8px"><div class="loading" style="padding:20px">Analisando com IA...</div></div>
+      </div>
+
+      <!-- ALERTS -->
+      <div id="alertsContainer" style="margin-bottom:14px"></div>
+
+      <!-- KPIs with deltas -->
+      <div class="metrics-grid" style="grid-template-columns:repeat(auto-fit,minmax(148px,1fr));margin-bottom:14px">
+        <div class="metric-card"><div class="metric-label">Investimento</div><div class="metric-value" id="meta-spend2">—</div><div class="metric-delta" id="meta-spend-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">Receita</div><div class="metric-value" id="meta-revenue2">—</div><div class="metric-delta" id="meta-revenue-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">ROAS <span style="font-size:.58rem;background:var(--primary-light);color:var(--primary-dark);padding:1px 6px;border-radius:8px" id="roasTargetBadge">meta 3x</span></div><div class="metric-value" id="meta-roas2">—</div><div class="metric-delta" id="meta-roas-delta"></div><div id="roasGauge" style="margin-top:5px"></div></div>
+        <div class="metric-card"><div class="metric-label">Compras</div><div class="metric-value" id="meta-purchases2">—</div><div class="metric-delta" id="meta-purchases-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">CPA</div><div class="metric-value" id="meta-cpa2">—</div><div class="metric-delta" id="meta-cpa-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">CTR</div><div class="metric-value" id="meta-ctr2">—</div><div class="metric-delta" id="meta-ctr-delta"></div></div>
+        <div class="metric-card"><div class="metric-label">Alcance</div><div class="metric-value" id="meta-reach2">—</div></div>
+        <div class="metric-card"><div class="metric-label">CPC</div><div class="metric-value" id="meta-cpc2">—</div></div>
+      </div>
+
+      <!-- ROAS TARGET -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header"><span class="card-title">ROAS: Meta vs Real</span><div style="display:flex;align-items:center;gap:6px"><label style="font-size:.7rem;color:var(--text-muted)">Meta:</label><input type="number" id="roasTargetInput" value="3" min="1" max="20" step="0.5" style="width:50px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--radius-xs);font-size:.8rem;font-family:var(--font)" onchange="updateRoasTarget(this.value)"><span style="font-size:.7rem;color:var(--text-muted)">x</span></div></div>
+        <div class="card-body" id="roasTargetBody"><div class="loading">Carregando...</div></div>
+      </div>
+
+      <!-- CHARTS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px" id="chartsRow">
+        <div class="card"><div class="card-header"><span class="card-title">Gasto vs Receita</span></div><div class="card-body" style="height:230px;position:relative"><canvas id="chartSpendRevenue"></canvas></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">ROAS Diário <span style="font-size:.68rem;color:var(--text-muted)">(vermelho = meta <span id="roasLineLabel">3x</span>)</span></span></div><div class="card-body" style="height:230px;position:relative"><canvas id="chartRoas"></canvas></div></div>
+      </div>
+
+      <!-- BUBBLE MAP -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header"><span class="card-title">Mapa de Eficiência dos Criativos</span><span style="font-size:.68rem;color:var(--text-muted)">X=Gasto | Y=ROAS | Bolha=Compras | Verde=acima meta | Vermelho=abaixo</span></div>
+        <div class="card-body" style="height:280px;position:relative"><canvas id="chartBubble"></canvas></div>
+      </div>
+
+      <!-- SIMULATOR -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header"><span class="card-title">Simulador de Escala</span><span style="font-size:.68rem;color:var(--text-muted)">Projeção com diminishing returns</span></div>
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px"><label style="font-size:.82rem;font-weight:600;white-space:nowrap">Aumento:</label><input type="range" id="scaleSlider" min="0" max="200" value="50" style="flex:1" oninput="updateSimulator(this.value)"><span id="scaleLabel" style="font-size:1.1rem;font-weight:700;color:var(--primary);min-width:50px">+50%</span></div>
+          <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr)">
+            <div class="metric-card" style="text-align:center"><div class="metric-label">Gasto proj.</div><div class="metric-value" id="sim-spend" style="font-size:1.15rem">—</div></div>
+            <div class="metric-card" style="text-align:center"><div class="metric-label">CPA proj.</div><div class="metric-value" id="sim-cpa" style="font-size:1.15rem">—</div></div>
+            <div class="metric-card" style="text-align:center"><div class="metric-label">Compras proj.</div><div class="metric-value" id="sim-purchases" style="font-size:1.15rem">—</div></div>
+            <div class="metric-card" style="text-align:center"><div class="metric-label">Receita proj.</div><div class="metric-value" id="sim-revenue" style="font-size:1.15rem">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FATIGUE -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header"><span class="card-title">Detector de Fadiga Criativa</span><span style="font-size:.68rem;color:var(--text-muted)">Frequência alta + CTR baixo = fadiga</span></div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Anúncio</th><th>Conjunto</th><th>Freq.</th><th>CTR</th><th>ROAS</th><th>Risco</th></tr></thead><tbody id="fatigueTable"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody></table></div></div>
+      </div>
+
+      <!-- FUNNEL -->
+      <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">Funil de Conversão</span></div><div class="card-body"><div class="funnel-container" id="funnelContainer"><div style="text-align:center;padding:30px;color:var(--text-muted)">Carregando...</div></div></div></div>
+
+      <!-- CAMPAIGNS TABLE -->
+      <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">Campanhas</span><span id="metaPeriodLabel" style="font-size:.72rem;color:var(--text-muted)">7d</span></div><div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Campanha</th><th>Gasto</th><th>Cliques</th><th>CTR</th><th>Add Cart</th><th>Compras</th><th>ROAS</th><th>CPA</th><th>Saúde</th></tr></thead><tbody id="metaCampaignsTable2"><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody></table></div></div></div>
+
+      <!-- ADS TABLE -->
+      <div class="card" style="margin-bottom:14px"><div class="card-header"><span class="card-title">Criativos</span></div><div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Anúncio</th><th>Conjunto</th><th>Gasto</th><th>CTR</th><th>Add Cart</th><th>Compras</th><th>ROAS</th><th>CPA</th><th>Saúde</th></tr></thead><tbody id="metaAdsTable"><tr><td colspan="9" class="loading">Carregando...</td></tr></tbody></table></div></div></div>
+
+      <!-- IA REPORT + CHAT -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px" id="iaRow">
+        <div class="card"><div class="card-header"><span class="card-title">Relatório IA</span><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" id="genReportBtn2" onclick="generateReport()">Gerar</button><button class="btn btn-outline btn-sm" onclick="loadReportHistory()">Histórico</button></div></div><div class="card-body" id="iaReportBody2" style="max-height:460px;overflow-y:auto"><div class="empty-state"><p>Clique em "Gerar"</p></div></div></div>
+        <div class="card ia-chat-card"><div class="card-header"><span class="card-title">Chat IA</span><span class="ia-chat-status">Online</span></div>
+          <div class="ia-chat-body">
+            <div class="ia-chat-messages" id="iaChatMessages"><div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">Posso analisar tudo: campanhas, criativos, funil, fadiga. Pergunte!</div></div></div>
+            <div class="ia-chat-suggestions" id="iaChatSuggestions">
+              <button class="ia-suggestion" onclick="iaAsk('Análise completa: campanhas, criativos, funil, recomendações')">📊 Análise completa</button>
+              <button class="ia-suggestion" onclick="iaAsk('Quais criativos estão com fadiga e o que fazer?')">🔥 Fadiga</button>
+              <button class="ia-suggestion" onclick="iaAsk('Sugira 3 criativos novos para moda fitness 45+')">🎨 Ideias</button>
+              <button class="ia-suggestion" onclick="iaAsk('Crie 5 copies persuasivas')">✍️ Copies</button>
+              <button class="ia-suggestion" onclick="iaAsk('Como atingir ROAS de 3x? O que preciso mudar?')">🎯 Meta ROAS</button>
+            </div>
+            <div class="ia-chat-input-row"><input class="input" id="iaChatInput" placeholder="Pergunte qualquer coisa..." onkeypress="if(event.key==='Enter')iaSend()"><button class="btn btn-primary" onclick="iaSend()" id="iaSendBtn">Enviar</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="reportHistoryCard2" style="display:none"><div class="card-header"><span class="card-title">Histórico</span></div><div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Alerta</th><th>Ação</th></tr></thead><tbody id="reportHistoryTable2"></tbody></table></div></div></div>
+    </div>
+
+    <!-- TEMPLATES -->
+    <div class="view" id="view-templates">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Templates WhatsApp</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="openTemplateModal()">+ Novo Template</button>
+            <button class="btn btn-outline btn-sm" onclick="loadTemplates()">Atualizar</button>
+          </div>
+        </div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Nome</th><th>Categoria</th><th>Status</th><th>Idioma</th></tr></thead>
+          <tbody id="templatesTable"><tr><td colspan="4" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
+      </div>
+    </div>
+
+    <!-- AUTOMAÇÃO -->
+    <div class="view" id="view-automacao">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Automações Ativas</span></div>
+        <div class="card-body">
+          <div class="toggle-row">
+            <div><div class="toggle-label">Carrinho Abandonado</div><div class="toggle-desc">Verifica a cada 10 minutos</div></div>
+            <button class="toggle-switch on" id="togCart" onclick="toggleCron(this)"></button>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">PIX / Boleto Cancelado</div><div class="toggle-desc">Verifica a cada 15 minutos</div></div>
+            <button class="toggle-switch on" id="togPix" onclick="toggleCron(this)"></button>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Recompra Automática</div><div class="toggle-desc">Diário às 10h</div></div>
+            <button class="toggle-switch on" id="togRecompra" onclick="toggleCron(this)"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTEGRAÇÕES -->
+    <div class="view" id="view-integracoes">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Status das Integrações</span></div>
+        <div class="card-body" id="integrationsBody"><div class="loading">Verificando integrações...</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL ENVIO -->
+<div class="modal-overlay" id="sendModal">
+  <div class="modal">
+    <h2 id="modalTitle">Enviar Template</h2>
+    <div class="form-group"><label>Telefone</label><input class="input" id="modalPhone" readonly></div>
+    <div class="form-group"><label>Nome</label><input class="input" id="modalName" readonly></div>
+    <div class="form-group"><label>Template</label><select id="modalTemplate"></select></div>
+    <div class="form-group" id="modalCouponGroup" style="display:none"><label>Cupom</label><input class="input" id="modalCoupon"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="modalSendBtn" onclick="sendFromModal()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CRIAR TEMPLATE -->
+<div class="modal-overlay" id="templateModal">
+  <div class="modal" style="max-width:560px">
+    <h2>Novo Template WhatsApp</h2>
+    <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:18px">Preencha os campos e submeta para aprovação do Meta. Use {{1}} para nome, {{2}} para cupom/link.</p>
+    <div class="form-group">
+      <label>Nome do template *</label>
+      <input class="input" id="tplName" placeholder="ex: lembrete_promo_v1 (sem espaços, minúsculo)">
+    </div>
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="tplCategory">
+        <option value="MARKETING" selected>Marketing</option>
+        <option value="UTILITY">Utilidade</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Tipo</label>
+      <select id="tplType">
+        <option value="carrinho">Carrinho Abandonado</option>
+        <option value="pix">PIX / Boleto</option>
+        <option value="recompra">Recompra</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Timing (quando enviar)</label>
+      <input class="input" id="tplTiming" placeholder="ex: 15min, 2h, 24h, 48h">
+    </div>
+    <div class="form-group">
+      <label>Texto do corpo (body) *</label>
+      <textarea id="tplBody" rows="5" placeholder="Oiii, tudo bem {{1}}? Notei que você estava escolhendo algumas peças..." style="resize:vertical"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Texto do rodapé (footer) — opcional</label>
+      <input class="input" id="tplFooter" placeholder="ex: SSJ Moda Fitness">
+    </div>
+    <div class="form-group">
+      <label>Texto do botão URL — opcional</label>
+      <input class="input" id="tplBtnText" placeholder="ex: Ver minhas peças">
+    </div>
+    <div class="form-group">
+      <label>URL do botão (com {{1}} no final) — opcional</label>
+      <input class="input" id="tplBtnUrl" placeholder="ex: https://seguro.ssjmodafitness.com.br/{{1}}">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px">
+      <button class="btn btn-outline" onclick="closeTemplateModal()">Cancelar</button>
+      <button class="btn btn-primary" id="tplSubmitBtn" onclick="submitTemplate()">Enviar para Aprovação</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const API = window.location.origin;
+
+function toast(msg, type = 'info') {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+async function api(path, opts = {}) {
+  try {
+    const r = await fetch(API + path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  } catch (e) {
+    console.error('API Error:', path, e);
+    return null;
+  }
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtPhone(p) {
+  if (!p) return '—';
+  return p.replace(/^55(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3') || p;
+}
+
+function fmtMoney(v) {
+  if (!v && v !== 0) return '—';
+  const n = Number(v);
+  if (isNaN(n)) return String(v);
+  return 'R$ ' + n.toFixed(2).replace('.', ',');
+}
+
+function statusBadge(s) {
+  if (!s) return '<span class="badge-status badge-pending">—</span>';
+  const sl = String(s).toLowerCase();
+  const map = { sent:'sent', delivered:'delivered', read:'read', failed:'failed', pending:'pending', paid:'paid', cancelled:'cancelled', canceled:'cancelled', refused:'refused', waiting_payment:'pending', expired:'failed' };
+  const cls = map[sl] || 'pending';
+  const labels = { sent:'Enviado', delivered:'Entregue', read:'Lido', failed:'Falhou', pending:'Pendente', paid:'Pago', cancelled:'Cancelado', canceled:'Cancelado', refused:'Recusado', waiting_payment:'Aguardando', expired:'Expirado' };
+  return `<span class="badge-status badge-${cls}">${labels[sl] || s}</span>`;
+}
+
+function timeAgo(d) {
+  if (!d) return '';
+  const diff = Date.now() - new Date(d).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
+}
+
+function esc(s) { return String(s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
+const viewTitles = {
+  dashboard: 'Dashboard', carrinhos: 'Carrinhos Abandonados', pix: 'PIX / Boleto',
+  recompra: 'Recompra', inbox: 'Inbox', historico: 'Histórico de Envios',
+  metaads: 'Meta Ads + IA', templates: 'Templates WhatsApp',
+  automacao: 'Automação', integracoes: 'Integrações'
+};
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + name)?.classList.add('active');
+  document.querySelector(`.nav-item[data-view="${name}"]`)?.classList.add('active');
+  document.getElementById('topbarTitle').textContent = viewTitles[name] || name;
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('mobileOverlay').classList.remove('show');
+  const loaders = { dashboard:loadDashboard, carrinhos:loadCarts, pix:loadPix, recompra:loadRecompra, inbox:loadInbox, historico:loadHistory, templates:loadTemplates, integracoes:loadIntegrations, metaads:loadMetaAds };
+  if (loaders[name]) loaders[name]();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('mobileOverlay').classList.toggle('show');
+}
+
+// ═══ DASHBOARD ═══
+// /api/stats → { global, today: { sent, delivered, read, failed, automated }, byTemplate, cronLog }
+// /api/history → { data: [...], total }
+async function loadDashboard() {
+  const [stats, history] = await Promise.all([api('/api/stats'), api('/api/history')]);
+  if (stats && stats.today) {
+    const t = stats.today;
+    document.getElementById('m-sent').textContent = t.sent || 0;
+    document.getElementById('m-delivered').textContent = t.delivered || 0;
+    document.getElementById('m-read').textContent = t.read || 0;
+    document.getElementById('m-failed').textContent = t.failed || 0;
+  }
+  const tb = document.getElementById('dashRecentTable');
+  const items = (history && history.data) ? history.data : [];
+  if (items.length > 0) {
+    tb.innerHTML = items.slice(0, 10).map(h => `
+      <tr>
+        <td>${fmtPhone(h.phone)}</td>
+        <td>${h.template || h.templateId || '—'}</td>
+        <td>${statusBadge(h.status)}</td>
+        <td>${fmtDate(h.sentAt)}</td>
+      </tr>
+    `).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="4" class="empty-state"><p>Nenhum envio registrado</p></td></tr>';
+  }
+}
+
+// ═══ CARRINHOS ═══
+// /api/carts → { ok, count, totalAbandoned, data: [{ id, name, firstName, phone, total, totalRaw, items, itemCount, hoursAgo, createdAt, recommended, alreadySent }] }
+async function loadCarts() {
+  const res = await api('/api/carts');
+  const tb = document.getElementById('cartsTable');
+  const carts = (res && res.data) ? res.data : [];
+  if (carts.length > 0) {
+    tb.innerHTML = carts.map(c => {
+      // alreadySent = array of template IDs already sent, recommended = next template to send
+      const sent = c.alreadySent || [];
+      let waBadge;
+      if (sent.length === 0) {
+        waBadge = '<span class="badge-status badge-pending">Não enviado</span>';
+      } else {
+        waBadge = sent.map(t => `<span class="badge-status badge-delivered" style="margin:1px 2px;font-size:0.65rem">${t.replace(/_/g,' ').replace(/v2/,'').trim()}</span>`).join('');
+      }
+      const nextTpl = c.recommended && !sent.includes(c.recommended) ? `<div style="margin-top:3px"><span class="badge-status badge-pending" style="font-size:0.62rem">Próximo: ${c.recommended.replace(/_/g,' ').replace(/v2/,'').trim()}</span></div>` : '';
+      return `
+      <tr>
+        <td>${c.name || 'Sem nome'}</td>
+        <td>${fmtPhone(c.phone)}</td>
+        <td>${c.total || fmtMoney(c.totalRaw)}</td>
+        <td>${c.items || (c.itemCount + ' itens')}</td>
+        <td>${c.hoursAgo != null ? c.hoursAgo + 'h' : timeAgo(c.createdAt)}</td>
+        <td>${waBadge}${nextTpl}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="openSendModal('cart',${c.id},'${esc(c.phone)}','${esc(c.name)}')">Enviar</button></td>
+      </tr>`;
+    }).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Nenhum carrinho abandonado</p></td></tr>';
+  }
+}
+
+// ═══ PIX ═══
+// /api/pix/carts → { ok, count, data: [{ id, name, phone, total, status, statusLabel, hoursAgo, createdAt }] }
+async function loadPix() {
+  const [res, histRes] = await Promise.all([api('/api/pix/carts'), api('/api/pix/history')]);
+  const tb = document.getElementById('pixTable');
+  const orders = (res && res.data) ? res.data : [];
+  const hist = (histRes && histRes.data) ? histRes.data : [];
+  // Build map: orderId → last WA status
+  const waStatusMap = {};
+  hist.forEach(h => { if (h.cartId) waStatusMap[h.cartId] = h.status; });
+  if (orders.length > 0) {
+    tb.innerHTML = orders.map(p => {
+      const waStatus = waStatusMap[String(p.id)];
+      const waBadge = waStatus ? statusBadge(waStatus) : '<span class="badge-status badge-pending">Não enviado</span>';
+      return `
+      <tr>
+        <td>${p.name || 'Sem nome'}</td>
+        <td>${fmtPhone(p.phone)}</td>
+        <td>${p.total || fmtMoney(p.totalRaw)}</td>
+        <td>${statusBadge(p.status)}</td>
+        <td>${waBadge}</td>
+        <td>${fmtDate(p.createdAt)}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="openSendModal('pix',${p.id},'${esc(p.phone)}','${esc(p.name)}')">Enviar</button></td>
+      </tr>`;
+    }).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Nenhum pedido PIX cancelado</p></td></tr>';
+  }
+}
+
+// ═══ RECOMPRA ═══
+// /api/recompra/orders → { ok, count, data: [{ id, name, phone, total, daysAgo, intervalDays, intervalTemplate, intervalCoupon, alreadySent }] }
+async function loadRecompra() {
+  const res = await api('/api/recompra/orders');
+  const tb = document.getElementById('recompraTable');
+  const orders = (res && res.data) ? res.data : [];
+  if (orders.length > 0) {
+    tb.innerHTML = orders.map(r => {
+      const coupon = r.intervalCoupon || 'VOLTECOMSSJ';
+      const days = r.intervalDays || r.daysAgo || '—';
+      const sent = r.alreadySent === true;
+      const waBadge = sent
+        ? `<span class="badge-status badge-delivered">Enviado</span><div style="margin-top:2px"><span class="badge-status badge-read" style="font-size:0.62rem">${(r.intervalTemplate || '').replace(/_/g,' ')}</span></div>`
+        : '<span class="badge-status badge-pending">Não enviado</span>';
+      return `
+        <tr>
+          <td>${r.name || 'Sem nome'}</td>
+          <td>${fmtPhone(r.phone)}</td>
+          <td>${fmtDate(r.createdAt)}</td>
+          <td>${days} dias</td>
+          <td><span class="badge-status badge-sent">${coupon}</span></td>
+          <td>${waBadge}</td>
+          <td>${sent
+            ? '<span style="font-size:0.75rem;color:var(--text-muted)">—</span>'
+            : `<button class="btn btn-gold btn-sm" onclick="openSendModal('recompra',${r.id},'${esc(r.phone)}','${esc(r.name)}','${esc(coupon)}',${days},'${esc(r.intervalTemplate)}')">Enviar</button>`
+          }</td>
+        </tr>`;
+    }).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Nenhum pedido elegível para recompra</p></td></tr>';
+  }
+}
+
+// ═══ INBOX ═══
+// /api/inbox/conversations → { ok, data: [{ phone, name, lastMessage, lastMessageAt, unread, messageCount }], totalUnread }
+let currentConvPhone = null;
+
+async function loadInbox() {
+  const res = await api('/api/inbox/conversations');
+  const list = document.getElementById('inboxList');
+  const convs = (res && res.data) ? res.data : [];
+  if (convs.length > 0) {
+    list.innerHTML = convs.map(c => `
+      <div class="inbox-conv ${c.phone === currentConvPhone ? 'active' : ''}" onclick="openConversation('${c.phone}','${esc(c.name || c.phone)}')">
+        <span class="inbox-conv-time">${timeAgo(c.lastMessageAt)}</span>
+        <div class="inbox-conv-name">
+          ${c.name || fmtPhone(c.phone)}
+          ${c.unread > 0 ? '<span class="unread-dot"></span>' : ''}
+        </div>
+        <div class="inbox-conv-preview">${c.lastMessage || ''}</div>
+      </div>
+    `).join('');
+  } else {
+    list.innerHTML = '<div class="empty-state"><p>Nenhuma conversa</p></div>';
+  }
+  loadUnread();
+}
+
+// /api/inbox/conversation/:phone → { ok, data: { phone, name, messages: [{ id, direction, text, type, template, status, timestamp }] } }
+async function openConversation(phone, name) {
+  currentConvPhone = phone;
+  document.querySelectorAll('.inbox-conv').forEach(c => c.classList.remove('active'));
+  event?.target?.closest?.('.inbox-conv')?.classList.add('active');
+  api('/api/inbox/read/' + phone, { method: 'POST' });
+
+  const chat = document.getElementById('inboxChat');
+  chat.innerHTML = `
+    <div class="inbox-chat-header">${name || fmtPhone(phone)}</div>
+    <div class="inbox-messages" id="chatMessages"><div class="loading">Carregando...</div></div>
+    <div class="inbox-input-row">
+      <input class="input" id="chatInput" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter')sendChat()">
+      <button class="btn btn-primary" onclick="sendChat()">Enviar</button>
+    </div>`;
+
+  const res = await api('/api/inbox/conversation/' + phone);
+  const msgs = document.getElementById('chatMessages');
+  const messages = (res && res.data && res.data.messages) ? res.data.messages : [];
+  if (messages.length > 0) {
+    msgs.innerHTML = messages.map(m => `
+      <div class="msg-bubble ${m.direction === 'in' ? 'msg-in' : 'msg-out'}">
+        ${m.text || ''}
+        <div class="msg-time">${fmtDate(m.timestamp)}</div>
+      </div>
+    `).join('');
+    msgs.scrollTop = msgs.scrollHeight;
+  } else {
+    msgs.innerHTML = '<div class="empty-state"><p>Sem mensagens</p></div>';
+  }
+}
+
+// /api/inbox/send espera { phone, text } (NÃO "message")
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input?.value?.trim();
+  if (!text || !currentConvPhone) return;
+  input.value = '';
+  const msgs = document.getElementById('chatMessages');
+  msgs.innerHTML += `<div class="msg-bubble msg-out">${text}<div class="msg-time">agora</div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+  const res = await api('/api/inbox/send', { method: 'POST', body: JSON.stringify({ phone: currentConvPhone, text: text }) });
+  if (res && res.ok) toast('Mensagem enviada', 'success');
+  else toast('Erro ao enviar: ' + (res?.error || ''), 'error');
+}
+
+// /api/inbox/unread → { ok, unread }
+async function loadUnread() {
+  const data = await api('/api/inbox/unread');
+  const badge = document.getElementById('unreadBadge');
+  const count = data?.unread || 0;
+  if (count > 0) { badge.textContent = count; badge.style.display = ''; }
+  else { badge.style.display = 'none'; }
+}
+
+// ═══ HISTÓRICO ═══
+// /api/history, /api/pix/history, /api/recompra/history → { data: [...], total }
+async function loadHistory() {
+  const type = document.getElementById('histType')?.value || 'cart';
+  const search = document.getElementById('histSearch')?.value || '';
+  const endpoints = { cart: '/api/history', pix: '/api/pix/history', recompra: '/api/recompra/history' };
+  const res = await api(endpoints[type] || endpoints.cart);
+  const tb = document.getElementById('historyTable');
+  let items = (res && res.data) ? res.data : [];
+  if (search) items = items.filter(i => (i.phone || '').includes(search));
+  if (items.length > 0) {
+    tb.innerHTML = items.slice(0, 50).map(h => `
+      <tr><td>${fmtPhone(h.phone)}</td><td>${h.template || h.templateId || '—'}</td><td>${statusBadge(h.status)}</td><td>${fmtDate(h.sentAt)}</td></tr>
+    `).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="4" class="empty-state"><p>Nenhum registro</p></td></tr>';
+  }
+}
+
+// ═══ TEMPLATES ═══
+// /api/wa-templates → { ok, data: [{ name, category, status, language }] }
+async function loadTemplates() {
+  const res = await api('/api/wa-templates');
+  const tb = document.getElementById('templatesTable');
+  const items = (res && res.data) ? res.data : [];
+  if (items.length > 0) {
+    tb.innerHTML = items.map(t => `
+      <tr><td><strong>${t.name}</strong></td><td>${t.category || '—'}</td><td>${statusBadge(t.status === 'APPROVED' ? 'delivered' : 'pending')}</td><td>${t.language || '—'}</td></tr>
+    `).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="4" class="empty-state"><p>Nenhum template encontrado</p></td></tr>';
+  }
+}
+
+// ═══ INTEGRAÇÕES ═══
+// /api/health → { yampi: { ok }, whatsapp: { ok }, database: { ok }, uptime, stats }
+async function loadIntegrations() {
+  const data = await api('/api/health');
+  const body = document.getElementById('integrationsBody');
+  if (data) {
+    const items = [
+      { name: 'Yampi API', ok: data.yampi?.ok },
+      { name: 'WhatsApp Cloud API', ok: data.whatsapp?.ok },
+      { name: 'PostgreSQL', ok: data.database?.ok }
+    ];
+    body.innerHTML = items.map(i => {
+      const ok = i.ok === true;
+      return `<div class="toggle-row"><div><div class="toggle-label"><span class="status-dot ${ok ? 'ok' : 'err'}"></span>${i.name}</div><div class="toggle-desc">${ok ? 'Conectado e funcionando' : 'Erro na conexão'}</div></div><span class="badge-status ${ok ? 'badge-delivered' : 'badge-failed'}">${ok ? 'Online' : 'Offline'}</span></div>`;
+    }).join('');
+    if (data.uptime) {
+      const h = Math.floor(data.uptime / 3600), m = Math.floor((data.uptime % 3600) / 60);
+      body.innerHTML += `<div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">Uptime: ${h}h ${m}min</div>`;
+    }
+  } else {
+    body.innerHTML = '<div class="empty-state"><p>Não foi possível verificar as integrações</p></div>';
+  }
+}
+
+function toggleCron(el) {
+  el.classList.toggle('on');
+  const label = el.closest('.toggle-row')?.querySelector('.toggle-label')?.textContent || '';
+  const active = el.classList.contains('on');
+  toast(`${label}: ${active ? 'Ativada' : 'Desativada'}`, active ? 'success' : 'info');
+}
+
+// ═══ MODAL DE ENVIO ═══
+// /api/send → { cartIds: [id], templateId }
+// /api/pix/send → { cartIds: [id], templateId }
+// /api/recompra/send → { orderIds: [id], templateId, coupon, intervalDays }
+let modalContext = {};
+
+function openSendModal(type, id, phone, name, coupon, intervalDays, templateId) {
+  modalContext = { type, id, phone, name, coupon, intervalDays, templateId };
+  document.getElementById('modalPhone').value = phone;
+  document.getElementById('modalName').value = name;
+  const tplSelect = document.getElementById('modalTemplate');
+  const couponGroup = document.getElementById('modalCouponGroup');
+  const templates = {
+    cart: ['lembrete_15min_v2','confianca_2h_v2','social_24h_v2','cupom_48h_v2'],
+    pix: ['pix_5min','pix_30min','pix_1h','pix_24h','pix_48h'],
+    recompra: ['recompra_30dias','recompra_60dias','recompra_90dias']
+  };
+  tplSelect.innerHTML = (templates[type] || []).map(t => {
+    const sel = (t === templateId) ? 'selected' : '';
+    return `<option value="${t}" ${sel}>${t}</option>`;
+  }).join('');
+  if (type === 'recompra') {
+    couponGroup.style.display = '';
+    document.getElementById('modalCoupon').value = coupon || 'VOLTECOMSSJ';
+  } else { couponGroup.style.display = 'none'; }
+  document.getElementById('modalTitle').textContent = type === 'cart' ? 'Enviar Carrinho' : type === 'pix' ? 'Enviar PIX' : 'Enviar Recompra';
+  document.getElementById('sendModal').classList.add('show');
+}
+
+function closeModal() { document.getElementById('sendModal').classList.remove('show'); }
+
+async function sendFromModal() {
+  const btn = document.getElementById('modalSendBtn');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  const template = document.getElementById('modalTemplate').value;
+  const { type, id } = modalContext;
+  let endpoint, payload;
+  if (type === 'cart') {
+    endpoint = '/api/send';
+    payload = { cartIds: [id], templateId: template };
+  } else if (type === 'pix') {
+    endpoint = '/api/pix/send';
+    payload = { cartIds: [id], templateId: template };
+  } else {
+    endpoint = '/api/recompra/send';
+    payload = { orderIds: [id], templateId: template, coupon: document.getElementById('modalCoupon').value || 'VOLTECOMSSJ', intervalDays: modalContext.intervalDays || 30 };
+  }
+  const res = await api(endpoint, { method: 'POST', body: JSON.stringify(payload) });
+  btn.disabled = false; btn.textContent = 'Enviar';
+  if (res && res.ok && res.sent > 0) { toast('Mensagem enviada!', 'success'); closeModal(); }
+  else { const err = (res?.results && res.results[0]?.error) || res?.error || 'tente novamente'; toast('Erro: ' + err, 'error'); }
+}
+
+document.getElementById('sendModal').addEventListener('click', (e) => { if (e.target.classList.contains('modal-overlay')) closeModal(); });
+
+// ═══ META ADS DASHBOARD v4.0 — IA EVERYWHERE ═══
+let currentPreset='last_7d',currentCampaignId='all',roasTargetVal=3.0;
 let metaCache={campaigns:[],summary:{},funnel:{},ads:[]};
-let chartSR=null, chartR=null;
-const presetLabels={today:'Hoje',last_7d:'7 dias',last_14d:'14 dias',last_28d:'28 dias',this_month:'Mês atual'};
-const presetDays={today:1,last_3d:3,last_7d:7,last_14d:14,last_28d:28,this_month:30};
+let chartSR=null,chartR=null,chartBub=null;
+const presetLabels={today:'Hoje',last_7d:'7 dias',last_14d:'14 dias',last_28d:'28 dias'};
+const presetDays={today:1,last_7d:7,last_14d:14,last_28d:28};
 
 function changePeriod(p){currentPreset=p;document.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));document.querySelector(`.period-tab[data-preset="${p}"]`)?.classList.add('active');loadMetaAds();}
-function filterByCampaign(){currentCampaignId=document.getElementById('campaignFilter').value;applyFilter();loadDailyCharts();loadAds();}
+function filterByCampaign(){currentCampaignId=document.getElementById('campaignFilter').value;applyFilter();loadDailyCharts();loadAds();loadFatigue();}
+function healthBadge(roas){if(roas>=roasTargetVal*1.5)return'<span class="health-badge health-escalar">ESCALAR</span>';if(roas>=roasTargetVal)return'<span class="health-badge health-manter">MANTER</span>';if(roas>=roasTargetVal*0.5)return'<span class="health-badge health-ajustar">AJUSTAR</span>';return'<span class="health-badge health-pausar">PAUSAR</span>';}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function renderDelta(id,cur,prev,inv){const el=document.getElementById(id);if(!el)return;if(!prev){el.textContent='';return;}const d=Math.round(((cur-prev)/prev)*100);const a=d>0?'▲':d<0?'▼':'—';const c=inv?(d>0?'down':d<0?'up':'neutral'):(d>0?'up':d<0?'down':'neutral');el.className='metric-delta '+c;el.textContent=a+' '+Math.abs(d)+'% vs anterior';}
 
 function applyFilter(){
-  let camps=metaCache.campaigns;
-  if(currentCampaignId&&currentCampaignId!=='all') camps=camps.filter(c=>c.id===currentCampaignId);
+  let camps=metaCache.campaigns;if(currentCampaignId&&currentCampaignId!=='all')camps=camps.filter(c=>c.id===currentCampaignId);
   const s={totalSpend:0,totalRevenue:0,totalPurchases:0,totalImpressions:0,totalClicks:0,totalReach:0,totalAddToCart:0,totalInitiateCheckout:0,totalViewContent:0};
   camps.forEach(c=>{s.totalSpend+=c.spend;s.totalRevenue+=c.purchaseValue;s.totalPurchases+=c.purchases;s.totalImpressions+=c.impressions;s.totalClicks+=c.clicks;s.totalReach+=c.reach;s.totalAddToCart+=c.addToCart||0;s.totalInitiateCheckout+=c.initiateCheckout||0;s.totalViewContent+=c.viewContent||0;});
-  s.roas=s.totalSpend>0?Math.round((s.totalRevenue/s.totalSpend)*100)/100:0;
-  s.cpa=s.totalPurchases>0?Math.round((s.totalSpend/s.totalPurchases)*100)/100:0;
-  s.ctr=s.totalImpressions>0?Math.round((s.totalClicks/s.totalImpressions)*10000)/100:0;
-  s.cpc=s.totalClicks>0?Math.round((s.totalSpend/s.totalClicks)*100)/100:0;
-  updateMetrics(s);
-  renderFunnel({impressions:s.totalImpressions,clicks:s.totalClicks,viewContent:s.totalViewContent,addToCart:s.totalAddToCart,initiateCheckout:s.totalInitiateCheckout,purchases:s.totalPurchases,revenue:Math.round(s.totalRevenue*100)/100});
-  renderCampaignsTable(camps);
-}
-
-function updateMetrics(s){
-  document.getElementById('meta-spend2').textContent=fmtMoney(s.totalSpend);
-  document.getElementById('meta-revenue2').textContent=fmtMoney(s.totalRevenue);
-  const re=document.getElementById('meta-roas2');re.textContent=(s.roas||0).toFixed(2)+'x';re.style.color=s.roas>=2?'var(--success)':s.roas>=1?'var(--warning)':'var(--danger)';
-  document.getElementById('meta-purchases2').textContent=s.totalPurchases||0;
-  document.getElementById('meta-cpa2').textContent=s.cpa>0?fmtMoney(s.cpa):'—';
-  document.getElementById('meta-ctr2').textContent=(s.ctr||0).toFixed(2)+'%';
-  document.getElementById('meta-reach2').textContent=(s.totalReach||0).toLocaleString('pt-BR');
-  document.getElementById('meta-cpc2').textContent=s.cpc>0?fmtMoney(s.cpc):'—';
+  s.roas=s.totalSpend>0?Math.round((s.totalRevenue/s.totalSpend)*100)/100:0;s.cpa=s.totalPurchases>0?Math.round((s.totalSpend/s.totalPurchases)*100)/100:0;s.ctr=s.totalImpressions>0?Math.round((s.totalClicks/s.totalImpressions)*10000)/100:0;s.cpc=s.totalClicks>0?Math.round((s.totalSpend/s.totalClicks)*100)/100:0;
+  metaCache.filteredSummary=s;
+  document.getElementById('meta-spend2').textContent=fmtMoney(s.totalSpend);document.getElementById('meta-revenue2').textContent=fmtMoney(s.totalRevenue);
+  const re=document.getElementById('meta-roas2');re.textContent=(s.roas||0).toFixed(2)+'x';re.style.color=s.roas>=roasTargetVal?'var(--success)':s.roas>=roasTargetVal*0.7?'var(--warning)':'var(--danger)';
+  document.getElementById('meta-purchases2').textContent=s.totalPurchases||0;document.getElementById('meta-cpa2').textContent=s.cpa>0?fmtMoney(s.cpa):'—';
+  document.getElementById('meta-ctr2').textContent=(s.ctr||0).toFixed(2)+'%';document.getElementById('meta-reach2').textContent=(s.totalReach||0).toLocaleString('pt-BR');document.getElementById('meta-cpc2').textContent=s.cpc>0?fmtMoney(s.cpc):'—';
   document.getElementById('metaPeriodLabel').textContent=presetLabels[currentPreset]||currentPreset;
+  const pct=Math.min(100,Math.round((s.roas/roasTargetVal)*100));const gc=pct>=100?'var(--success)':pct>=70?'var(--warning)':'var(--danger)';
+  document.getElementById('roasGauge').innerHTML=`<div class="roas-gauge"><div class="roas-gauge-fill" style="width:${pct}%;background:${gc}"></div></div>`;
+  renderRoasTarget(camps,s);renderCampaignsTable(camps);
+  renderFunnel({impressions:s.totalImpressions,clicks:s.totalClicks,viewContent:s.totalViewContent,addToCart:s.totalAddToCart,initiateCheckout:s.totalInitiateCheckout,purchases:s.totalPurchases,revenue:Math.round(s.totalRevenue*100)/100});
+  updateSimulator(document.getElementById('scaleSlider')?.value||50);
 }
 
-function renderCampaignsTable(camps){
-  const tb=document.getElementById('metaCampaignsTable2');
-  if(camps.length>0){tb.innerHTML=camps.map(c=>`<tr><td><strong>${c.name||'—'}</strong></td><td>R$ ${c.spend.toFixed(2)}</td><td>${c.impressions.toLocaleString('pt-BR')}</td><td>${c.clicks.toLocaleString('pt-BR')}</td><td>${c.ctr.toFixed(2)}%</td><td>R$ ${c.cpc.toFixed(2)}</td><td>${c.addToCart||0}</td><td>${c.purchases}</td><td><strong style="color:${c.roas>=2?'var(--success)':c.roas>=1?'var(--warning)':'var(--danger)'}">${c.roas.toFixed(2)}x</strong></td><td>${c.cpa>0?'R$ '+c.cpa.toFixed(2):'—'}</td></tr>`).join('');}
-  else tb.innerHTML='<tr><td colspan="10" class="empty-state"><p>Nenhuma campanha</p></td></tr>';
-}
+function renderRoasTarget(camps,s){const b=document.getElementById('roasTargetBody');const r=s.roas||0;const d=r-roasTargetVal;const sc=d>=0?'var(--success)':'var(--danger)';
+  let ch='';if(camps.length>1){const ab=camps.filter(c=>c.roas>=roasTargetVal).sort((a,b)=>b.roas-a.roas);const bl=camps.filter(c=>c.roas<roasTargetVal).sort((a,b)=>a.roas-b.roas);
+  if(ab.length)ch+=`<div style="margin-top:8px"><span style="font-size:.7rem;font-weight:700;color:var(--success)">Acima da meta:</span> ${ab.map(c=>c.name+' ('+c.roas.toFixed(1)+'x)').join(', ')}</div>`;
+  if(bl.length)ch+=`<div style="margin-top:3px"><span style="font-size:.7rem;font-weight:700;color:var(--danger)">Abaixo:</span> ${bl.map(c=>c.name+' ('+c.roas.toFixed(1)+'x)').join(', ')}</div>`;}
+  const pct=roasTargetVal>0?Math.min(Math.round((r/roasTargetVal)*100),150):0;
+  b.innerHTML=`<div style="display:flex;gap:20px;flex-wrap:wrap"><div style="flex:1;min-width:180px"><div style="font-size:.75rem;color:var(--text-muted);margin-bottom:4px">Atual vs meta ${roasTargetVal}x</div><div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:1.8rem;font-weight:700;color:${sc}">${r.toFixed(2)}x</span><span style="font-size:.82rem;color:${sc}">${d>=0?'+':''}${d.toFixed(2)}x</span></div><div class="roas-gauge" style="margin-top:6px;height:8px"><div class="roas-gauge-fill" style="width:${Math.min(pct,100)}%;background:${sc}"></div></div><div style="font-size:.65rem;color:var(--text-muted);margin-top:3px">${pct}% da meta</div></div><div style="flex:1;min-width:180px"><div style="font-size:.75rem;margin-bottom:2px">Receita necessária: <strong>${fmtMoney(s.totalSpend*roasTargetVal)}</strong></div><div style="font-size:.75rem">Receita atual: <strong>${fmtMoney(s.totalRevenue)}</strong></div><div style="font-size:.75rem">Gap: <strong style="color:${sc}">${fmtMoney(Math.abs(s.totalRevenue-s.totalSpend*roasTargetVal))}</strong></div></div></div>${ch}`;}
+function updateRoasTarget(v){roasTargetVal=parseFloat(v)||3;document.getElementById('roasTargetBadge').textContent='meta '+roasTargetVal+'x';document.getElementById('roasLineLabel').textContent=roasTargetVal+'x';api('/api/meta/roas-target',{method:'POST',body:JSON.stringify({target:roasTargetVal})});applyFilter();loadDailyCharts();}
+function renderCampaignsTable(camps){const tb=document.getElementById('metaCampaignsTable2');camps.sort((a,b)=>b.roas-a.roas);if(camps.length)tb.innerHTML=camps.map(c=>`<tr><td><strong>${c.name||'—'}</strong></td><td>R$ ${c.spend.toFixed(2)}</td><td>${c.clicks.toLocaleString('pt-BR')}</td><td>${c.ctr.toFixed(2)}%</td><td>${c.addToCart||0}</td><td>${c.purchases}</td><td><strong style="color:${c.roas>=roasTargetVal?'var(--success)':c.roas>=roasTargetVal*0.7?'var(--warning)':'var(--danger)'}">${c.roas.toFixed(2)}x</strong></td><td>${c.cpa>0?'R$ '+c.cpa.toFixed(2):'—'}</td><td>${healthBadge(c.roas)}</td></tr>`).join('');else tb.innerHTML='<tr><td colspan="9" class="empty-state"><p>—</p></td></tr>';}
 
-async function loadMetaAds(){loadMetaCampaignsPeriod();loadDailyCharts();loadAds();loadLatestReport();}
+// ═══ SIMULATOR ═══
+function updateSimulator(v){const p=parseInt(v);document.getElementById('scaleLabel').textContent='+'+p+'%';const s=metaCache.filteredSummary||metaCache.summary;if(!s||!s.totalSpend)return;const f=1+(p/100);const dim=Math.pow(f,0.85);
+  document.getElementById('sim-spend').textContent=fmtMoney(s.totalSpend*f);const np=Math.round(s.totalPurchases*dim);document.getElementById('sim-purchases').textContent=np;
+  const nc=np>0?(s.totalSpend*f)/np:0;document.getElementById('sim-cpa').textContent=fmtMoney(nc);document.getElementById('sim-cpa').style.color=nc>(s.cpa||0)*1.2?'var(--danger)':'var(--text)';
+  document.getElementById('sim-revenue').textContent=fmtMoney(s.totalRevenue*dim);}
 
-async function loadMetaCampaignsPeriod(){
-  const res=await api('/api/meta/campaigns-period?preset='+currentPreset);
-  if(res&&res.ok){
-    metaCache.campaigns=res.data||[];metaCache.summary=res.summary||{};metaCache.funnel=res.funnel||{};
-    const sel=document.getElementById('campaignFilter');const prev=sel.value;
-    sel.innerHTML='<option value="all">Todas as campanhas</option>';
-    metaCache.campaigns.forEach(c=>{sel.innerHTML+=`<option value="${c.id}">${c.name}</option>`;});
-    sel.value=prev&&sel.querySelector(`option[value="${prev}"]`)?prev:'all';currentCampaignId=sel.value;
-    applyFilter();
-  }else document.getElementById('metaCampaignsTable2').innerHTML='<tr><td colspan="10" class="empty-state"><p>Erro: '+(res?.error||'verifique variáveis')+'</p></td></tr>';
-}
+// ═══ LOADERS ═══
+async function loadMetaAds(){loadMetaCampaignsPeriod();loadDailyCharts();loadAds();loadFatigue();loadComparison();loadScorecard(false);loadLatestReport();}
+async function loadMetaCampaignsPeriod(){const res=await api('/api/meta/campaigns-period?preset='+currentPreset);if(res&&res.ok){metaCache.campaigns=res.data||[];metaCache.summary=res.summary||{};metaCache.funnel=res.funnel||{};const sel=document.getElementById('campaignFilter');const pv=sel.value;sel.innerHTML='<option value="all">Todas as campanhas</option>';metaCache.campaigns.forEach(c=>{sel.innerHTML+=`<option value="${c.id}">${c.name}</option>`;});sel.value=pv&&sel.querySelector(`option[value="${pv}"]`)?pv:'all';currentCampaignId=sel.value;applyFilter();}}
+async function loadAds(){let u='/api/meta/ads?preset='+currentPreset;if(currentCampaignId&&currentCampaignId!=='all')u+='&campaignId='+currentCampaignId;const res=await api(u);const tb=document.getElementById('metaAdsTable');if(res&&res.ok&&res.data&&res.data.length){metaCache.ads=res.data;res.data.sort((a,b)=>b.roas-a.roas);tb.innerHTML=res.data.map(a=>`<tr><td><strong style="font-size:.76rem">${a.adName||'—'}</strong></td><td style="font-size:.72rem;color:var(--text-muted)">${a.adsetName||'—'}</td><td>R$ ${a.spend.toFixed(2)}</td><td>${a.ctr.toFixed(2)}%</td><td>${a.addToCart||0}</td><td>${a.purchases}</td><td><strong style="color:${a.roas>=roasTargetVal?'var(--success)':a.roas>=roasTargetVal*0.7?'var(--warning)':'var(--danger)'}">${a.roas.toFixed(2)}x</strong></td><td>${a.cpa>0?'R$ '+a.cpa.toFixed(2):'—'}</td><td>${healthBadge(a.roas)}</td></tr>`).join('');renderBubble(res.data);}else{metaCache.ads=[];tb.innerHTML='<tr><td colspan="9" class="empty-state"><p>—</p></td></tr>';}}
+async function loadComparison(){const r=await api('/api/meta/compare');if(r&&r.ok){renderDelta('meta-spend-delta',r.current.spend,r.previous.spend,true);renderDelta('meta-revenue-delta',r.current.revenue,r.previous.revenue,false);renderDelta('meta-roas-delta',r.current.roas,r.previous.roas,false);renderDelta('meta-purchases-delta',r.current.purchases,r.previous.purchases,false);renderDelta('meta-cpa-delta',r.current.cpa,r.previous.cpa,true);renderDelta('meta-ctr-delta',r.current.ctr,r.previous.ctr,false);}}
+async function loadFatigue(){const r=await api('/api/meta/fatigue');const tb=document.getElementById('fatigueTable');if(r&&r.ok&&r.data&&r.data.length){tb.innerHTML=r.data.map(a=>{const l={critical:'CRÍTICO',high:'ALTO',medium:'MÉDIO',low:'BAIXO'}[a.fatigueRisk]||'—';return`<tr><td><strong style="font-size:.76rem">${a.name||'—'}</strong></td><td style="font-size:.72rem;color:var(--text-muted)">${a.adset||'—'}</td><td style="font-weight:600;color:${a.frequency>=3?'var(--danger)':a.frequency>=2?'var(--warning)':'var(--text)'}">${a.frequency.toFixed(1)}</td><td>${a.ctr.toFixed(2)}%</td><td>${a.roas.toFixed(2)}x</td><td><span class="fatigue-badge fatigue-${a.fatigueRisk}">${l}</span></td></tr>`;}).join('');}else tb.innerHTML='<tr><td colspan="6" class="empty-state"><p>—</p></td></tr>';}
 
-async function loadAds(){
-  let url='/api/meta/ads?preset='+currentPreset;
-  if(currentCampaignId&&currentCampaignId!=='all') url+='&campaignId='+currentCampaignId;
-  const res=await api(url);
-  const tb=document.getElementById('metaAdsTable');
-  if(res&&res.ok&&res.data&&res.data.length>0){
-    metaCache.ads=res.data;
-    tb.innerHTML=res.data.map(a=>`<tr>
-      <td><strong style="font-size:.8rem">${a.adName||'—'}</strong></td>
-      <td style="font-size:.75rem;color:var(--text-muted)">${a.adsetName||'—'}</td>
-      <td style="font-size:.75rem;color:var(--text-muted)">${a.campaignName||'—'}</td>
-      <td>R$ ${a.spend.toFixed(2)}</td><td>${a.impressions.toLocaleString('pt-BR')}</td>
-      <td>${a.clicks.toLocaleString('pt-BR')}</td><td>${a.ctr.toFixed(2)}%</td>
-      <td>${a.addToCart||0}</td><td>${a.purchases}</td>
-      <td><strong style="color:${a.roas>=2?'var(--success)':a.roas>=1?'var(--warning)':'var(--danger)'}">${a.roas.toFixed(2)}x</strong></td>
-      <td>${a.cpa>0?'R$ '+a.cpa.toFixed(2):'—'}</td>
-    </tr>`).join('');
-  }else{metaCache.ads=[];tb.innerHTML='<tr><td colspan="11" class="empty-state"><p>Nenhum anúncio</p></td></tr>';}
-}
+// ═══ SCORECARD (IA auto) ═══
+async function loadScorecard(force){const b=document.getElementById('scorecardBody');b.innerHTML='<div class="loading" style="padding:16px">Analisando com IA...</div>';const r=await api('/api/meta/scorecard'+(force?'?force=1':''));if(r&&r.ok&&r.scorecard){const sc=r.scorecard;let h='';if(sc.summary)h+=`<div style="font-size:.82rem;line-height:1.6;margin-bottom:10px">${sc.summary}</div>`;
+  const ac=document.getElementById('alertsContainer');if(sc.alerts&&sc.alerts.length)ac.innerHTML=sc.alerts.map(a=>`<div class="alert-card alert-${a.type||'warning'}"><div><div class="alert-title">${a.title||''}</div><div class="alert-detail">${a.detail||''}</div></div></div>`).join('');else ac.innerHTML='';
+  if(sc.campaigns&&sc.campaigns.length){h+='<div style="margin-top:6px">';sc.campaigns.forEach(c=>{const cl=c.verdict==='ESCALAR'?'health-escalar':c.verdict==='MANTER'?'health-manter':c.verdict==='PAUSAR'?'health-pausar':'health-ajustar';h+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border-light)"><span class="health-badge ${cl}">${c.verdict}</span><strong style="font-size:.8rem;flex:1">${c.name}</strong><span style="font-size:.72rem;color:var(--text-muted)">${c.reason||''}</span></div>`;});h+='</div>';}
+  if(sc.creatives&&sc.creatives.length){h+='<div style="margin-top:8px;font-size:.68rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Criativos</div>';sc.creatives.forEach(c=>{const cl=c.verdict==='TOP'?'health-escalar':c.verdict==='OK'?'health-manter':c.verdict==='FADIGA'?'health-ajustar':'health-pausar';h+=`<div style="display:flex;align-items:center;gap:8px;padding:3px 0"><span class="health-badge ${cl}">${c.verdict}</span><span style="font-size:.76rem">${c.name}</span><span style="font-size:.7rem;color:var(--text-muted)">${c.reason||''}</span></div>`;});}
+  b.innerHTML=h+(r.cached?`<div style="font-size:.6rem;color:var(--text-muted);margin-top:6px">Cache: ${r.age}s</div>`:'');}else b.innerHTML=`<div style="font-size:.8rem;color:var(--text-muted)">Indisponível: ${r?.error||'erro'}</div>`;}
 
-function renderFunnel(f){
-  const el=document.getElementById('funnelContainer');
-  if(!f||!f.impressions){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">Sem dados de funil</div>';return;}
-  const steps=[{l:'Impressões',v:f.impressions,c:'#4A9FE5'},{l:'Cliques',v:f.clicks,c:'#5AAAE0'},{l:'Visualização',v:f.viewContent,c:'#E8A33D'},{l:'Add Carrinho',v:f.addToCart,c:'#E8B84B'},{l:'Checkout',v:f.initiateCheckout,c:'#7C5CBF'},{l:'Compras',v:f.purchases,c:'#3AAF76'}];
-  const mx=steps[0].v||1;let h='';
-  // Pre-calculate benchmarks for analysis
-  const benchmarks={1:{good:5,ok:2,name:'CTR (Cliques/Impressões)'},2:{good:50,ok:20,name:'View Content/Cliques'},3:{good:20,ok:8,name:'Add Cart/View Content'},4:{good:30,ok:15,name:'Checkout/Add Cart'},5:{good:40,ok:20,name:'Compra/Checkout'}};
-
-  steps.forEach((s,i)=>{const ht=Math.max(30,(s.v/mx)*120);
-    const rtNum=i>0&&steps[i-1].v>0?((s.v/steps[i-1].v)*100):0;
-    const rt=i>0?rtNum.toFixed(1)+'%':'';
-    const rc=i>0?(rtNum>50?'var(--success)':rtNum>20?'var(--warning)':'var(--danger)'):'';
-    // Analysis for each step
-    let analysis='';
-    if(i>0&&benchmarks[i]){
-      const b=benchmarks[i];
-      if(rtNum>=b.good) analysis='✅ Boa taxa! Acima do benchmark.';
-      else if(rtNum>=b.ok) analysis='⚠️ Taxa razoável. Pode melhorar.';
-      else analysis='❌ Taxa baixa. Precisa de atenção.';
-      if(i===1&&rtNum<b.ok) analysis+=' Criativos podem não estar atraindo cliques. Teste novos hooks e imagens.';
-      if(i===2&&rtNum>100) analysis=' ⚡ View Content > Cliques = pixel pode estar contando views de outras fontes.';
-      if(i===3&&rtNum<b.ok) analysis+=' Página de produto pode estar com problema (preço, fotos, descrição).';
-      if(i===4&&rtNum<b.ok) analysis+=' Checkout com atrito. Verifique frete, métodos de pagamento.';
-      if(i===5&&rtNum<b.ok) analysis+=' Abandono no pagamento. Verifique PIX/boleto, erros no checkout.';
-    }
-    const analysisHtml=analysis?`<div class="funnel-analysis" onclick="this.classList.toggle('open')" style="cursor:pointer;margin-top:4px"><span style="font-size:.6rem;color:var(--primary);font-weight:700">▶ análise</span><div class="funnel-analysis-detail" style="display:none;font-size:.68rem;color:var(--text-secondary);margin-top:4px;text-align:left;max-width:140px;line-height:1.4">${analysis}</div></div>`:'';
-
-    if(i>0)h+='<div class="funnel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>';
-    h+=`<div class="funnel-step"><div class="funnel-bar-wrap"><div class="funnel-bar" style="height:${ht}px;background:${s.c}"></div></div><div class="funnel-value">${s.v>=1000?(s.v/1000).toFixed(1)+'k':s.v}</div><div class="funnel-label">${s.l}</div>${i>0?`<div class="funnel-rate" style="color:${rc}">↓ ${rt}</div>`:''}${analysisHtml}</div>`;
-  });
-  h+='<div class="funnel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>';
-  h+=`<div class="funnel-step"><div class="funnel-bar-wrap"><div class="funnel-bar" style="height:80px;background:linear-gradient(180deg,#2D8F60,#3AAF76)"></div></div><div class="funnel-value" style="color:var(--success)">${fmtMoney(f.revenue)}</div><div class="funnel-label">Receita</div></div>`;
-  el.innerHTML=h;
-  // Add click handlers for analysis toggles
-  el.querySelectorAll('.funnel-analysis').forEach(function(el){
-    el.addEventListener('click',function(){
-      var detail=this.querySelector('.funnel-analysis-detail');
-      var arrow=this.querySelector('span');
-      if(detail.style.display==='none'){detail.style.display='block';arrow.textContent='▼ análise';}
-      else{detail.style.display='none';arrow.textContent='▶ análise';}
-    });
-  });
-}
-
-async function loadDailyCharts(){
-  const days=presetDays[currentPreset]||7;
-  if(days<=1){document.getElementById('chartsRow').style.display='none';return;}
-  document.getElementById('chartsRow').style.display='';
-  let url='/api/meta/daily?days='+days;if(currentCampaignId&&currentCampaignId!=='all')url+='&campaignId='+currentCampaignId;
-  const res=await api(url);if(!res||!res.ok||!res.data||!res.data.length)return;
-  const d=res.data,lb=d.map(x=>{const dt=new Date(x.date+'T12:00:00');return dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});});
-  const cf={family:"'Outfit',sans-serif",size:11},gc='rgba(218,227,237,.5)';
+// ═══ CHARTS ═══
+async function loadDailyCharts(){const days=presetDays[currentPreset]||7;if(days<=1){document.getElementById('chartsRow').style.display='none';return;}document.getElementById('chartsRow').style.display='';let u='/api/meta/daily?days='+days;if(currentCampaignId&&currentCampaignId!=='all')u+='&campaignId='+currentCampaignId;const r=await api(u);if(!r||!r.ok||!r.data||!r.data.length)return;const d=r.data,lb=d.map(x=>{const dt=new Date(x.date+'T12:00:00');return dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});});const cf={family:"'Outfit',sans-serif",size:11},gc='rgba(218,227,237,.4)';
   if(chartSR)chartSR.destroy();if(chartR)chartR.destroy();
-  chartSR=new Chart(document.getElementById('chartSpendRevenue').getContext('2d'),{type:'bar',data:{labels:lb,datasets:[{label:'Gasto',data:d.map(x=>x.spend),backgroundColor:'rgba(74,159,229,.7)',borderRadius:4,barPercentage:.5,categoryPercentage:.7},{label:'Receita',data:d.map(x=>x.revenue),backgroundColor:'rgba(58,175,118,.7)',borderRadius:4,barPercentage:.5,categoryPercentage:.7}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:cf,boxWidth:10,padding:14}}},scales:{x:{grid:{display:false},ticks:{font:cf}},y:{grid:{color:gc},ticks:{font:cf,callback:v=>'R$ '+v.toFixed(0)}}}}});
-  chartR=new Chart(document.getElementById('chartRoas').getContext('2d'),{type:'line',data:{labels:lb,datasets:[{label:'ROAS',data:d.map(x=>x.roas),borderColor:'#7C5CBF',backgroundColor:'rgba(124,92,191,.08)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#7C5CBF',pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:cf,boxWidth:10,padding:14}}},scales:{x:{grid:{display:false},ticks:{font:cf}},y:{grid:{color:gc},ticks:{font:cf,callback:v=>v.toFixed(1)+'x'},suggestedMin:0}}}});
-}
+  chartSR=new Chart(document.getElementById('chartSpendRevenue').getContext('2d'),{type:'bar',data:{labels:lb,datasets:[{label:'Gasto',data:d.map(x=>x.spend),backgroundColor:'rgba(74,159,229,.7)',borderRadius:4,barPercentage:.5},{label:'Receita',data:d.map(x=>x.revenue),backgroundColor:'rgba(58,175,118,.7)',borderRadius:4,barPercentage:.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:cf,boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:cf}},y:{grid:{color:gc},ticks:{font:cf,callback:v=>'R$'+v.toFixed(0)}}}}});
+  chartR=new Chart(document.getElementById('chartRoas').getContext('2d'),{type:'line',data:{labels:lb,datasets:[{label:'ROAS',data:d.map(x=>x.roas),borderColor:'#7C5CBF',backgroundColor:'rgba(124,92,191,.08)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#7C5CBF',pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5},{label:'Meta '+roasTargetVal+'x',data:d.map(()=>roasTargetVal),borderColor:'rgba(216,84,84,.6)',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:cf,boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:cf}},y:{grid:{color:gc},ticks:{font:cf,callback:v=>v.toFixed(1)+'x'},suggestedMin:0}}}});}
+function renderBubble(ads){if(chartBub)chartBub.destroy();const ctx=document.getElementById('chartBubble').getContext('2d');const d=ads.filter(a=>a.spend>0).map(a=>({x:a.spend,y:a.roas,r:Math.max(5,Math.min(25,(a.purchases||0)*6+5)),label:a.adName||'—'}));
+  chartBub=new Chart(ctx,{type:'bubble',data:{datasets:[{data:d,backgroundColor:d.map(x=>x.y>=roasTargetVal?'rgba(58,175,118,.55)':'rgba(216,84,84,.45)'),borderColor:d.map(x=>x.y>=roasTargetVal?'#3AAF76':'#D85454'),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const p=ctx.raw;return p.label+' | R$'+p.x.toFixed(2)+' | '+p.y.toFixed(2)+'x';}}}},scales:{x:{title:{display:true,text:'Gasto (R$)',font:{size:11}},grid:{color:'rgba(218,227,237,.3)'}},y:{title:{display:true,text:'ROAS',font:{size:11}},grid:{color:'rgba(218,227,237,.3)'},suggestedMin:0}}}});}
+
+// ═══ FUNNEL ═══
+function renderFunnel(f){const el=document.getElementById('funnelContainer');if(!f||!f.impressions){el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-muted)">Sem dados</div>';return;}
+  const steps=[{l:'Impressões',v:f.impressions,c:'#4A9FE5'},{l:'Cliques',v:f.clicks,c:'#5AAAE0'},{l:'Visualização',v:f.viewContent,c:'#E8A33D'},{l:'Add Carrinho',v:f.addToCart,c:'#E8B84B'},{l:'Checkout',v:f.initiateCheckout,c:'#7C5CBF'},{l:'Compras',v:f.purchases,c:'#3AAF76'}];
+  const bm={1:{g:5,o:2},2:{g:50,o:20},3:{g:20,o:8},4:{g:30,o:15},5:{g:40,o:20}};const mx=steps[0].v||1;let h='';
+  steps.forEach((s,i)=>{const ht=Math.max(28,(s.v/mx)*110);const p=i>0&&steps[i-1].v>0?((s.v/steps[i-1].v)*100):0;let rc='var(--text-muted)',an='';
+    if(i>0&&bm[i]){const b=bm[i];if(p>=b.g){rc='var(--success)';an='Boa taxa';}else if(p>=b.o){rc='var(--warning)';an='Pode melhorar';}else{rc='var(--danger)';const causes=['','Criativo fraco ou segmentação ampla','Landing page lenta ou confusa','Preço, fotos ou frete','Frete surpresa ou checkout longo','Erro pagamento ou desconfiança'];an=causes[i]||'Atenção';}}
+    if(i>0)h+='<div class="funnel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>';
+    const anHtml=an?`<div style="font-size:.6rem;color:${rc};margin-top:2px;cursor:help" title="${an}">${p>=bm[i]?.g?'✓':'⚠'} ${an}</div>`:'';
+    h+=`<div class="funnel-step"><div class="funnel-bar-wrap"><div class="funnel-bar" style="height:${ht}px;background:${s.c}"></div></div><div class="funnel-value">${s.v>=1000?(s.v/1000).toFixed(1)+'k':s.v}</div><div class="funnel-label">${s.l}</div>${i>0?`<div class="funnel-rate" style="color:${rc}">↓ ${p.toFixed(1)}%</div>`:''}${anHtml}</div>`;});
+  h+='<div class="funnel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>';
+  h+=`<div class="funnel-step"><div class="funnel-bar-wrap"><div class="funnel-bar" style="height:70px;background:linear-gradient(180deg,#2D8F60,#3AAF76)"></div></div><div class="funnel-value" style="color:var(--success)">${fmtMoney(f.revenue)}</div><div class="funnel-label">Receita</div></div>`;el.innerHTML=h;}
 
 // ═══ IA REPORT ═══
-async function loadLatestReport(){const r=await api('/api/meta/reports');if(r&&r.ok&&r.data&&r.data.length>0)showReport(r.data[0].report_text,r.data[0].report_date);}
-function showReport(text,date){const b=document.getElementById('iaReportBody2');if(!text){b.innerHTML='<div class="empty-state"><p>Nenhum relatório</p></div>';return;}let h=text.replace(/## (.*)/g,'<h3 style="margin:14px 0 6px;font-size:.92rem;font-weight:700;color:var(--primary-dark)">$1</h3>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n- /g,'\n• ').replace(/\n/g,'<br>');b.innerHTML=`<div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px">Relatório de ${date?new Date(date).toLocaleDateString('pt-BR'):'Hoje'}</div><div style="font-size:.82rem;line-height:1.7">${h}</div>`;}
-async function generateReport(){const btn=document.getElementById('genReportBtn2');btn.disabled=true;btn.textContent='Gerando...';document.getElementById('iaReportBody2').innerHTML='<div class="loading">Analisando com IA... pode levar até 60s.</div>';const p={campaignsData:metaCache.campaigns};if(currentCampaignId&&currentCampaignId!=='all')p.campaignId=currentCampaignId;const r=await api('/api/meta/report',{method:'POST',body:JSON.stringify(p)});btn.disabled=false;btn.textContent='Gerar Relatório';if(r&&r.ok){showReport(r.report,r.date);toast('Relatório gerado!','success');}else{document.getElementById('iaReportBody2').innerHTML='<div class="empty-state"><p>Erro: '+(r?.error||'tente novamente')+'</p></div>';toast('Erro: '+(r?.error||''),'error');}}
-async function loadReportHistory(){document.getElementById('reportHistoryCard2').style.display='';const r=await api('/api/meta/reports');const tb=document.getElementById('reportHistoryTable2');if(r&&r.ok&&r.data&&r.data.length>0)tb.innerHTML=r.data.map(x=>`<tr><td>${new Date(x.report_date).toLocaleDateString('pt-BR')}</td><td>${x.alerts_sent?'<span class="badge-status badge-delivered">Sim</span>':'<span class="badge-status badge-pending">Não</span>'}</td><td><button class="btn btn-outline btn-sm" onclick="viewReport('${x.report_date}')">Ver</button></td></tr>`).join('');else tb.innerHTML='<tr><td colspan="3" class="empty-state"><p>Nenhum</p></td></tr>';}
+async function loadLatestReport(){const r=await api('/api/meta/reports');if(r&&r.ok&&r.data&&r.data.length)showReport(r.data[0].report_text,r.data[0].report_date);}
+function showReport(t,d){const b=document.getElementById('iaReportBody2');if(!t){b.innerHTML='<div class="empty-state"><p>—</p></div>';return;}let h=t.replace(/## (.*)/g,'<h3 style="margin:12px 0 4px;font-size:.9rem;font-weight:700;color:var(--primary-dark)">$1</h3>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n- /g,'\n• ').replace(/\n/g,'<br>');b.innerHTML=`<div style="font-size:.68rem;color:var(--text-muted);margin-bottom:6px">${d?new Date(d).toLocaleDateString('pt-BR'):'Hoje'}</div><div style="font-size:.8rem;line-height:1.7">${h}</div>`;}
+async function generateReport(){const btn=document.getElementById('genReportBtn2');btn.disabled=true;btn.textContent='Gerando...';document.getElementById('iaReportBody2').innerHTML='<div class="loading">IA analisando...</div>';const p={campaignsData:metaCache.campaigns};if(currentCampaignId&&currentCampaignId!=='all')p.campaignId=currentCampaignId;const r=await api('/api/meta/report',{method:'POST',body:JSON.stringify(p)});btn.disabled=false;btn.textContent='Gerar';if(r&&r.ok){showReport(r.report,r.date);toast('Relatório gerado!','success');}else{document.getElementById('iaReportBody2').innerHTML='<div class="empty-state"><p>Erro: '+(r?.error||'')+'</p></div>';toast('Erro','error');}}
+async function loadReportHistory(){document.getElementById('reportHistoryCard2').style.display='';const r=await api('/api/meta/reports');const tb=document.getElementById('reportHistoryTable2');if(r&&r.ok&&r.data&&r.data.length)tb.innerHTML=r.data.map(x=>`<tr><td>${new Date(x.report_date).toLocaleDateString('pt-BR')}</td><td>${x.alerts_sent?'<span class="badge-status badge-delivered">Sim</span>':'<span class="badge-status badge-pending">Não</span>'}</td><td><button class="btn btn-outline btn-sm" onclick="viewReport('${x.report_date}')">Ver</button></td></tr>`).join('');else tb.innerHTML='<tr><td colspan="3">—</td></tr>';}
 async function viewReport(d){const r=await api('/api/meta/report/'+d);if(r&&r.ok&&r.data){showReport(r.data.report,r.data.date);window.scrollTo({top:0,behavior:'smooth'});}else toast('Erro','error');}
 
 // ═══ IA CHAT ═══
 function iaAsk(q){document.getElementById('iaChatInput').value=q;iaSend();}
-function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-async function iaSend(){
-  const input=document.getElementById('iaChatInput');const text=input?.value?.trim();if(!text)return;input.value='';
-  const msgs=document.getElementById('iaChatMessages');
-  msgs.innerHTML+=`<div class="ia-msg ia-msg-user"><div class="ia-msg-avatar">Eu</div><div class="ia-msg-content">${escHtml(text)}</div></div>`;
-  msgs.innerHTML+=`<div class="ia-msg ia-msg-bot" id="iaTyping"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content"><div class="ia-msg-typing"><span></span><span></span><span></span></div></div></div>`;
-  msgs.scrollTop=msgs.scrollHeight;
-  document.getElementById('iaChatSuggestions').style.display='none';
-  const btn=document.getElementById('iaSendBtn');btn.disabled=true;btn.textContent='Pensando...';
-  let campsToSend=metaCache.campaigns;if(currentCampaignId&&currentCampaignId!=='all')campsToSend=metaCache.campaigns.filter(c=>c.id===currentCampaignId);
-  const r=await api('/api/meta/chat',{method:'POST',body:JSON.stringify({message:text,campaignsData:campsToSend,summaryData:metaCache.summary,funnelData:metaCache.funnel,adsData:metaCache.ads})});
+async function iaSend(){const input=document.getElementById('iaChatInput');const t=input?.value?.trim();if(!t)return;input.value='';const msgs=document.getElementById('iaChatMessages');
+  msgs.innerHTML+=`<div class="ia-msg ia-msg-user"><div class="ia-msg-avatar">Eu</div><div class="ia-msg-content">${escHtml(t)}</div></div>`;
+  msgs.innerHTML+=`<div class="ia-msg ia-msg-bot" id="iaTyping"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content"><div class="ia-msg-typing"><span></span><span></span><span></span></div></div></div>`;msgs.scrollTop=msgs.scrollHeight;
+  document.getElementById('iaChatSuggestions').style.display='none';const btn=document.getElementById('iaSendBtn');btn.disabled=true;btn.textContent='...';
+  let cs=metaCache.campaigns;if(currentCampaignId&&currentCampaignId!=='all')cs=cs.filter(c=>c.id===currentCampaignId);
+  const r=await api('/api/meta/chat',{method:'POST',body:JSON.stringify({message:t,campaignsData:cs,summaryData:metaCache.summary,funnelData:metaCache.funnel,adsData:metaCache.ads})});
   btn.disabled=false;btn.textContent='Enviar';document.getElementById('iaTyping')?.remove();
-  let reply='Desculpe, ocorreu um erro. Tente novamente.';
-  if(r&&r.ok&&r.response)reply=r.response;else if(r&&r.error)reply='Erro: '+r.error;
-  let hr=reply.replace(/## (.*)/g,'<h3>$1</h3>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^- (.+)$/gm,'<li>$1</li>').replace(/\n/g,'<br>');
-  hr=hr.replace(/<\/li><br><li>/g,'</li><li>').replace(/((?:<li>.*?<\/li>)+)/g,'<ul>$1</ul>');
-  const modelTag=r&&r.model?` <span style="font-size:.6rem;opacity:.5">(${r.model})</span>`:'';
-  msgs.innerHTML+=`<div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">${hr}${modelTag}</div></div>`;
-  msgs.scrollTop=msgs.scrollHeight;
-}
-
-// IA diagnostic
-async function testIA(){
-  const msgs=document.getElementById('iaChatMessages');
-  msgs.innerHTML+=`<div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">🔧</div><div class="ia-msg-content">Testando conexão com API Anthropic...</div></div>`;
-  msgs.scrollTop=msgs.scrollHeight;
-  const r=await api('/api/meta/ia-test');
-  let html='';
-  if(r){
-    html+=`<strong>Chave:</strong> ${r.key_preview||'?'}<br>`;
-    if(r.results){r.results.forEach(function(t){
-      html+=`<strong>${t.model}:</strong> ${t.ok?'✅ OK — "'+t.response+'"':'❌ ERRO — '+t.error}<br>`;
-    });}
-    if(r.ok) html+='<br>✅ Pelo menos um modelo funciona!';
-    else html+='<br>❌ Nenhum modelo respondeu. Verifique a chave API e os créditos.';
-  }else html='❌ Não conseguiu conectar ao servidor.';
-  msgs.innerHTML+=`<div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">🔧</div><div class="ia-msg-content">${html}</div></div>`;
-  msgs.scrollTop=msgs.scrollHeight;
-}
+  let rp='Erro. Tente novamente.';if(r&&r.ok&&r.response)rp=r.response;else if(r&&r.error)rp='Erro: '+r.error;
+  let hr=rp.replace(/## (.*)/g,'<h3>$1</h3>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^- (.+)$/gm,'<li>$1</li>').replace(/\n/g,'<br>').replace(/<\/li><br><li>/g,'</li><li>').replace(/((?:<li>.*?<\/li>)+)/g,'<ul>$1</ul>');
+  msgs.innerHTML+=`<div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">${hr}</div></div>`;msgs.scrollTop=msgs.scrollHeight;}
 
 // ═══ TEMPLATE CREATION MODAL ═══
 // POST /api/wa-templates → { name, bodyText, footerText, buttonText, buttonUrl, category, language, timing, tplType }
