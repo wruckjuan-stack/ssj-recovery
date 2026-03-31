@@ -1734,7 +1734,7 @@ app.get("/api/meta/fatigue", async function(req, res) {
   } catch (e) { res.status(500).json({ok:false,error:e.message}); }
 });
 
-// Scorecard IA (cached)
+// Scorecard IA (cached) - GET uses Meta API, POST uses frontend data
 var scorecardCache = { data:null, ts:0 };
 app.get("/api/meta/scorecard", async function(req, res) {
   try {
@@ -1745,8 +1745,11 @@ app.get("/api/meta/scorecard", async function(req, res) {
     var cUrl="https://graph.facebook.com/v22.0/act_"+CFG.metaAdAccountId+"/insights?fields="+fields+"&level=campaign&date_preset=last_7d&limit=50&access_token="+CFG.metaAdsToken;
     var aUrl="https://graph.facebook.com/v22.0/act_"+CFG.metaAdAccountId+"/insights?fields=ad_name,ad_id,adset_name,campaign_name,impressions,clicks,spend,ctr,actions,action_values,frequency&level=ad&date_preset=last_7d&limit=50&access_token="+CFG.metaAdsToken;
     var [cr,ar]=await Promise.all([fetch(cUrl),fetch(aUrl)]);var [cd,ad]=await Promise.all([cr.json(),ar.json()]);
+    if (cd.error) { console.error("[SCORECARD] Meta campaigns error:", JSON.stringify(cd.error).substring(0,200)); }
+    if (ad.error) { console.error("[SCORECARD] Meta ads error:", JSON.stringify(ad.error).substring(0,200)); }
     var camps=(cd.data||[]).map(function(c){var a=parseActions(c);var sp=parseFloat(c.spend)||0;return{name:c.campaign_name,spend:sp,purchases:a.purchases,roas:sp>0?Math.round((a.purchaseValue/sp)*100)/100:0,cpa:a.purchases>0?Math.round((sp/a.purchases)*100)/100:0,ctr:parseFloat(c.ctr)||0,frequency:parseFloat(c.frequency)||0};});
     var ads=(ad.data||[]).map(function(a){var ac=parseActions(a);var sp=parseFloat(a.spend)||0;return{name:a.ad_name,adset:a.adset_name,campaign:a.campaign_name,spend:sp,roas:sp>0?Math.round((ac.purchaseValue/sp)*100)/100:0,ctr:parseFloat(a.ctr)||0,frequency:parseFloat(a.frequency)||0};});
+    console.log("[SCORECARD] Campanhas encontradas:", camps.length, "Anuncios:", ads.length);
     var prompt="Você é analista de mídia paga para SSJ Moda Fitness (moda fitness feminina 45+). ROAS meta: "+roasTarget+"x.\n\nAnalise e gere um scorecard. Responda SOMENTE em JSON válido, sem markdown:\n{\"alerts\":[{\"type\":\"success|warning|danger\",\"title\":\"...\",\"detail\":\"...\"}],\"campaigns\":[{\"name\":\"...\",\"verdict\":\"ESCALAR|MANTER|PAUSAR|AJUSTAR\",\"reason\":\"...\"}],\"creatives\":[{\"name\":\"...\",\"verdict\":\"TOP|OK|FADIGA|PAUSAR\",\"reason\":\"...\"}],\"summary\":\"2-3 frases\"}\n\nCAMPANHAS:\n"+JSON.stringify(camps)+"\n\nANÚNCIOS:\n"+JSON.stringify(ads.slice(0,15));
     var models=["claude-opus-4-6","claude-sonnet-4-6"];var text=null;
     for(var mi=0;mi<models.length;mi++){try{var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":CFG.anthropicKey,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:models[mi],max_tokens:2000,messages:[{role:"user",content:prompt}]})});var d=await r.json();if(r.ok&&d.content){text="";d.content.forEach(function(b){if(b.type==="text")text+=b.text;});break;}}catch(e){}}
@@ -1755,6 +1758,22 @@ app.get("/api/meta/scorecard", async function(req, res) {
     scorecardCache.data=parsed;scorecardCache.ts=now;
     res.json({ok:true,scorecard:parsed,cached:false});
   } catch (e) { console.error("[SCORECARD]",e.message); res.status(500).json({ok:false,error:e.message}); }
+});
+
+app.post("/api/meta/scorecard", async function(req, res) {
+  try {
+    if (!CFG.anthropicKey) throw new Error("ANTHROPIC_API_KEY não configurada");
+    var camps = req.body.campaigns || [];
+    var ads = req.body.ads || [];
+    if (camps.length === 0 && ads.length === 0) return res.json({ok:false,error:"Nenhum dado enviado"});
+    var prompt="Você é analista de mídia paga para SSJ Moda Fitness (moda fitness feminina 45+). ROAS meta: "+roasTarget+"x.\n\nAnalise e gere um scorecard. Responda SOMENTE em JSON válido, sem markdown, sem backticks:\n{\"alerts\":[{\"type\":\"success|warning|danger\",\"title\":\"...\",\"detail\":\"...\"}],\"campaigns\":[{\"name\":\"...\",\"verdict\":\"ESCALAR|MANTER|PAUSAR|AJUSTAR\",\"reason\":\"...\"}],\"creatives\":[{\"name\":\"...\",\"verdict\":\"TOP|OK|FADIGA|PAUSAR\",\"reason\":\"...\"}],\"summary\":\"2-3 frases\"}\n\nCAMPANHAS:\n"+JSON.stringify(camps)+"\n\nANÚNCIOS:\n"+JSON.stringify(ads.slice(0,20));
+    var models=["claude-opus-4-6","claude-sonnet-4-6"];var text=null;
+    for(var mi=0;mi<models.length;mi++){try{var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":CFG.anthropicKey,"anthropic-version":"2023-06-01"},body:JSON.stringify({model:models[mi],max_tokens:2000,messages:[{role:"user",content:prompt}]})});var d=await r.json();if(r.ok&&d.content){text="";d.content.forEach(function(b){if(b.type==="text")text+=b.text;});break;}}catch(e){}}
+    if(!text)throw new Error("IA indisponível");
+    var parsed;try{parsed=JSON.parse(text.replace(/```json\s*/g,"").replace(/```\s*/g,"").trim());}catch(e){parsed={summary:text,alerts:[],campaigns:[],creatives:[]};}
+    scorecardCache.data=parsed;scorecardCache.ts=Date.now();
+    res.json({ok:true,scorecard:parsed,cached:false});
+  } catch (e) { console.error("[SCORECARD-POST]",e.message); res.status(500).json({ok:false,error:e.message}); }
 });
 
 // ===================== START SERVER =====================
