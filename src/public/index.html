@@ -428,8 +428,8 @@ tr:hover td { background: var(--primary-lighter); }
           <button class="btn btn-outline btn-sm" onclick="loadCarts()">Atualizar</button>
         </div>
         <div class="card-body no-pad"><div class="tbl-wrap"><table>
-          <thead><tr><th>Cliente</th><th>Telefone</th><th>Valor</th><th>Produtos</th><th>Tempo</th><th>Ação</th></tr></thead>
-          <tbody id="cartsTable"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+          <thead><tr><th>Cliente</th><th>Telefone</th><th>Valor</th><th>Produtos</th><th>Tempo</th><th>Status Envio</th><th>Ação</th></tr></thead>
+          <tbody id="cartsTable"><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
         </table></div></div>
       </div>
     </div>
@@ -461,8 +461,8 @@ tr:hover td { background: var(--primary-lighter); }
           </div>
         </div>
         <div class="card-body no-pad"><div class="tbl-wrap"><table>
-          <thead><tr><th>Cliente</th><th>Telefone</th><th>Último Pedido</th><th>Dias</th><th>Cupom</th><th>Ação</th></tr></thead>
-          <tbody id="recompraTable"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+          <thead><tr><th>Cliente</th><th>Telefone</th><th>Último Pedido</th><th>Dias</th><th>Cupom</th><th>Status Envio</th><th>Ação</th></tr></thead>
+          <tbody id="recompraTable"><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
         </table></div></div>
       </div>
     </div>
@@ -744,18 +744,29 @@ async function loadCarts() {
   const tb = document.getElementById('cartsTable');
   const carts = (res && res.data) ? res.data : [];
   if (carts.length > 0) {
-    tb.innerHTML = carts.map(c => `
+    tb.innerHTML = carts.map(c => {
+      // alreadySent = array of template IDs already sent, recommended = next template to send
+      const sent = c.alreadySent || [];
+      let waBadge;
+      if (sent.length === 0) {
+        waBadge = '<span class="badge-status badge-pending">Não enviado</span>';
+      } else {
+        waBadge = sent.map(t => `<span class="badge-status badge-delivered" style="margin:1px 2px;font-size:0.65rem">${t.replace(/_/g,' ').replace(/v2/,'').trim()}</span>`).join('');
+      }
+      const nextTpl = c.recommended && !sent.includes(c.recommended) ? `<div style="margin-top:3px"><span class="badge-status badge-pending" style="font-size:0.62rem">Próximo: ${c.recommended.replace(/_/g,' ').replace(/v2/,'').trim()}</span></div>` : '';
+      return `
       <tr>
         <td>${c.name || 'Sem nome'}</td>
         <td>${fmtPhone(c.phone)}</td>
         <td>${c.total || fmtMoney(c.totalRaw)}</td>
         <td>${c.items || (c.itemCount + ' itens')}</td>
         <td>${c.hoursAgo != null ? c.hoursAgo + 'h' : timeAgo(c.createdAt)}</td>
+        <td>${waBadge}${nextTpl}</td>
         <td><button class="btn btn-primary btn-sm" onclick="openSendModal('cart',${c.id},'${esc(c.phone)}','${esc(c.name)}')">Enviar</button></td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
   } else {
-    tb.innerHTML = '<tr><td colspan="6" class="empty-state"><p>Nenhum carrinho abandonado</p></td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Nenhum carrinho abandonado</p></td></tr>';
   }
 }
 
@@ -800,6 +811,9 @@ async function loadRecompra() {
       const coupon = r.intervalCoupon || 'VOLTECOMSSJ';
       const days = r.intervalDays || r.daysAgo || '—';
       const sent = r.alreadySent === true;
+      const waBadge = sent
+        ? `<span class="badge-status badge-delivered">Enviado</span><div style="margin-top:2px"><span class="badge-status badge-read" style="font-size:0.62rem">${(r.intervalTemplate || '').replace(/_/g,' ')}</span></div>`
+        : '<span class="badge-status badge-pending">Não enviado</span>';
       return `
         <tr>
           <td>${r.name || 'Sem nome'}</td>
@@ -807,14 +821,15 @@ async function loadRecompra() {
           <td>${fmtDate(r.createdAt)}</td>
           <td>${days} dias</td>
           <td><span class="badge-status badge-sent">${coupon}</span></td>
+          <td>${waBadge}</td>
           <td>${sent
-            ? '<span class="badge-status badge-delivered">Já enviado</span>'
+            ? '<span style="font-size:0.75rem;color:var(--text-muted)">—</span>'
             : `<button class="btn btn-gold btn-sm" onclick="openSendModal('recompra',${r.id},'${esc(r.phone)}','${esc(r.name)}','${esc(coupon)}',${days},'${esc(r.intervalTemplate)}')">Enviar</button>`
           }</td>
         </tr>`;
     }).join('');
   } else {
-    tb.innerHTML = '<tr><td colspan="6" class="empty-state"><p>Nenhum pedido elegível para recompra</p></td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Nenhum pedido elegível para recompra</p></td></tr>';
   }
 }
 
