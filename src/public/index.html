@@ -5,463 +5,362 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SSJ Moda Fitness — CRM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #F4F7FA;
+  --bg: #F0F4F8;
   --surface: #FFFFFF;
-  --surface-alt: #EDF1F7;
-  --border: #D8E0EA;
-  --border-light: #E6ECF3;
-  --text: #1A2332;
-  --text-secondary: #5A6A7E;
-  --text-muted: #8D99A8;
-  --primary: #3B8FD9;
-  --primary-light: #E3F0FC;
-  --primary-hover: #2D7AC4;
-  --primary-dark: #1E5A94;
-  --accent-gold: #D4A94C;
-  --accent-gold-light: #FBF5E4;
-  --success: #2EAA6F;
-  --success-light: #E2F6ED;
-  --warning: #E5993E;
-  --warning-light: #FEF4E4;
-  --danger: #D1534F;
-  --danger-light: #FDE9E8;
-  --info: #5AA4DC;
-  --info-light: #E8F2FC;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-lg: 16px;
-  --shadow-sm: 0 1px 3px rgba(26,35,50,0.04), 0 1px 2px rgba(26,35,50,0.06);
-  --shadow: 0 4px 16px rgba(26,35,50,0.06), 0 1px 4px rgba(26,35,50,0.03);
-  --shadow-lg: 0 12px 40px rgba(26,35,50,0.08), 0 4px 12px rgba(26,35,50,0.04);
-  --sidebar-w: 256px;
-  --header-h: 60px;
-  --font-body: 'DM Sans', sans-serif;
-  --font-display: 'Playfair Display', serif;
-  --transition: 0.2s ease;
+  --surface-alt: #F7F9FC;
+  --surface-raised: #FFFFFF;
+  --border: #DAE3ED;
+  --border-light: #E8EEF4;
+  --text: #1B2A3D;
+  --text-secondary: #546A7F;
+  --text-muted: #8FA3B8;
+  --primary: #4A9FE5;
+  --primary-soft: #6BB3F0;
+  --primary-light: #E8F3FD;
+  --primary-lighter: #F2F8FE;
+  --primary-hover: #3589D0;
+  --primary-dark: #2A6DA8;
+  --accent: #E8B84B;
+  --accent-light: #FDF6E3;
+  --success: #3AAF76;
+  --success-light: #E4F6ED;
+  --warning: #E8A33D;
+  --warning-light: #FEF3E2;
+  --danger: #D85454;
+  --danger-light: #FDECEC;
+  --info: #5AAAE0;
+  --info-light: #EAF4FD;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+  --radius-lg: 18px;
+  --shadow-xs: 0 1px 2px rgba(27,42,61,0.04);
+  --shadow-sm: 0 1px 4px rgba(27,42,61,0.05), 0 1px 2px rgba(27,42,61,0.03);
+  --shadow: 0 4px 20px rgba(27,42,61,0.06), 0 1px 4px rgba(27,42,61,0.03);
+  --shadow-md: 0 8px 30px rgba(27,42,61,0.08), 0 2px 8px rgba(27,42,61,0.04);
+  --shadow-lg: 0 16px 50px rgba(27,42,61,0.1), 0 4px 12px rgba(27,42,61,0.04);
+  --sidebar-w: 252px;
+  --header-h: 58px;
+  --font: 'Outfit', -apple-system, sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
+  --transition: 0.18s ease;
+  --transition-slow: 0.3s ease;
 }
 
-html { font-size: 14px; }
-body {
-  font-family: var(--font-body);
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.6;
-  overflow-x: hidden;
-}
+html { font-size: 14px; -webkit-font-smoothing: antialiased; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
 
-/* ─── SIDEBAR ─── */
+/* ═══ SIDEBAR ═══ */
 .sidebar {
   position: fixed; top: 0; left: 0; bottom: 0;
   width: var(--sidebar-w);
-  background: var(--surface);
+  background: linear-gradient(180deg, #FAFCFE 0%, #F4F8FB 100%);
   border-right: 1px solid var(--border);
   display: flex; flex-direction: column;
-  z-index: 100;
-  transition: transform 0.3s ease;
+  z-index: 100; transition: transform var(--transition-slow);
 }
-.sidebar-brand {
-  padding: 22px 20px 18px;
-  border-bottom: 1px solid var(--border-light);
+.sidebar-brand { padding: 24px 22px 20px; border-bottom: 1px solid var(--border-light); position: relative; }
+.sidebar-brand::after {
+  content: ''; position: absolute; bottom: -1px; left: 22px; right: 22px; height: 1px;
+  background: linear-gradient(90deg, var(--primary-light), transparent);
 }
 .sidebar-brand h1 {
-  font-family: var(--font-display);
-  font-size: 1.45rem; font-weight: 700;
-  color: var(--primary-dark);
-  letter-spacing: -0.02em;
+  font-family: var(--font-display); font-size: 1.6rem; font-weight: 600;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  letter-spacing: -0.03em;
 }
-.sidebar-brand span {
-  font-size: 0.7rem; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.12em;
-  display: block; margin-top: 3px; font-weight: 500;
-}
-.sidebar-nav { flex: 1; overflow-y: auto; padding: 12px 10px; }
-.nav-group { margin-bottom: 8px; }
-.nav-group-title {
-  font-size: 0.68rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.1em;
-  color: var(--text-muted); padding: 12px 12px 6px;
-}
+.sidebar-brand p { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.14em; margin-top: 4px; font-weight: 500; }
+.sidebar-nav { flex: 1; overflow-y: auto; padding: 16px 12px; }
+.sidebar-nav::-webkit-scrollbar { width: 3px; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+.nav-group { margin-bottom: 6px; }
+.nav-group-label { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.13em; color: var(--text-muted); padding: 14px 14px 7px; }
 .nav-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; gap: 11px;
+  padding: 9px 14px; border-radius: var(--radius-sm);
   cursor: pointer; color: var(--text-secondary);
-  font-weight: 500; font-size: 0.9rem;
-  transition: all var(--transition); position: relative;
+  font-weight: 500; font-size: 0.88rem;
+  transition: all var(--transition); position: relative; margin-bottom: 2px;
+  border: 1px solid transparent;
 }
-.nav-item:hover { background: var(--surface-alt); color: var(--text); }
+.nav-item:hover { background: var(--surface); color: var(--text); border-color: var(--border-light); box-shadow: var(--shadow-xs); }
 .nav-item.active {
-  background: var(--primary-light); color: var(--primary);
-  font-weight: 600;
-  box-shadow: inset 3px 0 0 var(--primary);
+  background: var(--primary-light); color: var(--primary-dark); font-weight: 600;
+  border-color: rgba(74,159,229,0.15); box-shadow: 0 1px 4px rgba(74,159,229,0.08);
 }
-.nav-item .badge {
-  margin-left: auto; background: var(--danger);
-  color: white; font-size: 0.65rem; font-weight: 700;
-  padding: 2px 7px; border-radius: 10px; min-width: 18px;
-  text-align: center;
+.nav-item.active::before {
+  content: ''; position: absolute; left: 0; top: 8px; bottom: 8px;
+  width: 3px; border-radius: 0 3px 3px 0; background: var(--primary);
 }
-.nav-item svg { width: 18px; height: 18px; flex-shrink: 0; opacity: 0.7; }
-.nav-item.active svg { opacity: 1; }
-.sidebar-footer {
-  padding: 16px 20px; border-top: 1px solid var(--border-light);
-  font-size: 0.75rem; color: var(--text-muted);
-}
+.nav-item .badge { margin-left: auto; background: var(--danger); color: white; font-size: 0.62rem; font-weight: 700; padding: 2px 7px; border-radius: 10px; min-width: 18px; text-align: center; line-height: 1.3; }
+.nav-item svg { width: 17px; height: 17px; flex-shrink: 0; opacity: 0.55; stroke-width: 1.8; }
+.nav-item:hover svg { opacity: 0.8; }
+.nav-item.active svg { opacity: 1; color: var(--primary); }
+.sidebar-footer { padding: 14px 22px; border-top: 1px solid var(--border-light); font-size: 0.7rem; color: var(--text-muted); font-weight: 500; letter-spacing: 0.02em; }
 
-/* ─── MAIN ─── */
+/* ═══ MAIN ═══ */
 .main { margin-left: var(--sidebar-w); min-height: 100vh; }
 .topbar {
-  height: var(--header-h); background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  height: var(--header-h); background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-light);
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 28px; position: sticky; top: 0; z-index: 50;
 }
-.topbar-title { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; }
-.topbar-actions { display: flex; align-items: center; gap: 12px; }
+.topbar-left { display: flex; align-items: center; gap: 14px; }
+.topbar-title { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
 .topbar-btn {
-  background: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;
-  font-size: 0.8rem; color: var(--text-secondary); transition: all var(--transition);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 7px 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); font-family: var(--font);
+  transition: all var(--transition); box-shadow: var(--shadow-xs);
 }
-.topbar-btn:hover { border-color: var(--primary); color: var(--primary); }
-.mobile-toggle {
-  display: none; background: none; border: none; cursor: pointer;
-  color: var(--text); padding: 4px;
-}
-.content { padding: 24px 28px; max-width: 1400px; }
+.topbar-btn:hover { border-color: var(--primary-soft); color: var(--primary-dark); box-shadow: var(--shadow-sm); }
+.topbar-btn svg { width: 14px; height: 14px; }
+.mobile-toggle { display: none; background: none; border: none; cursor: pointer; color: var(--text); padding: 4px; }
+.content { padding: 24px 28px; max-width: 1440px; }
 
-/* ─── CARDS / METRICS ─── */
-.metrics-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px; margin-bottom: 24px;
-}
+/* ═══ METRICS ═══ */
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 14px; margin-bottom: 24px; }
 .metric-card {
-  background: var(--surface); border: 1px solid var(--border-light);
-  border-radius: var(--radius); padding: 20px 22px;
-  transition: all var(--transition);
-  border-top: 3px solid var(--primary-light);
+  background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius);
+  padding: 20px 22px; transition: all var(--transition); position: relative; overflow: hidden;
 }
-.metric-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-top-color: var(--primary); }
-.metric-label {
-  font-size: 0.72rem; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.08em;
-  margin-bottom: 8px; font-weight: 600;
+.metric-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--primary-light), var(--primary-soft)); opacity: 0; transition: opacity var(--transition);
 }
-.metric-value {
-  font-family: var(--font-display); font-size: 2rem;
-  font-weight: 700; color: var(--text); line-height: 1.1;
+.metric-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.metric-card:hover::before { opacity: 1; }
+.metric-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
 }
-.metric-change {
-  font-size: 0.75rem; margin-top: 4px; font-weight: 500;
-}
-.metric-change.up { color: var(--success); }
-.metric-change.down { color: var(--danger); }
+.metric-icon svg { width: 18px; height: 18px; }
+.metric-icon.blue { background: var(--primary-light); color: var(--primary); }
+.metric-icon.green { background: var(--success-light); color: var(--success); }
+.metric-icon.purple { background: #EDE6F8; color: #7C5CBF; }
+.metric-icon.red { background: var(--danger-light); color: var(--danger); }
+.metric-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; font-weight: 600; }
+.metric-value { font-family: var(--font-display); font-size: 2rem; font-weight: 600; color: var(--text); line-height: 1.1; letter-spacing: -0.02em; }
 
-/* ─── CARD CONTAINER ─── */
-.card {
-  background: var(--surface); border: 1px solid var(--border-light);
-  border-radius: var(--radius); margin-bottom: 20px;
-}
-.card-header {
-  padding: 16px 20px; border-bottom: 1px solid var(--border-light);
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 10px;
-}
-.card-title { font-size: 0.95rem; font-weight: 700; color: var(--text); }
-.card-body { padding: 20px; }
+/* ═══ CARDS ═══ */
+.card { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius); margin-bottom: 20px; box-shadow: var(--shadow-xs); }
+.card-header { padding: 16px 22px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.card-title { font-size: 0.92rem; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+.card-body { padding: 20px 22px; }
 .card-body.no-pad { padding: 0; }
 
-/* ─── TABLE ─── */
+/* ═══ TABLE ═══ */
 .tbl-wrap { overflow-x: auto; }
+.tbl-wrap::-webkit-scrollbar { height: 4px; }
+.tbl-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 table { width: 100%; border-collapse: collapse; }
-th {
-  text-align: left; font-size: 0.72rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--text-muted); padding: 10px 16px;
-  border-bottom: 1px solid var(--border-light);
-  background: var(--surface-alt); white-space: nowrap;
-}
-td {
-  padding: 12px 16px; border-bottom: 1px solid var(--border-light);
-  font-size: 0.85rem; vertical-align: middle;
-}
+th { text-align: left; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); padding: 11px 18px; border-bottom: 1px solid var(--border-light); background: var(--surface-alt); white-space: nowrap; }
+th:first-child { border-radius: var(--radius) 0 0 0; }
+th:last-child { border-radius: 0 var(--radius) 0 0; }
+td { padding: 13px 18px; border-bottom: 1px solid var(--border-light); font-size: 0.84rem; vertical-align: middle; color: var(--text-secondary); }
 tr:last-child td { border-bottom: none; }
-tr:hover td { background: var(--surface-alt); }
+tr { transition: background var(--transition); }
+tr:hover td { background: var(--primary-lighter); }
 
-/* ─── BADGES ─── */
-.badge-status {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px; border-radius: 20px;
-  font-size: 0.72rem; font-weight: 600;
-}
-.badge-sent { background: var(--info-light); color: var(--info); }
-.badge-delivered { background: var(--success-light); color: var(--success); }
-.badge-read { background: var(--primary-light); color: var(--primary); }
-.badge-failed { background: var(--danger-light); color: var(--danger); }
-.badge-pending { background: var(--warning-light); color: var(--warning); }
-.badge-paid { background: var(--success-light); color: var(--success); }
-.badge-cancelled { background: var(--danger-light); color: var(--danger); }
-.badge-refused { background: var(--warning-light); color: var(--warning); }
+/* ═══ BADGES ═══ */
+.badge-status { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 20px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.02em; }
+.badge-status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
+.badge-sent { background: var(--info-light); color: #3A7FBA; }
+.badge-sent::before { background: #3A7FBA; }
+.badge-delivered { background: var(--success-light); color: #2D8F60; }
+.badge-delivered::before { background: #2D8F60; }
+.badge-read { background: #EDE6F8; color: #6B4DAF; }
+.badge-read::before { background: #6B4DAF; }
+.badge-failed { background: var(--danger-light); color: #B83E3E; }
+.badge-failed::before { background: #B83E3E; }
+.badge-pending { background: var(--warning-light); color: #B07A2B; }
+.badge-pending::before { background: #B07A2B; }
+.badge-paid { background: var(--success-light); color: #2D8F60; }
+.badge-paid::before { background: #2D8F60; }
+.badge-cancelled { background: var(--danger-light); color: #B83E3E; }
+.badge-cancelled::before { background: #B83E3E; }
+.badge-refused { background: var(--warning-light); color: #B07A2B; }
+.badge-refused::before { background: #B07A2B; }
 
-/* ─── BUTTONS ─── */
+/* ═══ BUTTONS ═══ */
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border-radius: var(--radius-sm);
-  font-size: 0.82rem; font-weight: 600; cursor: pointer;
-  border: none; transition: all var(--transition); white-space: nowrap;
+  padding: 8px 18px; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600;
+  cursor: pointer; border: none; font-family: var(--font); transition: all var(--transition); white-space: nowrap; letter-spacing: 0.01em;
 }
-.btn-primary { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(59,143,217,0.25); }
-.btn-primary:hover { background: var(--primary-hover); box-shadow: 0 4px 12px rgba(59,143,217,0.3); }
-.btn-outline {
-  background: transparent; border: 1px solid var(--border);
-  color: var(--text-secondary);
-}
-.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
-.btn-sm { padding: 5px 10px; font-size: 0.75rem; }
-.btn-gold { background: var(--accent-gold); color: white; }
-.btn-gold:hover { background: #B8973E; }
+.btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-soft) 100%); color: white; box-shadow: 0 2px 8px rgba(74,159,229,0.25); }
+.btn-primary:hover { background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%); box-shadow: 0 4px 14px rgba(74,159,229,0.35); transform: translateY(-1px); }
+.btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); box-shadow: var(--shadow-xs); }
+.btn-outline:hover { border-color: var(--primary-soft); color: var(--primary-dark); box-shadow: var(--shadow-sm); }
+.btn-sm { padding: 6px 12px; font-size: 0.74rem; border-radius: var(--radius-xs); }
+.btn-gold { background: linear-gradient(135deg, var(--accent) 0%, #D4B85C 100%); color: white; box-shadow: 0 2px 8px rgba(232,184,75,0.25); }
+.btn-gold:hover { box-shadow: 0 4px 14px rgba(232,184,75,0.35); transform: translateY(-1px); }
 .btn-danger { background: var(--danger); color: white; }
 .btn-success { background: var(--success); color: white; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
 
-/* ─── INPUTS / FILTERS ─── */
+/* ═══ INPUTS ═══ */
 .input, select, textarea {
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 8px 12px; font-size: 0.85rem; font-family: var(--font-body);
-  background: var(--surface); color: var(--text);
-  transition: border-color var(--transition);
-  width: 100%;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 14px;
+  font-size: 0.84rem; font-family: var(--font); background: var(--surface); color: var(--text);
+  transition: all var(--transition); width: 100%;
 }
-.input:focus, select:focus, textarea:focus {
-  outline: none; border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59,143,217,0.12);
-}
-.filter-row {
-  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-}
-.filter-row .input, .filter-row select { width: auto; min-width: 160px; }
+.input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-soft); box-shadow: 0 0 0 3px rgba(74,159,229,0.1); }
+.filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.filter-row .input, .filter-row select { width: auto; min-width: 155px; }
 
-/* ─── INBOX ─── */
+/* ═══ INBOX ═══ */
 .inbox-layout { display: flex; height: calc(100vh - var(--header-h) - 48px); }
-.inbox-list {
-  width: 340px; border-right: 1px solid var(--border-light);
-  overflow-y: auto; flex-shrink: 0;
-}
-.inbox-conv {
-  padding: 14px 16px; border-bottom: 1px solid var(--border-light);
-  cursor: pointer; transition: background var(--transition);
-}
-.inbox-conv:hover, .inbox-conv.active { background: var(--primary-light); }
-.inbox-conv-name { font-weight: 600; font-size: 0.9rem; }
-.inbox-conv-preview {
-  font-size: 0.78rem; color: var(--text-muted);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  margin-top: 2px;
-}
-.inbox-conv-time {
-  font-size: 0.68rem; color: var(--text-muted); float: right;
-}
-.inbox-conv .unread-dot {
-  display: inline-block; width: 8px; height: 8px;
-  background: var(--primary); border-radius: 50%;
-  margin-left: 6px; vertical-align: middle;
-}
-.inbox-chat { flex: 1; display: flex; flex-direction: column; }
-.inbox-chat-header {
-  padding: 14px 20px; border-bottom: 1px solid var(--border-light);
-  font-weight: 600; font-size: 1rem;
-}
-.inbox-messages {
-  flex: 1; overflow-y: auto; padding: 20px;
-  display: flex; flex-direction: column; gap: 8px;
-}
-.msg-bubble {
-  max-width: 70%; padding: 10px 14px; border-radius: 14px;
-  font-size: 0.85rem; line-height: 1.5; word-wrap: break-word;
-}
-.msg-in { background: var(--surface-alt); align-self: flex-start; border-bottom-left-radius: 4px; }
-.msg-out { background: var(--primary-light); color: var(--text); align-self: flex-end; border-bottom-right-radius: 4px; }
-.msg-time { font-size: 0.65rem; color: var(--text-muted); margin-top: 2px; }
-.inbox-input-row {
-  padding: 12px 20px; border-top: 1px solid var(--border-light);
-  display: flex; gap: 10px;
-}
+.inbox-list { width: 340px; border-right: 1px solid var(--border-light); overflow-y: auto; flex-shrink: 0; background: var(--surface-alt); }
+.inbox-list::-webkit-scrollbar { width: 3px; }
+.inbox-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+.inbox-conv { padding: 14px 18px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: all var(--transition); }
+.inbox-conv:hover { background: var(--primary-lighter); }
+.inbox-conv.active { background: var(--primary-light); border-left: 3px solid var(--primary); }
+.inbox-conv-name { font-weight: 600; font-size: 0.88rem; color: var(--text); }
+.inbox-conv-preview { font-size: 0.76rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; max-width: 260px; }
+.inbox-conv-time { font-size: 0.66rem; color: var(--text-muted); float: right; font-weight: 500; }
+.inbox-conv .unread-dot { display: inline-block; width: 7px; height: 7px; background: var(--primary); border-radius: 50%; margin-left: 6px; vertical-align: middle; box-shadow: 0 0 0 2px var(--primary-light); }
+.inbox-chat { flex: 1; display: flex; flex-direction: column; background: var(--surface); }
+.inbox-chat-header { padding: 14px 22px; border-bottom: 1px solid var(--border-light); font-weight: 700; font-size: 0.95rem; color: var(--text); }
+.inbox-messages { flex: 1; overflow-y: auto; padding: 22px; display: flex; flex-direction: column; gap: 8px; background: var(--surface-alt); }
+.inbox-messages::-webkit-scrollbar { width: 3px; }
+.inbox-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+.msg-bubble { max-width: 68%; padding: 11px 16px; border-radius: 16px; font-size: 0.84rem; line-height: 1.55; word-wrap: break-word; }
+.msg-in { background: var(--surface); align-self: flex-start; border-bottom-left-radius: 4px; box-shadow: var(--shadow-xs); border: 1px solid var(--border-light); }
+.msg-out { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-soft) 100%); color: white; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 2px 8px rgba(74,159,229,0.2); }
+.msg-time { font-size: 0.62rem; opacity: 0.6; margin-top: 3px; }
+.msg-out .msg-time { color: rgba(255,255,255,0.7); }
+.inbox-input-row { padding: 14px 22px; border-top: 1px solid var(--border-light); display: flex; gap: 10px; background: var(--surface); }
 .inbox-input-row .input { flex: 1; }
-.inbox-empty {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  color: var(--text-muted); font-size: 0.9rem;
-}
+.inbox-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.88rem; background: var(--surface-alt); }
 
-/* ─── CONFIG PANELS ─── */
-.config-section { margin-bottom: 24px; }
-.config-section h3 {
-  font-size: 0.95rem; font-weight: 600; margin-bottom: 12px;
-  padding-bottom: 8px; border-bottom: 1px solid var(--border-light);
-}
-.toggle-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 0; border-bottom: 1px solid var(--border-light);
-}
+/* ═══ CONFIG ═══ */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border-light); }
 .toggle-row:last-child { border-bottom: none; }
-.toggle-label { font-size: 0.88rem; }
-.toggle-desc { font-size: 0.75rem; color: var(--text-muted); }
-.toggle-switch {
-  width: 44px; height: 24px; background: var(--border);
-  border-radius: 12px; cursor: pointer; position: relative;
-  transition: background var(--transition); border: none;
-}
-.toggle-switch::after {
-  content: ''; position: absolute; top: 3px; left: 3px;
-  width: 18px; height: 18px; background: white;
-  border-radius: 50%; transition: transform var(--transition);
-  box-shadow: var(--shadow-sm);
-}
+.toggle-label { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+.toggle-desc { font-size: 0.74rem; color: var(--text-muted); margin-top: 2px; }
+.toggle-switch { width: 44px; height: 24px; background: var(--border); border-radius: 12px; cursor: pointer; position: relative; transition: background var(--transition); border: none; }
+.toggle-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: white; border-radius: 50%; transition: transform var(--transition); box-shadow: var(--shadow-sm); }
 .toggle-switch.on { background: var(--primary); }
 .toggle-switch.on::after { transform: translateX(20px); }
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+.status-dot.ok { background: var(--success); box-shadow: 0 0 0 3px var(--success-light); }
+.status-dot.err { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-light); }
 
-.status-dot {
-  display: inline-block; width: 8px; height: 8px;
-  border-radius: 50%; margin-right: 6px;
-}
-.status-dot.ok { background: var(--success); }
-.status-dot.err { background: var(--danger); }
-
-/* ─── EMPTY / LOADING ─── */
-.loading { text-align: center; padding: 40px; color: var(--text-muted); }
-.empty-state {
-  text-align: center; padding: 60px 20px; color: var(--text-muted);
-}
-.empty-state svg { width: 48px; height: 48px; opacity: 0.3; margin-bottom: 12px; }
-.empty-state p { font-size: 0.9rem; }
-
-/* ─── VIEWS ─── */
+/* ═══ STATES ═══ */
+.loading { text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+.empty-state svg { width: 44px; height: 44px; opacity: 0.25; margin-bottom: 12px; }
+.empty-state p { font-size: 0.88rem; }
 .view { display: none; }
-.view.active { display: block; }
+.view.active { display: block; animation: fadeUp 0.22s ease; }
 
-/* ─── TOAST ─── */
-.toast-container {
-  position: fixed; top: 20px; right: 20px; z-index: 1000;
-  display: flex; flex-direction: column; gap: 8px;
-}
-.toast {
-  padding: 12px 20px; border-radius: var(--radius-sm);
-  font-size: 0.82rem; font-weight: 500;
-  box-shadow: var(--shadow-lg); animation: slideIn 0.3s ease;
-  display: flex; align-items: center; gap: 8px;
-}
-.toast-success { background: var(--success); color: white; }
-.toast-error { background: var(--danger); color: white; }
-.toast-info { background: var(--info); color: white; }
-@keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+/* ═══ TOAST ═══ */
+.toast-container { position: fixed; top: 16px; right: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+.toast { padding: 12px 20px; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; box-shadow: var(--shadow-lg); animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px); }
+.toast-success { background: rgba(58,175,118,0.95); color: white; }
+.toast-error { background: rgba(216,84,84,0.95); color: white; }
+.toast-info { background: rgba(74,159,229,0.95); color: white; }
 
-/* ─── MODAL ─── */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-  z-index: 200; display: flex; align-items: center; justify-content: center;
-  opacity: 0; pointer-events: none; transition: opacity 0.2s;
-}
+/* ═══ MODAL ═══ */
+.modal-overlay { position: fixed; inset: 0; background: rgba(27,42,61,0.35); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
 .modal-overlay.show { opacity: 1; pointer-events: auto; }
-.modal {
-  background: var(--surface); border-radius: var(--radius-lg);
-  width: 90%; max-width: 520px; max-height: 80vh; overflow-y: auto;
-  box-shadow: var(--shadow-lg); padding: 24px;
-}
-.modal h2 { font-size: 1.1rem; margin-bottom: 16px; }
+.modal { background: var(--surface); border-radius: var(--radius-lg); width: 92%; max-width: 480px; max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow-lg); padding: 28px; transform: translateY(10px); transition: transform 0.25s; }
+.modal-overlay.show .modal { transform: translateY(0); }
+.modal h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; color: var(--text); letter-spacing: -0.01em; }
 .form-group { margin-bottom: 14px; }
-.form-group label { display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 4px; color: var(--text-secondary); }
+.form-group label { display: block; font-size: 0.72rem; font-weight: 700; margin-bottom: 5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 
-/* ─── RESPONSIVE ─── */
+/* ═══ RESPONSIVE ═══ */
 @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
   .main { margin-left: 0; }
   .mobile-toggle { display: block; }
   .content { padding: 16px; }
-  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .inbox-layout { flex-direction: column; height: auto; }
-  .inbox-list { width: 100%; max-height: 300px; border-right: none; border-bottom: 1px solid var(--border-light); }
+  .inbox-list { width: 100%; max-height: 280px; border-right: none; border-bottom: 1px solid var(--border-light); }
   .filter-row .input, .filter-row select { min-width: 120px; }
+  .topbar { padding: 0 16px; }
+  .metric-value { font-size: 1.6rem; }
 }
-.mobile-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.3);
-  z-index: 99; display: none;
-}
+.mobile-overlay { position: fixed; inset: 0; background: rgba(27,42,61,0.25); backdrop-filter: blur(2px); z-index: 99; display: none; }
 .mobile-overlay.show { display: block; }
 
-/* ─── ANIMATIONS ─── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.view.active { animation: fadeUp 0.25s ease; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideIn { from { transform: translateX(80px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 </style>
 </head>
 <body>
 
-<!-- TOAST -->
 <div class="toast-container" id="toasts"></div>
-
-<!-- MOBILE OVERLAY -->
 <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
 
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <h1>SSJ</h1>
-    <span>Moda Fitness — CRM</span>
+    <p>Moda Fitness — CRM</p>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-group">
-      <div class="nav-group-title">CRM WhatsApp</div>
+      <div class="nav-group-label">CRM WhatsApp</div>
       <div class="nav-item active" data-view="dashboard" onclick="showView('dashboard')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
         Dashboard
       </div>
       <div class="nav-item" data-view="carrinhos" onclick="showView('carrinhos')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
         Carrinhos
       </div>
       <div class="nav-item" data-view="pix" onclick="showView('pix')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
         PIX / Boleto
       </div>
       <div class="nav-item" data-view="recompra" onclick="showView('recompra')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
         Recompra
       </div>
       <div class="nav-item" data-view="inbox" onclick="showView('inbox')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         Inbox
         <span class="badge" id="unreadBadge" style="display:none">0</span>
       </div>
       <div class="nav-item" data-view="historico" onclick="showView('historico')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         Histórico
       </div>
     </div>
     <div class="nav-group">
-      <div class="nav-group-title">Meta Ads + IA</div>
+      <div class="nav-group-label">Meta Ads + IA</div>
       <div class="nav-item" data-view="metaads" onclick="showView('metaads')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
         Campanhas
       </div>
     </div>
     <div class="nav-group">
-      <div class="nav-group-title">Configurações</div>
+      <div class="nav-group-label">Configurações</div>
       <div class="nav-item" data-view="templates" onclick="showView('templates')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Templates
       </div>
       <div class="nav-item" data-view="automacao" onclick="showView('automacao')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         Automação
       </div>
       <div class="nav-item" data-view="integracoes" onclick="showView('integracoes')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
         Integrações
       </div>
     </div>
@@ -472,7 +371,7 @@ tr:hover td { background: var(--surface-alt); }
 <!-- MAIN -->
 <div class="main">
   <div class="topbar">
-    <div style="display:flex;align-items:center;gap:12px">
+    <div class="topbar-left">
       <button class="mobile-toggle" onclick="toggleSidebar()">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
@@ -480,7 +379,7 @@ tr:hover td { background: var(--surface-alt); }
     </div>
     <div class="topbar-actions">
       <button class="topbar-btn" onclick="loadDashboard()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
         Atualizar
       </button>
     </div>
@@ -488,233 +387,188 @@ tr:hover td { background: var(--surface-alt); }
 
   <div class="content">
 
-    <!-- ═══ DASHBOARD ═══ -->
+    <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
-      <div class="metrics-grid" id="dashMetrics">
-        <div class="metric-card"><div class="metric-label">Enviados Hoje</div><div class="metric-value" id="m-sent">—</div></div>
-        <div class="metric-card"><div class="metric-label">Entregues</div><div class="metric-value" id="m-delivered">—</div></div>
-        <div class="metric-card"><div class="metric-label">Lidos</div><div class="metric-value" id="m-read">—</div></div>
-        <div class="metric-card"><div class="metric-label">Falharam</div><div class="metric-value" id="m-failed">—</div></div>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+          <div class="metric-label">Enviados Hoje</div>
+          <div class="metric-value" id="m-sent">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="metric-label">Entregues</div>
+          <div class="metric-value" id="m-delivered">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <div class="metric-label">Lidos</div>
+          <div class="metric-value" id="m-read">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+          <div class="metric-label">Falharam</div>
+          <div class="metric-value" id="m-failed">—</div>
+        </div>
       </div>
       <div class="card">
-        <div class="card-header">
-          <span class="card-title">Últimos Envios</span>
-        </div>
-        <div class="card-body no-pad">
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>Telefone</th><th>Template</th><th>Status</th><th>Data</th></tr></thead>
-              <tbody id="dashRecentTable"><tr><td colspan="4" class="loading">Carregando...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card-header"><span class="card-title">Últimos Envios</span></div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Telefone</th><th>Template</th><th>Status</th><th>Data</th></tr></thead>
+          <tbody id="dashRecentTable"><tr><td colspan="4" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
       </div>
     </div>
 
-    <!-- ═══ CARRINHOS ═══ -->
+    <!-- CARRINHOS -->
     <div class="view" id="view-carrinhos">
       <div class="card">
         <div class="card-header">
           <span class="card-title">Carrinhos Abandonados</span>
           <button class="btn btn-outline btn-sm" onclick="loadCarts()">Atualizar</button>
         </div>
-        <div class="card-body no-pad">
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>Cliente</th><th>Telefone</th><th>Valor</th><th>Produtos</th><th>Tempo</th><th>Ação</th></tr></thead>
-              <tbody id="cartsTable"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Cliente</th><th>Telefone</th><th>Valor</th><th>Produtos</th><th>Tempo</th><th>Ação</th></tr></thead>
+          <tbody id="cartsTable"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
       </div>
     </div>
 
-    <!-- ═══ PIX ═══ -->
+    <!-- PIX -->
     <div class="view" id="view-pix">
       <div class="card">
         <div class="card-header">
           <span class="card-title">PIX / Boleto Cancelados</span>
           <button class="btn btn-outline btn-sm" onclick="loadPix()">Atualizar</button>
         </div>
-        <div class="card-body no-pad">
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>Cliente</th><th>Telefone</th><th>Valor</th><th>Status Yampi</th><th>Data</th><th>Ação</th></tr></thead>
-              <tbody id="pixTable"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Cliente</th><th>Telefone</th><th>Valor</th><th>Status Yampi</th><th>Data</th><th>Ação</th></tr></thead>
+          <tbody id="pixTable"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
       </div>
     </div>
 
-    <!-- ═══ RECOMPRA ═══ -->
+    <!-- RECOMPRA -->
     <div class="view" id="view-recompra">
       <div class="card">
         <div class="card-header">
           <span class="card-title">Recompra 30 / 60 / 90 dias</span>
           <div class="filter-row">
             <select id="recompraFilter" onchange="loadRecompra()">
-              <option value="">Todos</option>
-              <option value="30">30 dias</option>
-              <option value="60">60 dias</option>
-              <option value="90">90 dias</option>
+              <option value="">Todos</option><option value="30">30 dias</option><option value="60">60 dias</option><option value="90">90 dias</option>
             </select>
             <button class="btn btn-outline btn-sm" onclick="loadRecompra()">Atualizar</button>
           </div>
         </div>
-        <div class="card-body no-pad">
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>Cliente</th><th>Telefone</th><th>Último Pedido</th><th>Dias</th><th>Cupom</th><th>Ação</th></tr></thead>
-              <tbody id="recompraTable"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Cliente</th><th>Telefone</th><th>Último Pedido</th><th>Dias</th><th>Cupom</th><th>Ação</th></tr></thead>
+          <tbody id="recompraTable"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
       </div>
     </div>
 
-    <!-- ═══ INBOX ═══ -->
+    <!-- INBOX -->
     <div class="view" id="view-inbox">
       <div class="card" style="overflow:hidden">
         <div class="inbox-layout">
-          <div class="inbox-list" id="inboxList">
-            <div class="loading">Carregando conversas...</div>
-          </div>
-          <div class="inbox-chat" id="inboxChat">
-            <div class="inbox-empty">Selecione uma conversa</div>
-          </div>
+          <div class="inbox-list" id="inboxList"><div class="loading">Carregando conversas...</div></div>
+          <div class="inbox-chat" id="inboxChat"><div class="inbox-empty">Selecione uma conversa</div></div>
         </div>
       </div>
     </div>
 
-    <!-- ═══ HISTÓRICO ═══ -->
+    <!-- HISTÓRICO -->
     <div class="view" id="view-historico">
       <div class="card">
         <div class="card-header">
           <span class="card-title">Histórico de Envios</span>
           <div class="filter-row">
-            <select id="histType">
-              <option value="cart">Carrinhos</option>
-              <option value="pix">PIX</option>
-              <option value="recompra">Recompra</option>
-            </select>
-            <input class="input" type="text" id="histSearch" placeholder="Buscar telefone..." style="max-width:180px">
+            <select id="histType"><option value="cart">Carrinhos</option><option value="pix">PIX</option><option value="recompra">Recompra</option></select>
+            <input class="input" type="text" id="histSearch" placeholder="Buscar telefone..." style="max-width:175px">
             <button class="btn btn-primary btn-sm" onclick="loadHistory()">Filtrar</button>
           </div>
         </div>
-        <div class="card-body no-pad">
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>Telefone</th><th>Template</th><th>Status</th><th>Data</th></tr></thead>
-              <tbody id="historyTable"><tr><td colspan="4" class="loading">Carregando...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Telefone</th><th>Template</th><th>Status</th><th>Data</th></tr></thead>
+          <tbody id="historyTable"><tr><td colspan="4" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
       </div>
     </div>
 
-    <!-- ═══ META ADS ═══ -->
+    <!-- META ADS -->
     <div class="view" id="view-metaads">
       <div class="empty-state">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
         <p>Meta Ads + IA será implementado na fase 2.</p>
-        <p style="margin-top:8px;font-size:0.78rem">Configure META_AD_ACCOUNT_ID, META_ADS_TOKEN e ANTHROPIC_API_KEY no Railway.</p>
+        <p style="margin-top:8px;font-size:0.74rem">Configure META_AD_ACCOUNT_ID, META_ADS_TOKEN e ANTHROPIC_API_KEY no Railway.</p>
       </div>
     </div>
 
-    <!-- ═══ TEMPLATES ═══ -->
+    <!-- TEMPLATES -->
     <div class="view" id="view-templates">
       <div class="card">
         <div class="card-header">
           <span class="card-title">Templates WhatsApp</span>
-          <button class="btn btn-primary btn-sm" onclick="loadTemplates()">Atualizar</button>
+          <button class="btn btn-outline btn-sm" onclick="loadTemplates()">Atualizar</button>
         </div>
-        <div class="card-body no-pad">
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>Nome</th><th>Categoria</th><th>Status</th><th>Idioma</th></tr></thead>
-              <tbody id="templatesTable"><tr><td colspan="4" class="loading">Carregando...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Nome</th><th>Categoria</th><th>Status</th><th>Idioma</th></tr></thead>
+          <tbody id="templatesTable"><tr><td colspan="4" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
       </div>
     </div>
 
-    <!-- ═══ AUTOMAÇÃO ═══ -->
+    <!-- AUTOMAÇÃO -->
     <div class="view" id="view-automacao">
       <div class="card">
         <div class="card-header"><span class="card-title">Automações Ativas</span></div>
         <div class="card-body">
           <div class="toggle-row">
-            <div>
-              <div class="toggle-label">Carrinho Abandonado</div>
-              <div class="toggle-desc">Verifica a cada 10 minutos</div>
-            </div>
+            <div><div class="toggle-label">Carrinho Abandonado</div><div class="toggle-desc">Verifica a cada 10 minutos</div></div>
             <button class="toggle-switch on" id="togCart" onclick="toggleCron(this)"></button>
           </div>
           <div class="toggle-row">
-            <div>
-              <div class="toggle-label">PIX / Boleto Cancelado</div>
-              <div class="toggle-desc">Verifica a cada 15 minutos</div>
-            </div>
+            <div><div class="toggle-label">PIX / Boleto Cancelado</div><div class="toggle-desc">Verifica a cada 15 minutos</div></div>
             <button class="toggle-switch on" id="togPix" onclick="toggleCron(this)"></button>
           </div>
           <div class="toggle-row">
-            <div>
-              <div class="toggle-label">Recompra Automática</div>
-              <div class="toggle-desc">Diário às 10h</div>
-            </div>
+            <div><div class="toggle-label">Recompra Automática</div><div class="toggle-desc">Diário às 10h</div></div>
             <button class="toggle-switch on" id="togRecompra" onclick="toggleCron(this)"></button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ═══ INTEGRAÇÕES ═══ -->
+    <!-- INTEGRAÇÕES -->
     <div class="view" id="view-integracoes">
       <div class="card">
         <div class="card-header"><span class="card-title">Status das Integrações</span></div>
-        <div class="card-body" id="integrationsBody">
-          <div class="loading">Verificando integrações...</div>
-        </div>
+        <div class="card-body" id="integrationsBody"><div class="loading">Verificando integrações...</div></div>
       </div>
     </div>
 
   </div>
 </div>
 
-<!-- ═══ MODAL ENVIO ═══ -->
+<!-- MODAL -->
 <div class="modal-overlay" id="sendModal">
   <div class="modal">
     <h2 id="modalTitle">Enviar Template</h2>
-    <div class="form-group">
-      <label>Telefone</label>
-      <input class="input" id="modalPhone" readonly>
-    </div>
-    <div class="form-group">
-      <label>Nome</label>
-      <input class="input" id="modalName" readonly>
-    </div>
-    <div class="form-group">
-      <label>Template</label>
-      <select id="modalTemplate"></select>
-    </div>
-    <div class="form-group" id="modalCouponGroup" style="display:none">
-      <label>Cupom</label>
-      <input class="input" id="modalCoupon">
-    </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+    <div class="form-group"><label>Telefone</label><input class="input" id="modalPhone" readonly></div>
+    <div class="form-group"><label>Nome</label><input class="input" id="modalName" readonly></div>
+    <div class="form-group"><label>Template</label><select id="modalTemplate"></select></div>
+    <div class="form-group" id="modalCouponGroup" style="display:none"><label>Cupom</label><input class="input" id="modalCoupon"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px">
       <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" id="modalSendBtn" onclick="sendFromModal()">Enviar</button>
     </div>
   </div>
 </div>
 
+
 <script>
-// ─── CONFIG ───
 const API = window.location.origin;
 
-// ─── HELPERS ───
 function toast(msg, type = 'info') {
   const c = document.getElementById('toasts');
   const t = document.createElement('div');
@@ -751,22 +605,18 @@ function fmtPhone(p) {
 
 function fmtMoney(v) {
   if (!v && v !== 0) return '—';
-  return 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+  const n = Number(v);
+  if (isNaN(n)) return String(v);
+  return 'R$ ' + n.toFixed(2).replace('.', ',');
 }
 
 function statusBadge(s) {
-  const map = {
-    sent: 'sent', delivered: 'delivered', read: 'read',
-    failed: 'failed', pending: 'pending',
-    paid: 'paid', cancelled: 'cancelled', refused: 'refused'
-  };
-  const cls = map[s] || 'pending';
-  const labels = {
-    sent: 'Enviado', delivered: 'Entregue', read: 'Lido',
-    failed: 'Falhou', pending: 'Pendente',
-    paid: 'Pago', cancelled: 'Cancelado', refused: 'Recusado'
-  };
-  return `<span class="badge-status badge-${cls}">${labels[s] || s}</span>`;
+  if (!s) return '<span class="badge-status badge-pending">—</span>';
+  const sl = String(s).toLowerCase();
+  const map = { sent:'sent', delivered:'delivered', read:'read', failed:'failed', pending:'pending', paid:'paid', cancelled:'cancelled', canceled:'cancelled', refused:'refused', waiting_payment:'pending', expired:'failed' };
+  const cls = map[sl] || 'pending';
+  const labels = { sent:'Enviado', delivered:'Entregue', read:'Lido', failed:'Falhou', pending:'Pendente', paid:'Pago', cancelled:'Cancelado', canceled:'Cancelado', refused:'Recusado', waiting_payment:'Aguardando', expired:'Expirado' };
+  return `<span class="badge-status badge-${cls}">${labels[sl] || s}</span>`;
 }
 
 function timeAgo(d) {
@@ -779,18 +629,13 @@ function timeAgo(d) {
   return `${Math.floor(hrs / 24)}d`;
 }
 
-// ─── NAVIGATION ───
+function esc(s) { return String(s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
 const viewTitles = {
-  dashboard: 'Dashboard',
-  carrinhos: 'Carrinhos Abandonados',
-  pix: 'PIX / Boleto',
-  recompra: 'Recompra',
-  inbox: 'Inbox',
-  historico: 'Histórico de Envios',
-  metaads: 'Meta Ads + IA',
-  templates: 'Templates WhatsApp',
-  automacao: 'Automação',
-  integracoes: 'Integrações'
+  dashboard: 'Dashboard', carrinhos: 'Carrinhos Abandonados', pix: 'PIX / Boleto',
+  recompra: 'Recompra', inbox: 'Inbox', historico: 'Histórico de Envios',
+  metaads: 'Meta Ads + IA', templates: 'Templates WhatsApp',
+  automacao: 'Automação', integracoes: 'Integrações'
 };
 
 function showView(name) {
@@ -799,61 +644,38 @@ function showView(name) {
   document.getElementById('view-' + name)?.classList.add('active');
   document.querySelector(`.nav-item[data-view="${name}"]`)?.classList.add('active');
   document.getElementById('topbarTitle').textContent = viewTitles[name] || name;
-  // Close mobile sidebar
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('mobileOverlay').classList.remove('show');
-  // Load data
-  const loaders = {
-    dashboard: loadDashboard,
-    carrinhos: loadCarts,
-    pix: loadPix,
-    recompra: loadRecompra,
-    inbox: loadInbox,
-    historico: loadHistory,
-    templates: loadTemplates,
-    integracoes: loadIntegrations
-  };
+  const loaders = { dashboard:loadDashboard, carrinhos:loadCarts, pix:loadPix, recompra:loadRecompra, inbox:loadInbox, historico:loadHistory, templates:loadTemplates, integracoes:loadIntegrations };
   if (loaders[name]) loaders[name]();
 }
 
 function toggleSidebar() {
-  const sb = document.getElementById('sidebar');
-  const ov = document.getElementById('mobileOverlay');
-  sb.classList.toggle('open');
-  ov.classList.toggle('show');
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('mobileOverlay').classList.toggle('show');
 }
 
-// ─── DASHBOARD ───
+// ═══ DASHBOARD ═══
+// /api/stats → { global, today: { sent, delivered, read, failed, automated }, byTemplate, cronLog }
+// /api/history → { data: [...], total }
 async function loadDashboard() {
-  const [stats, history] = await Promise.all([
-    api('/api/stats'),
-    api('/api/history')
-  ]);
-
-  if (stats) {
-    let sent = 0, delivered = 0, read = 0, failed = 0;
-    if (Array.isArray(stats)) {
-      stats.forEach(s => {
-        sent += parseInt(s.total || 0);
-        delivered += parseInt(s.delivered || 0);
-        read += parseInt(s.read || 0);
-        failed += parseInt(s.failed || 0);
-      });
-    }
-    document.getElementById('m-sent').textContent = sent;
-    document.getElementById('m-delivered').textContent = delivered;
-    document.getElementById('m-read').textContent = read;
-    document.getElementById('m-failed').textContent = failed;
+  const [stats, history] = await Promise.all([api('/api/stats'), api('/api/history')]);
+  if (stats && stats.today) {
+    const t = stats.today;
+    document.getElementById('m-sent').textContent = t.sent || 0;
+    document.getElementById('m-delivered').textContent = t.delivered || 0;
+    document.getElementById('m-read').textContent = t.read || 0;
+    document.getElementById('m-failed').textContent = t.failed || 0;
   }
-
   const tb = document.getElementById('dashRecentTable');
-  if (history && Array.isArray(history) && history.length > 0) {
-    tb.innerHTML = history.slice(0, 10).map(h => `
+  const items = (history && history.data) ? history.data : [];
+  if (items.length > 0) {
+    tb.innerHTML = items.slice(0, 10).map(h => `
       <tr>
         <td>${fmtPhone(h.phone)}</td>
-        <td>${h.template_name || '—'}</td>
+        <td>${h.template || h.templateId || '—'}</td>
         <td>${statusBadge(h.status)}</td>
-        <td>${fmtDate(h.sent_at || h.created_at)}</td>
+        <td>${fmtDate(h.sentAt)}</td>
       </tr>
     `).join('');
   } else {
@@ -861,104 +683,96 @@ async function loadDashboard() {
   }
 }
 
-// ─── CARRINHOS ───
+// ═══ CARRINHOS ═══
+// /api/carts → { ok, count, totalAbandoned, data: [{ id, name, firstName, phone, total, totalRaw, items, itemCount, hoursAgo, createdAt, recommended, alreadySent }] }
 async function loadCarts() {
-  const data = await api('/api/carts');
+  const res = await api('/api/carts');
   const tb = document.getElementById('cartsTable');
-  if (data && Array.isArray(data) && data.length > 0) {
-    tb.innerHTML = data.map(c => {
-      const name = c.customer?.name || c.name || 'Sem nome';
-      const phone = c.customer?.phone || c.phone || '';
-      const total = c.total || c.value || 0;
-      const products = c.products || c.items?.length || '—';
-      const time = timeAgo(c.created_at || c.date);
-      return `
-        <tr>
-          <td>${name}</td>
-          <td>${fmtPhone(phone)}</td>
-          <td>${fmtMoney(total)}</td>
-          <td>${products}</td>
-          <td>${time}</td>
-          <td><button class="btn btn-primary btn-sm" onclick="openSendModal('cart','${phone}','${name.replace(/'/g, "\\'")}')">Enviar</button></td>
-        </tr>
-      `;
-    }).join('');
+  const carts = (res && res.data) ? res.data : [];
+  if (carts.length > 0) {
+    tb.innerHTML = carts.map(c => `
+      <tr>
+        <td>${c.name || 'Sem nome'}</td>
+        <td>${fmtPhone(c.phone)}</td>
+        <td>${c.total || fmtMoney(c.totalRaw)}</td>
+        <td>${c.items || (c.itemCount + ' itens')}</td>
+        <td>${c.hoursAgo != null ? c.hoursAgo + 'h' : timeAgo(c.createdAt)}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="openSendModal('cart',${c.id},'${esc(c.phone)}','${esc(c.name)}')">Enviar</button></td>
+      </tr>
+    `).join('');
   } else {
     tb.innerHTML = '<tr><td colspan="6" class="empty-state"><p>Nenhum carrinho abandonado</p></td></tr>';
   }
 }
 
-// ─── PIX ───
+// ═══ PIX ═══
+// /api/pix/carts → { ok, count, data: [{ id, name, phone, total, status, statusLabel, hoursAgo, createdAt }] }
 async function loadPix() {
-  const data = await api('/api/pix/carts');
+  const res = await api('/api/pix/carts');
   const tb = document.getElementById('pixTable');
-  if (data && Array.isArray(data) && data.length > 0) {
-    tb.innerHTML = data.map(p => {
-      const name = p.customer?.name || p.name || 'Sem nome';
-      const phone = p.customer?.phone || p.phone || '';
-      const total = p.total || p.value || 0;
-      const status = p.status || 'cancelled';
-      const date = fmtDate(p.created_at || p.date);
-      return `
-        <tr>
-          <td>${name}</td>
-          <td>${fmtPhone(phone)}</td>
-          <td>${fmtMoney(total)}</td>
-          <td>${statusBadge(status)}</td>
-          <td>${date}</td>
-          <td><button class="btn btn-primary btn-sm" onclick="openSendModal('pix','${phone}','${name.replace(/'/g, "\\'")}')">Enviar</button></td>
-        </tr>
-      `;
-    }).join('');
+  const orders = (res && res.data) ? res.data : [];
+  if (orders.length > 0) {
+    tb.innerHTML = orders.map(p => `
+      <tr>
+        <td>${p.name || 'Sem nome'}</td>
+        <td>${fmtPhone(p.phone)}</td>
+        <td>${p.total || fmtMoney(p.totalRaw)}</td>
+        <td>${statusBadge(p.status)}</td>
+        <td>${fmtDate(p.createdAt)}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="openSendModal('pix',${p.id},'${esc(p.phone)}','${esc(p.name)}')">Enviar</button></td>
+      </tr>
+    `).join('');
   } else {
     tb.innerHTML = '<tr><td colspan="6" class="empty-state"><p>Nenhum pedido PIX cancelado</p></td></tr>';
   }
 }
 
-// ─── RECOMPRA ───
+// ═══ RECOMPRA ═══
+// /api/recompra/orders → { ok, count, data: [{ id, name, phone, total, daysAgo, intervalDays, intervalTemplate, intervalCoupon, alreadySent }] }
 async function loadRecompra() {
-  const filter = document.getElementById('recompraFilter')?.value || '';
-  const data = await api('/api/recompra/orders' + (filter ? `?days=${filter}` : ''));
+  const res = await api('/api/recompra/orders');
   const tb = document.getElementById('recompraTable');
-  const couponMap = { '30': 'VOLTESSJ10', '60': 'VOLTESSJ15', '90': 'VOLTESSJ20' };
-  if (data && Array.isArray(data) && data.length > 0) {
-    tb.innerHTML = data.map(r => {
-      const name = r.customer?.name || r.name || 'Sem nome';
-      const phone = r.customer?.phone || r.phone || '';
-      const lastOrder = fmtDate(r.paid_at || r.last_order || r.created_at);
-      const days = r.days_since || r.days || '—';
-      const coupon = couponMap[String(days)] || r.coupon || 'VOLTECOMSSJ';
+  const orders = (res && res.data) ? res.data : [];
+  if (orders.length > 0) {
+    tb.innerHTML = orders.map(r => {
+      const coupon = r.intervalCoupon || 'VOLTECOMSSJ';
+      const days = r.intervalDays || r.daysAgo || '—';
+      const sent = r.alreadySent === true;
       return `
         <tr>
-          <td>${name}</td>
-          <td>${fmtPhone(phone)}</td>
-          <td>${lastOrder}</td>
-          <td>${days}</td>
+          <td>${r.name || 'Sem nome'}</td>
+          <td>${fmtPhone(r.phone)}</td>
+          <td>${fmtDate(r.createdAt)}</td>
+          <td>${days} dias</td>
           <td><span class="badge-status badge-sent">${coupon}</span></td>
-          <td><button class="btn btn-gold btn-sm" onclick="openSendModal('recompra','${phone}','${name.replace(/'/g, "\\'")}','${coupon}')">Enviar</button></td>
-        </tr>
-      `;
+          <td>${sent
+            ? '<span class="badge-status badge-delivered">Já enviado</span>'
+            : `<button class="btn btn-gold btn-sm" onclick="openSendModal('recompra',${r.id},'${esc(r.phone)}','${esc(r.name)}','${esc(coupon)}',${days},'${esc(r.intervalTemplate)}')">Enviar</button>`
+          }</td>
+        </tr>`;
     }).join('');
   } else {
     tb.innerHTML = '<tr><td colspan="6" class="empty-state"><p>Nenhum pedido elegível para recompra</p></td></tr>';
   }
 }
 
-// ─── INBOX ───
+// ═══ INBOX ═══
+// /api/inbox/conversations → { ok, data: [{ phone, name, lastMessage, lastMessageAt, unread, messageCount }], totalUnread }
 let currentConvPhone = null;
 
 async function loadInbox() {
-  const data = await api('/api/inbox/conversations');
+  const res = await api('/api/inbox/conversations');
   const list = document.getElementById('inboxList');
-  if (data && Array.isArray(data) && data.length > 0) {
-    list.innerHTML = data.map(c => `
-      <div class="inbox-conv ${c.phone === currentConvPhone ? 'active' : ''}" onclick="openConversation('${c.phone}','${(c.name || c.phone).replace(/'/g, "\\'")}')">
-        <span class="inbox-conv-time">${timeAgo(c.last_message_at || c.updated_at)}</span>
+  const convs = (res && res.data) ? res.data : [];
+  if (convs.length > 0) {
+    list.innerHTML = convs.map(c => `
+      <div class="inbox-conv ${c.phone === currentConvPhone ? 'active' : ''}" onclick="openConversation('${c.phone}','${esc(c.name || c.phone)}')">
+        <span class="inbox-conv-time">${timeAgo(c.lastMessageAt)}</span>
         <div class="inbox-conv-name">
           ${c.name || fmtPhone(c.phone)}
-          ${c.unread_count > 0 ? '<span class="unread-dot"></span>' : ''}
+          ${c.unread > 0 ? '<span class="unread-dot"></span>' : ''}
         </div>
-        <div class="inbox-conv-preview">${c.last_message || ''}</div>
+        <div class="inbox-conv-preview">${c.lastMessage || ''}</div>
       </div>
     `).join('');
   } else {
@@ -967,11 +781,12 @@ async function loadInbox() {
   loadUnread();
 }
 
+// /api/inbox/conversation/:phone → { ok, data: { phone, name, messages: [{ id, direction, text, type, template, status, timestamp }] } }
 async function openConversation(phone, name) {
   currentConvPhone = phone;
-  // Highlight
   document.querySelectorAll('.inbox-conv').forEach(c => c.classList.remove('active'));
   event?.target?.closest?.('.inbox-conv')?.classList.add('active');
+  api('/api/inbox/read/' + phone, { method: 'POST' });
 
   const chat = document.getElementById('inboxChat');
   chat.innerHTML = `
@@ -980,15 +795,16 @@ async function openConversation(phone, name) {
     <div class="inbox-input-row">
       <input class="input" id="chatInput" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter')sendChat()">
       <button class="btn btn-primary" onclick="sendChat()">Enviar</button>
-    </div>
-  `;
-  const data = await api(`/api/inbox/conversation/${phone}`);
+    </div>`;
+
+  const res = await api('/api/inbox/conversation/' + phone);
   const msgs = document.getElementById('chatMessages');
-  if (data && Array.isArray(data) && data.length > 0) {
-    msgs.innerHTML = data.map(m => `
-      <div class="msg-bubble ${m.direction === 'incoming' || m.direction === 'in' ? 'msg-in' : 'msg-out'}">
-        ${m.body || m.text || m.content || ''}
-        <div class="msg-time">${fmtDate(m.created_at || m.timestamp)}</div>
+  const messages = (res && res.data && res.data.messages) ? res.data.messages : [];
+  if (messages.length > 0) {
+    msgs.innerHTML = messages.map(m => `
+      <div class="msg-bubble ${m.direction === 'in' ? 'msg-in' : 'msg-out'}">
+        ${m.text || ''}
+        <div class="msg-time">${fmtDate(m.timestamp)}</div>
       </div>
     `).join('');
     msgs.scrollTop = msgs.scrollHeight;
@@ -997,116 +813,87 @@ async function openConversation(phone, name) {
   }
 }
 
+// /api/inbox/send espera { phone, text } (NÃO "message")
 async function sendChat() {
   const input = document.getElementById('chatInput');
   const text = input?.value?.trim();
   if (!text || !currentConvPhone) return;
   input.value = '';
-
-  // Optimistic render
   const msgs = document.getElementById('chatMessages');
   msgs.innerHTML += `<div class="msg-bubble msg-out">${text}<div class="msg-time">agora</div></div>`;
   msgs.scrollTop = msgs.scrollHeight;
-
-  const res = await api('/api/inbox/send', {
-    method: 'POST',
-    body: JSON.stringify({ phone: currentConvPhone, message: text })
-  });
-  if (res) {
-    toast('Mensagem enviada', 'success');
-  } else {
-    toast('Erro ao enviar', 'error');
-  }
+  const res = await api('/api/inbox/send', { method: 'POST', body: JSON.stringify({ phone: currentConvPhone, text: text }) });
+  if (res && res.ok) toast('Mensagem enviada', 'success');
+  else toast('Erro ao enviar: ' + (res?.error || ''), 'error');
 }
 
+// /api/inbox/unread → { ok, unread }
 async function loadUnread() {
   const data = await api('/api/inbox/unread');
   const badge = document.getElementById('unreadBadge');
-  const count = data?.unread || data?.count || 0;
-  if (count > 0) {
-    badge.textContent = count;
-    badge.style.display = '';
-  } else {
-    badge.style.display = 'none';
-  }
+  const count = data?.unread || 0;
+  if (count > 0) { badge.textContent = count; badge.style.display = ''; }
+  else { badge.style.display = 'none'; }
 }
 
-// ─── HISTÓRICO ───
+// ═══ HISTÓRICO ═══
+// /api/history, /api/pix/history, /api/recompra/history → { data: [...], total }
 async function loadHistory() {
   const type = document.getElementById('histType')?.value || 'cart';
   const search = document.getElementById('histSearch')?.value || '';
-  const endpoints = {
-    cart: '/api/history',
-    pix: '/api/pix/history',
-    recompra: '/api/recompra/history'
-  };
-  const data = await api(endpoints[type] || endpoints.cart);
+  const endpoints = { cart: '/api/history', pix: '/api/pix/history', recompra: '/api/recompra/history' };
+  const res = await api(endpoints[type] || endpoints.cart);
   const tb = document.getElementById('historyTable');
-  let items = Array.isArray(data) ? data : [];
-  if (search) {
-    items = items.filter(i => (i.phone || '').includes(search));
-  }
+  let items = (res && res.data) ? res.data : [];
+  if (search) items = items.filter(i => (i.phone || '').includes(search));
   if (items.length > 0) {
     tb.innerHTML = items.slice(0, 50).map(h => `
-      <tr>
-        <td>${fmtPhone(h.phone)}</td>
-        <td>${h.template_name || h.template || '—'}</td>
-        <td>${statusBadge(h.status)}</td>
-        <td>${fmtDate(h.sent_at || h.created_at)}</td>
-      </tr>
+      <tr><td>${fmtPhone(h.phone)}</td><td>${h.template || h.templateId || '—'}</td><td>${statusBadge(h.status)}</td><td>${fmtDate(h.sentAt)}</td></tr>
     `).join('');
   } else {
     tb.innerHTML = '<tr><td colspan="4" class="empty-state"><p>Nenhum registro</p></td></tr>';
   }
 }
 
-// ─── TEMPLATES ───
+// ═══ TEMPLATES ═══
+// /api/wa-templates → { ok, data: [{ name, category, status, language }] }
 async function loadTemplates() {
-  const data = await api('/api/wa-templates');
+  const res = await api('/api/wa-templates');
   const tb = document.getElementById('templatesTable');
-  const items = data?.data || (Array.isArray(data) ? data : []);
+  const items = (res && res.data) ? res.data : [];
   if (items.length > 0) {
     tb.innerHTML = items.map(t => `
-      <tr>
-        <td><strong>${t.name}</strong></td>
-        <td>${t.category || '—'}</td>
-        <td>${statusBadge(t.status === 'APPROVED' ? 'delivered' : 'pending')}</td>
-        <td>${t.language || '—'}</td>
-      </tr>
+      <tr><td><strong>${t.name}</strong></td><td>${t.category || '—'}</td><td>${statusBadge(t.status === 'APPROVED' ? 'delivered' : 'pending')}</td><td>${t.language || '—'}</td></tr>
     `).join('');
   } else {
     tb.innerHTML = '<tr><td colspan="4" class="empty-state"><p>Nenhum template encontrado</p></td></tr>';
   }
 }
 
-// ─── INTEGRAÇÕES ───
+// ═══ INTEGRAÇÕES ═══
+// /api/health → { yampi: { ok }, whatsapp: { ok }, database: { ok }, uptime, stats }
 async function loadIntegrations() {
   const data = await api('/api/health');
   const body = document.getElementById('integrationsBody');
   if (data) {
     const items = [
-      { name: 'Yampi API', ok: data.yampi?.ok ?? data.yampi },
-      { name: 'WhatsApp Cloud API', ok: data.whatsapp?.ok ?? data.whatsapp },
-      { name: 'PostgreSQL', ok: data.database?.ok ?? data.db ?? data.postgres },
+      { name: 'Yampi API', ok: data.yampi?.ok },
+      { name: 'WhatsApp Cloud API', ok: data.whatsapp?.ok },
+      { name: 'PostgreSQL', ok: data.database?.ok }
     ];
     body.innerHTML = items.map(i => {
-      const ok = i.ok === true || i.ok === 'ok' || i.ok === 'connected';
-      return `
-        <div class="toggle-row">
-          <div>
-            <div class="toggle-label"><span class="status-dot ${ok ? 'ok' : 'err'}"></span>${i.name}</div>
-            <div class="toggle-desc">${ok ? 'Conectado e funcionando' : 'Erro na conexão'}</div>
-          </div>
-          <span class="badge-status ${ok ? 'badge-delivered' : 'badge-failed'}">${ok ? 'Online' : 'Offline'}</span>
-        </div>
-      `;
+      const ok = i.ok === true;
+      return `<div class="toggle-row"><div><div class="toggle-label"><span class="status-dot ${ok ? 'ok' : 'err'}"></span>${i.name}</div><div class="toggle-desc">${ok ? 'Conectado e funcionando' : 'Erro na conexão'}</div></div><span class="badge-status ${ok ? 'badge-delivered' : 'badge-failed'}">${ok ? 'Online' : 'Offline'}</span></div>`;
     }).join('');
+    if (data.uptime) {
+      const h = Math.floor(data.uptime / 3600), m = Math.floor((data.uptime % 3600) / 60);
+      body.innerHTML += `<div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">Uptime: ${h}h ${m}min</div>`;
+    }
   } else {
     body.innerHTML = '<div class="empty-state"><p>Não foi possível verificar as integrações</p></div>';
   }
 }
 
-// ─── AUTOMAÇÃO TOGGLE ───
 function toggleCron(el) {
   el.classList.toggle('on');
   const label = el.closest('.toggle-row')?.querySelector('.toggle-label')?.textContent || '';
@@ -1114,86 +901,61 @@ function toggleCron(el) {
   toast(`${label}: ${active ? 'Ativada' : 'Desativada'}`, active ? 'success' : 'info');
 }
 
-// ─── MODAL DE ENVIO ───
+// ═══ MODAL DE ENVIO ═══
+// /api/send → { cartIds: [id], templateId }
+// /api/pix/send → { cartIds: [id], templateId }
+// /api/recompra/send → { orderIds: [id], templateId, coupon, intervalDays }
 let modalContext = {};
 
-function openSendModal(type, phone, name, coupon) {
-  modalContext = { type, phone, name, coupon };
+function openSendModal(type, id, phone, name, coupon, intervalDays, templateId) {
+  modalContext = { type, id, phone, name, coupon, intervalDays, templateId };
   document.getElementById('modalPhone').value = phone;
   document.getElementById('modalName').value = name;
-
   const tplSelect = document.getElementById('modalTemplate');
   const couponGroup = document.getElementById('modalCouponGroup');
-
   const templates = {
-    cart: ['lembrete_15min_v2', 'confianca_2h_v2', 'social_24h_v2', 'cupom_48h_v2'],
-    pix: ['pix_5min', 'pix_30min', 'pix_1h', 'pix_24h', 'pix_48h'],
-    recompra: ['recompra_30dias', 'recompra_60dias', 'recompra_90dias']
+    cart: ['lembrete_15min_v2','confianca_2h_v2','social_24h_v2','cupom_48h_v2'],
+    pix: ['pix_5min','pix_30min','pix_1h','pix_24h','pix_48h'],
+    recompra: ['recompra_30dias','recompra_60dias','recompra_90dias']
   };
-
-  tplSelect.innerHTML = (templates[type] || []).map(t => `<option value="${t}">${t}</option>`).join('');
-
+  tplSelect.innerHTML = (templates[type] || []).map(t => {
+    const sel = (t === templateId) ? 'selected' : '';
+    return `<option value="${t}" ${sel}>${t}</option>`;
+  }).join('');
   if (type === 'recompra') {
     couponGroup.style.display = '';
     document.getElementById('modalCoupon').value = coupon || 'VOLTECOMSSJ';
-  } else {
-    couponGroup.style.display = 'none';
-  }
-
-  document.getElementById('modalTitle').textContent =
-    type === 'cart' ? 'Enviar Carrinho' :
-    type === 'pix' ? 'Enviar PIX' : 'Enviar Recompra';
-
+  } else { couponGroup.style.display = 'none'; }
+  document.getElementById('modalTitle').textContent = type === 'cart' ? 'Enviar Carrinho' : type === 'pix' ? 'Enviar PIX' : 'Enviar Recompra';
   document.getElementById('sendModal').classList.add('show');
 }
 
-function closeModal() {
-  document.getElementById('sendModal').classList.remove('show');
-}
+function closeModal() { document.getElementById('sendModal').classList.remove('show'); }
 
 async function sendFromModal() {
   const btn = document.getElementById('modalSendBtn');
-  btn.disabled = true;
-  btn.textContent = 'Enviando...';
-
+  btn.disabled = true; btn.textContent = 'Enviando...';
   const template = document.getElementById('modalTemplate').value;
-  const { type, phone, name } = modalContext;
-
-  const endpoints = { cart: '/api/send', pix: '/api/pix/send', recompra: '/api/recompra/send' };
-  const payload = { phone, name, template_name: template };
-
-  if (type === 'recompra') {
-    payload.coupon = document.getElementById('modalCoupon').value;
-  }
-
-  const res = await api(endpoints[type], {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
-
-  btn.disabled = false;
-  btn.textContent = 'Enviar';
-
-  if (res && !res.error) {
-    toast('Mensagem enviada com sucesso!', 'success');
-    closeModal();
+  const { type, id } = modalContext;
+  let endpoint, payload;
+  if (type === 'cart') {
+    endpoint = '/api/send';
+    payload = { cartIds: [id], templateId: template };
+  } else if (type === 'pix') {
+    endpoint = '/api/pix/send';
+    payload = { cartIds: [id], templateId: template };
   } else {
-    toast('Erro ao enviar: ' + (res?.error || 'tente novamente'), 'error');
+    endpoint = '/api/recompra/send';
+    payload = { orderIds: [id], templateId: template, coupon: document.getElementById('modalCoupon').value || 'VOLTECOMSSJ', intervalDays: modalContext.intervalDays || 30 };
   }
+  const res = await api(endpoint, { method: 'POST', body: JSON.stringify(payload) });
+  btn.disabled = false; btn.textContent = 'Enviar';
+  if (res && res.ok && res.sent > 0) { toast('Mensagem enviada!', 'success'); closeModal(); }
+  else { const err = (res?.results && res.results[0]?.error) || res?.error || 'tente novamente'; toast('Erro: ' + err, 'error'); }
 }
 
-// Close modal on overlay click
-document.getElementById('sendModal').addEventListener('click', (e) => {
-  if (e.target.classList.contains('modal-overlay')) closeModal();
-});
-
-// ─── INIT ───
-document.addEventListener('DOMContentLoaded', () => {
-  loadDashboard();
-  loadUnread();
-  // Poll unread every 30s
-  setInterval(loadUnread, 30000);
-});
+document.getElementById('sendModal').addEventListener('click', (e) => { if (e.target.classList.contains('modal-overlay')) closeModal(); });
+document.addEventListener('DOMContentLoaded', () => { loadDashboard(); loadUnread(); setInterval(loadUnread, 30000); });
 </script>
 </body>
 </html>
