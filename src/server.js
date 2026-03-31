@@ -238,7 +238,23 @@ async function fetchCarts() {
     var hoursAgo = created ? Math.round((Date.now() - new Date(created).getTime()) / 3600000) : 0;
     var items = Array.isArray(cart.items && cart.items.data) ? cart.items.data.map(function(it) { return (it.sku && it.sku.data && it.sku.data.title) || it.name || "Produto"; }) : [];
     var rec = TEMPLATES.find(function(t) { return hoursAgo >= t.minH && hoursAgo < t.maxH; });
-    var lastTxStatus = cart.last_transaction_status || cart.transaction_status || null;
+    // Extrair status da transação — Yampi pode retornar string, objeto, ou objeto aninhado
+    var rawTxStatus = cart.last_transaction_status || cart.transaction_status || null;
+    var lastTxStatus = null;
+    if (rawTxStatus) {
+      if (typeof rawTxStatus === "string") {
+        lastTxStatus = rawTxStatus;
+      } else if (typeof rawTxStatus === "object") {
+        // Yampi retorna objeto: pode ter .alias, .name, .data.alias, etc
+        lastTxStatus = rawTxStatus.alias || rawTxStatus.name || rawTxStatus.status ||
+          (rawTxStatus.data && (rawTxStatus.data.alias || rawTxStatus.data.name)) || null;
+      }
+    }
+    // Log primeiro carrinho pra debug (só uma vez)
+    if (i === 0) {
+      console.log("[DEBUG-CART] Primeiro carrinho raw status:", JSON.stringify(rawTxStatus));
+      console.log("[DEBUG-CART] Primeiro carrinho simUrl:", cart.simulate_url || cart.unauth_simulate_url || "VAZIO");
+    }
 
     // Buscar templates já enviados do PostgreSQL
     var alreadySent = await getSentTemplates(cart.id);
@@ -340,13 +356,33 @@ function buildParams(tpl, cart) {
 
 function getCartUrl(cart) {
   var url = cart.simUrl || "";
+  if (!url) return "cart";
+
+  // Log pra debug
+  console.log("[CART-URL] simUrl original:", url.substring(0, 100));
+
+  // Se a URL contém o domínio SSJ, extrair só o path
   var domain = "https://seguro.ssjmodafitness.com.br/";
   if (url.indexOf(domain) === 0) {
-    return url.substring(domain.length);
+    var path = url.substring(domain.length);
+    console.log("[CART-URL] Extraido path:", path.substring(0, 80));
+    return path;
   }
+
+  // Tentar extrair path de qualquer URL com domínio SSJ
   var match = url.match(/ssjmodafitness\.com\.br\/(.*)/);
   if (match) return match[1];
-  return url;
+
+  // Se a URL é de outro domínio (Yampi), extrair só o path+query
+  try {
+    var parsed = new URL(url);
+    var suffix = parsed.pathname.substring(1) + parsed.search;
+    console.log("[CART-URL] URL externa, usando path:", suffix.substring(0, 80));
+    return suffix || "cart";
+  } catch (e) {
+    // URL inválida, retornar fallback
+    return "cart";
+  }
 }
 
 function buildPixParams(tpl, cart) {
