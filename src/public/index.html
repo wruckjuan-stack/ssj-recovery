@@ -442,8 +442,8 @@ tr:hover td { background: var(--primary-lighter); }
           <button class="btn btn-outline btn-sm" onclick="loadPix()">Atualizar</button>
         </div>
         <div class="card-body no-pad"><div class="tbl-wrap"><table>
-          <thead><tr><th>Cliente</th><th>Telefone</th><th>Valor</th><th>Status Yampi</th><th>Data</th><th>Ação</th></tr></thead>
-          <tbody id="pixTable"><tr><td colspan="6" class="loading">Carregando...</td></tr></tbody>
+          <thead><tr><th>Cliente</th><th>Telefone</th><th>Valor</th><th>Status Yampi</th><th>Status Envio</th><th>Data</th><th>Ação</th></tr></thead>
+          <tbody id="pixTable"><tr><td colspan="7" class="loading">Carregando...</td></tr></tbody>
         </table></div></div>
       </div>
     </div>
@@ -509,7 +509,10 @@ tr:hover td { background: var(--primary-lighter); }
       <div class="card">
         <div class="card-header">
           <span class="card-title">Templates WhatsApp</span>
-          <button class="btn btn-outline btn-sm" onclick="loadTemplates()">Atualizar</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="openTemplateModal()">+ Novo Template</button>
+            <button class="btn btn-outline btn-sm" onclick="loadTemplates()">Atualizar</button>
+          </div>
         </div>
         <div class="card-body no-pad"><div class="tbl-wrap"><table>
           <thead><tr><th>Nome</th><th>Categoria</th><th>Status</th><th>Idioma</th></tr></thead>
@@ -550,7 +553,7 @@ tr:hover td { background: var(--primary-lighter); }
   </div>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL ENVIO -->
 <div class="modal-overlay" id="sendModal">
   <div class="modal">
     <h2 id="modalTitle">Enviar Template</h2>
@@ -561,6 +564,57 @@ tr:hover td { background: var(--primary-lighter); }
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px">
       <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" id="modalSendBtn" onclick="sendFromModal()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CRIAR TEMPLATE -->
+<div class="modal-overlay" id="templateModal">
+  <div class="modal" style="max-width:560px">
+    <h2>Novo Template WhatsApp</h2>
+    <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:18px">Preencha os campos e submeta para aprovação do Meta. Use {{1}} para nome, {{2}} para cupom/link.</p>
+    <div class="form-group">
+      <label>Nome do template *</label>
+      <input class="input" id="tplName" placeholder="ex: lembrete_promo_v1 (sem espaços, minúsculo)">
+    </div>
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="tplCategory">
+        <option value="MARKETING" selected>Marketing</option>
+        <option value="UTILITY">Utilidade</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Tipo</label>
+      <select id="tplType">
+        <option value="carrinho">Carrinho Abandonado</option>
+        <option value="pix">PIX / Boleto</option>
+        <option value="recompra">Recompra</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Timing (quando enviar)</label>
+      <input class="input" id="tplTiming" placeholder="ex: 15min, 2h, 24h, 48h">
+    </div>
+    <div class="form-group">
+      <label>Texto do corpo (body) *</label>
+      <textarea id="tplBody" rows="5" placeholder="Oiii, tudo bem {{1}}? Notei que você estava escolhendo algumas peças..." style="resize:vertical"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Texto do rodapé (footer) — opcional</label>
+      <input class="input" id="tplFooter" placeholder="ex: SSJ Moda Fitness">
+    </div>
+    <div class="form-group">
+      <label>Texto do botão URL — opcional</label>
+      <input class="input" id="tplBtnText" placeholder="ex: Ver minhas peças">
+    </div>
+    <div class="form-group">
+      <label>URL do botão (com {{1}} no final) — opcional</label>
+      <input class="input" id="tplBtnUrl" placeholder="ex: https://seguro.ssjmodafitness.com.br/{{1}}">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px">
+      <button class="btn btn-outline" onclick="closeTemplateModal()">Cancelar</button>
+      <button class="btn btn-primary" id="tplSubmitBtn" onclick="submitTemplate()">Enviar para Aprovação</button>
     </div>
   </div>
 </div>
@@ -708,22 +762,30 @@ async function loadCarts() {
 // ═══ PIX ═══
 // /api/pix/carts → { ok, count, data: [{ id, name, phone, total, status, statusLabel, hoursAgo, createdAt }] }
 async function loadPix() {
-  const res = await api('/api/pix/carts');
+  const [res, histRes] = await Promise.all([api('/api/pix/carts'), api('/api/pix/history')]);
   const tb = document.getElementById('pixTable');
   const orders = (res && res.data) ? res.data : [];
+  const hist = (histRes && histRes.data) ? histRes.data : [];
+  // Build map: orderId → last WA status
+  const waStatusMap = {};
+  hist.forEach(h => { if (h.cartId) waStatusMap[h.cartId] = h.status; });
   if (orders.length > 0) {
-    tb.innerHTML = orders.map(p => `
+    tb.innerHTML = orders.map(p => {
+      const waStatus = waStatusMap[String(p.id)];
+      const waBadge = waStatus ? statusBadge(waStatus) : '<span class="badge-status badge-pending">Não enviado</span>';
+      return `
       <tr>
         <td>${p.name || 'Sem nome'}</td>
         <td>${fmtPhone(p.phone)}</td>
         <td>${p.total || fmtMoney(p.totalRaw)}</td>
         <td>${statusBadge(p.status)}</td>
+        <td>${waBadge}</td>
         <td>${fmtDate(p.createdAt)}</td>
         <td><button class="btn btn-primary btn-sm" onclick="openSendModal('pix',${p.id},'${esc(p.phone)}','${esc(p.name)}')">Enviar</button></td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
   } else {
-    tb.innerHTML = '<tr><td colspan="6" class="empty-state"><p>Nenhum pedido PIX cancelado</p></td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" class="empty-state"><p>Nenhum pedido PIX cancelado</p></td></tr>';
   }
 }
 
@@ -955,6 +1017,68 @@ async function sendFromModal() {
 }
 
 document.getElementById('sendModal').addEventListener('click', (e) => { if (e.target.classList.contains('modal-overlay')) closeModal(); });
+// ═══ TEMPLATE CREATION MODAL ═══
+// POST /api/wa-templates → { name, bodyText, footerText, buttonText, buttonUrl, category, language, timing, tplType }
+function openTemplateModal() {
+  document.getElementById('tplName').value = '';
+  document.getElementById('tplBody').value = '';
+  document.getElementById('tplFooter').value = '';
+  document.getElementById('tplBtnText').value = '';
+  document.getElementById('tplBtnUrl').value = '';
+  document.getElementById('tplTiming').value = '';
+  document.getElementById('tplCategory').value = 'MARKETING';
+  document.getElementById('tplType').value = 'carrinho';
+  document.getElementById('templateModal').classList.add('show');
+}
+
+function closeTemplateModal() {
+  document.getElementById('templateModal').classList.remove('show');
+}
+
+document.getElementById('templateModal').addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) closeTemplateModal();
+});
+
+async function submitTemplate() {
+  const name = document.getElementById('tplName').value.trim();
+  const bodyText = document.getElementById('tplBody').value.trim();
+  if (!name || !bodyText) { toast('Nome e texto do corpo são obrigatórios', 'error'); return; }
+
+  const btn = document.getElementById('tplSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+
+  const payload = {
+    name: name,
+    bodyText: bodyText,
+    category: document.getElementById('tplCategory').value,
+    language: 'pt_BR',
+    timing: document.getElementById('tplTiming').value.trim() || null,
+    tplType: document.getElementById('tplType').value
+  };
+
+  const footer = document.getElementById('tplFooter').value.trim();
+  if (footer) payload.footerText = footer;
+
+  const btnText = document.getElementById('tplBtnText').value.trim();
+  const btnUrl = document.getElementById('tplBtnUrl').value.trim();
+  if (btnText && btnUrl) {
+    payload.buttonText = btnText;
+    payload.buttonUrl = btnUrl;
+    payload.buttonUrlExample = btnUrl.replace('{{1}}', 'exemplo');
+  }
+
+  const res = await api('/api/wa-templates', { method: 'POST', body: JSON.stringify(payload) });
+  btn.disabled = false; btn.textContent = 'Enviar para Aprovação';
+
+  if (res && res.ok) {
+    toast('Template enviado para aprovação do Meta!', 'success');
+    closeTemplateModal();
+    loadTemplates();
+  } else {
+    toast('Erro: ' + (res?.error || 'tente novamente'), 'error');
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => { loadDashboard(); loadUnread(); setInterval(loadUnread, 30000); });
 </script>
 </body>
