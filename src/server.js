@@ -283,7 +283,10 @@ cron.schedule("*/10 * * * *", async function() {
         record(cart, tpl, "sent", msgId, true);
         sent++;
         await new Promise(function(r) { setTimeout(r, 250); });
-      } catch (e) { record(cart, tpl, "failed", null, true); failed++; }
+      } catch (e) {
+        console.error("[AUTO-CARRINHO] Falha " + cart.name + " (" + cart.phone + "): " + e.message);
+        record(cart, tpl, "failed", null, true); failed++;
+      }
     }
     DB.cronLog.unshift({ ts: new Date().toISOString(), cartsFound: carts.length, sent: sent, skipped: skipped, failed: failed });
     if (DB.cronLog.length > 100) DB.cronLog.length = 100;
@@ -303,7 +306,7 @@ cron.schedule("*/15 * * * *", async function() {
       var cart = carts[i];
       if (!cart.phone || cart.phone.length < 12) { skipped++; continue; }
 
-      var txStatus = (cart.lastTxStatus || "").toLowerCase();
+      var txStatus = String(cart.lastTxStatus || "").toLowerCase();
 
       // Check if PIX or boleto expired/refused
       var isPix = txStatus === "pix_expired" || txStatus === "expired" || txStatus === "timeout";
@@ -466,10 +469,10 @@ app.get("/api/pix/carts", async function(req, res) {
   try {
     var carts = await fetchCarts();
     var pixCarts = carts.filter(function(c) {
-      var tx = (c.lastTxStatus || "").toLowerCase();
+      var tx = String(c.lastTxStatus || "").toLowerCase();
       return tx.indexOf("expir") !== -1 || tx.indexOf("timeout") !== -1 || tx.indexOf("refused") !== -1 || tx === "waiting_payment" || tx.indexOf("pix") !== -1 || tx.indexOf("boleto") !== -1;
     }).map(function(c) {
-      var tx = (c.lastTxStatus || "").toLowerCase();
+      var tx = String(c.lastTxStatus || "").toLowerCase();
       c.paymentType = tx.indexOf("pix") !== -1 ? "PIX" : tx.indexOf("boleto") !== -1 ? "Boleto" : "PIX/Boleto";
       c.pixAlreadySent = DB.pixSentMap[c.id] || [];
       return c;
