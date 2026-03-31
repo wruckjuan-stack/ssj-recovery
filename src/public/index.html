@@ -582,10 +582,10 @@ tr:hover td { background: var(--primary-lighter); }
       <div class="card" style="margin-bottom:20px"><div class="card-header"><span class="card-title">Anúncios / Criativos</span><span style="font-size:.72rem;color:var(--text-muted)">Detalhamento por anúncio individual</span></div>
         <div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Anúncio</th><th>Conjunto</th><th>Campanha</th><th>Gasto</th><th>Impr.</th><th>Cliques</th><th>CTR</th><th>Add Cart</th><th>Compras</th><th>ROAS</th><th>CPA</th></tr></thead><tbody id="metaAdsTable"><tr><td colspan="11" class="loading">Carregando...</td></tr></tbody></table></div></div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" id="iaRow">
-        <div class="card"><div class="card-header"><span class="card-title">Relatório IA</span><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" id="genReportBtn2" onclick="generateReport()">Gerar Relatório</button><button class="btn btn-outline btn-sm" onclick="loadReportHistory()">Histórico</button></div></div><div class="card-body" id="iaReportBody2" style="max-height:480px;overflow-y:auto"><div class="empty-state"><p>Clique em "Gerar Relatório"</p></div></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">Relatório IA</span><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" id="genReportBtn2" onclick="generateReport()">Gerar Relatório</button><button class="btn btn-outline btn-sm" onclick="loadReportHistory()">Histórico</button><button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="diagnoseIA()">Diagnosticar IA</button></div></div><div class="card-body" id="iaReportBody2" style="max-height:480px;overflow-y:auto"><div class="empty-state"><p>Clique em "Gerar Relatório"</p></div></div></div>
         <div class="card ia-chat-card"><div class="card-header"><span class="card-title">Chat IA — Analista de Tráfego</span><span class="ia-chat-status">Online</span></div>
           <div class="ia-chat-body">
-            <div class="ia-chat-messages" id="iaChatMessages"><div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">Olá! Sou seu analista de tráfego IA. Posso analisar campanhas, criativos, sugerir otimizações e criar copies. Use os botões ou me pergunte qualquer coisa!</div></div></div>
+            <div class="ia-chat-messages" id="iaChatMessages"><div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">Olá! Sou seu analista de tráfego IA. Posso analisar campanhas, criativos, sugerir otimizações e criar copies. Use os botões ou me pergunte qualquer coisa!<br><br><button class="ia-suggestion" onclick="testIA()" style="background:var(--warning-light);color:#B07A2B;border-color:rgba(232,163,61,.2)">🔧 Testar conexão IA</button></div></div></div>
             <div class="ia-chat-suggestions" id="iaChatSuggestions">
               <button class="ia-suggestion" onclick="iaAsk('Analise o desempenho geral e me diga quais campanhas escalar e quais pausar')">📊 Análise geral</button>
               <button class="ia-suggestion" onclick="iaAsk('Analise os criativos/anúncios individualmente e identifique quais estão performando melhor e por quê')">🎯 Análise de criativos</button>
@@ -1211,13 +1211,43 @@ function renderFunnel(f){
   if(!f||!f.impressions){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">Sem dados de funil</div>';return;}
   const steps=[{l:'Impressões',v:f.impressions,c:'#4A9FE5'},{l:'Cliques',v:f.clicks,c:'#5AAAE0'},{l:'Visualização',v:f.viewContent,c:'#E8A33D'},{l:'Add Carrinho',v:f.addToCart,c:'#E8B84B'},{l:'Checkout',v:f.initiateCheckout,c:'#7C5CBF'},{l:'Compras',v:f.purchases,c:'#3AAF76'}];
   const mx=steps[0].v||1;let h='';
-  steps.forEach((s,i)=>{const ht=Math.max(30,(s.v/mx)*120);const rt=i>0&&steps[i-1].v>0?((s.v/steps[i-1].v)*100).toFixed(1)+'%':'';const rc=i>0?(parseFloat(rt)>50?'var(--success)':parseFloat(rt)>20?'var(--warning)':'var(--danger)'):'';
+  // Pre-calculate benchmarks for analysis
+  const benchmarks={1:{good:5,ok:2,name:'CTR (Cliques/Impressões)'},2:{good:50,ok:20,name:'View Content/Cliques'},3:{good:20,ok:8,name:'Add Cart/View Content'},4:{good:30,ok:15,name:'Checkout/Add Cart'},5:{good:40,ok:20,name:'Compra/Checkout'}};
+
+  steps.forEach((s,i)=>{const ht=Math.max(30,(s.v/mx)*120);
+    const rtNum=i>0&&steps[i-1].v>0?((s.v/steps[i-1].v)*100):0;
+    const rt=i>0?rtNum.toFixed(1)+'%':'';
+    const rc=i>0?(rtNum>50?'var(--success)':rtNum>20?'var(--warning)':'var(--danger)'):'';
+    // Analysis for each step
+    let analysis='';
+    if(i>0&&benchmarks[i]){
+      const b=benchmarks[i];
+      if(rtNum>=b.good) analysis='✅ Boa taxa! Acima do benchmark.';
+      else if(rtNum>=b.ok) analysis='⚠️ Taxa razoável. Pode melhorar.';
+      else analysis='❌ Taxa baixa. Precisa de atenção.';
+      if(i===1&&rtNum<b.ok) analysis+=' Criativos podem não estar atraindo cliques. Teste novos hooks e imagens.';
+      if(i===2&&rtNum>100) analysis=' ⚡ View Content > Cliques = pixel pode estar contando views de outras fontes.';
+      if(i===3&&rtNum<b.ok) analysis+=' Página de produto pode estar com problema (preço, fotos, descrição).';
+      if(i===4&&rtNum<b.ok) analysis+=' Checkout com atrito. Verifique frete, métodos de pagamento.';
+      if(i===5&&rtNum<b.ok) analysis+=' Abandono no pagamento. Verifique PIX/boleto, erros no checkout.';
+    }
+    const analysisHtml=analysis?`<div class="funnel-analysis" onclick="this.classList.toggle('open')" style="cursor:pointer;margin-top:4px"><span style="font-size:.6rem;color:var(--primary);font-weight:700">▶ análise</span><div class="funnel-analysis-detail" style="display:none;font-size:.68rem;color:var(--text-secondary);margin-top:4px;text-align:left;max-width:140px;line-height:1.4">${analysis}</div></div>`:'';
+
     if(i>0)h+='<div class="funnel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>';
-    h+=`<div class="funnel-step"><div class="funnel-bar-wrap"><div class="funnel-bar" style="height:${ht}px;background:${s.c}"></div></div><div class="funnel-value">${s.v>=1000?(s.v/1000).toFixed(1)+'k':s.v}</div><div class="funnel-label">${s.l}</div>${i>0?`<div class="funnel-rate" style="color:${rc}">↓ ${rt}</div>`:''}</div>`;
+    h+=`<div class="funnel-step"><div class="funnel-bar-wrap"><div class="funnel-bar" style="height:${ht}px;background:${s.c}"></div></div><div class="funnel-value">${s.v>=1000?(s.v/1000).toFixed(1)+'k':s.v}</div><div class="funnel-label">${s.l}</div>${i>0?`<div class="funnel-rate" style="color:${rc}">↓ ${rt}</div>`:''}${analysisHtml}</div>`;
   });
   h+='<div class="funnel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>';
   h+=`<div class="funnel-step"><div class="funnel-bar-wrap"><div class="funnel-bar" style="height:80px;background:linear-gradient(180deg,#2D8F60,#3AAF76)"></div></div><div class="funnel-value" style="color:var(--success)">${fmtMoney(f.revenue)}</div><div class="funnel-label">Receita</div></div>`;
   el.innerHTML=h;
+  // Add click handlers for analysis toggles
+  el.querySelectorAll('.funnel-analysis').forEach(function(el){
+    el.addEventListener('click',function(){
+      var detail=this.querySelector('.funnel-analysis-detail');
+      var arrow=this.querySelector('span');
+      if(detail.style.display==='none'){detail.style.display='block';arrow.textContent='▼ análise';}
+      else{detail.style.display='none';arrow.textContent='▶ análise';}
+    });
+  });
 }
 
 async function loadDailyCharts(){
@@ -1260,6 +1290,25 @@ async function iaSend(){
   hr=hr.replace(/<\/li><br><li>/g,'</li><li>').replace(/((?:<li>.*?<\/li>)+)/g,'<ul>$1</ul>');
   const modelTag=r&&r.model?` <span style="font-size:.6rem;opacity:.5">(${r.model})</span>`:'';
   msgs.innerHTML+=`<div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">${hr}${modelTag}</div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+// IA diagnostic
+async function testIA(){
+  const msgs=document.getElementById('iaChatMessages');
+  msgs.innerHTML+=`<div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">🔧</div><div class="ia-msg-content">Testando conexão com API Anthropic...</div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+  const r=await api('/api/meta/ia-test');
+  let html='';
+  if(r){
+    html+=`<strong>Chave:</strong> ${r.key_preview||'?'}<br>`;
+    if(r.results){r.results.forEach(function(t){
+      html+=`<strong>${t.model}:</strong> ${t.ok?'✅ OK — "'+t.response+'"':'❌ ERRO — '+t.error}<br>`;
+    });}
+    if(r.ok) html+='<br>✅ Pelo menos um modelo funciona!';
+    else html+='<br>❌ Nenhum modelo respondeu. Verifique a chave API e os créditos.';
+  }else html='❌ Não conseguiu conectar ao servidor.';
+  msgs.innerHTML+=`<div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">🔧</div><div class="ia-msg-content">${html}</div></div>`;
   msgs.scrollTop=msgs.scrollHeight;
 }
 
@@ -1323,6 +1372,28 @@ async function submitTemplate() {
   } else {
     toast('Erro: ' + (res?.error || 'tente novamente'), 'error');
   }
+}
+
+async function diagnoseIA(){
+  const body=document.getElementById('iaReportBody2');
+  body.innerHTML='<div class="loading">Testando conexão com API Anthropic...</div>';
+  const res=await api('/api/meta/ia-test');
+  if(!res){body.innerHTML='<div class="empty-state"><p style="color:var(--danger)">Não foi possível conectar ao servidor. Verifique se o Railway está online.</p></div>';return;}
+  let html='<div style="font-size:.82rem;line-height:1.7">';
+  html+=`<p><strong>Chave API:</strong> ${res.key_prefix||'não encontrada'}</p>`;
+  if(res.results){
+    res.results.forEach(r=>{
+      html+=`<p style="margin:8px 0;padding:8px 12px;border-radius:8px;background:${r.ok?'var(--success-light)':'var(--danger-light)'}">
+        <strong>${r.model}:</strong> ${r.ok?'✅ Funcionando — "'+r.response+'"':'❌ Erro '+( r.status||'')+' — '+r.error}
+      </p>`;
+    });
+  }
+  if(res.recentErrors&&res.recentErrors.length>0){
+    html+='<p style="margin-top:12px"><strong>Últimos erros:</strong></p>';
+    res.recentErrors.forEach(e=>{html+=`<p style="font-size:.72rem;color:var(--danger);margin:2px 0">${e.ts} | ${e.type} | ${e.model} | ${e.status} | ${e.error}</p>`;});
+  }
+  html+='</div>';
+  body.innerHTML=html;
 }
 
 document.addEventListener('DOMContentLoaded', () => { loadDashboard(); loadUnread(); setInterval(loadUnread, 30000); });
