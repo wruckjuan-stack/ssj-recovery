@@ -281,55 +281,47 @@ tr:hover td { background: var(--primary-lighter); }
 .form-group { margin-bottom: 14px; }
 .form-group label { display: block; font-size: 0.72rem; font-weight: 700; margin-bottom: 5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 
-/* ═══ PERIOD TABS ═══ */
-.period-tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 3px; }
-.period-tab { background: none; border: none; padding: 7px 16px; border-radius: var(--radius-xs); font-size: 0.76rem; font-weight: 600; color: var(--text-muted); cursor: pointer; font-family: var(--font); transition: all var(--transition); white-space: nowrap; }
-.period-tab:hover { color: var(--text); background: var(--surface-alt); }
-.period-tab.active { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(74,159,229,0.3); }
-
-/* ═══ FUNNEL ═══ */
-.funnel-container { display: flex; align-items: flex-end; justify-content: center; gap: 0; padding: 10px 0; overflow-x: auto; }
-.funnel-step { text-align: center; position: relative; flex: 1; min-width: 90px; }
-.funnel-bar-wrap { display: flex; justify-content: center; margin-bottom: 10px; }
-.funnel-bar { width: 100%; max-width: 130px; border-radius: var(--radius-xs); position: relative; overflow: hidden; }
-.funnel-bar::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 60%); }
-.funnel-value { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
-.funnel-label { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
-.funnel-rate { font-size: 0.66rem; font-weight: 700; margin-top: 3px; }
-.funnel-arrow { flex-shrink: 0; display: flex; align-items: center; padding: 0 2px; margin-bottom: 50px; }
-.funnel-arrow svg { width: 18px; height: 18px; color: var(--border); }
-.funnel-loading { text-align: center; padding: 40px; color: var(--text-muted); }
-
-/* ═══ IA CHAT ═══ */
-.ia-chat-card { display: flex; flex-direction: column; }
-.ia-chat-status { font-size: 0.68rem; font-weight: 700; color: var(--success); background: var(--success-light); padding: 3px 10px; border-radius: 10px; display: flex; align-items: center; gap: 5px; }
-.ia-chat-status::before { content: ''; width: 6px; height: 6px; background: var(--success); border-radius: 50%; display: inline-block; animation: iaPulse 2s infinite; }
-@keyframes iaPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-.ia-chat-body { display: flex; flex-direction: column; height: 440px; }
-.ia-chat-messages { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; background: var(--surface-alt); }
-.ia-chat-messages::-webkit-scrollbar { width: 3px; }
-.ia-chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-.ia-msg { display: flex; gap: 10px; max-width: 92%; animation: fadeUp 0.25s ease; }
-.ia-msg-bot { align-self: flex-start; }
-.ia-msg-user { align-self: flex-end; flex-direction: row-reverse; }
-.ia-msg-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 800; flex-shrink: 0; }
-.ia-msg-bot .ia-msg-avatar { background: linear-gradient(135deg, var(--primary), var(--primary-soft)); color: white; }
-.ia-msg-user .ia-msg-avatar { background: var(--accent); color: white; }
-.ia-msg-content { padding: 11px 16px; border-radius: 14px; font-size: 0.82rem; line-height: 1.65; word-wrap: break-word; }
-.ia-msg-bot .ia-msg-content { background: var(--surface); border: 1px solid var(--border-light); border-bottom-left-radius: 4px; box-shadow: var(--shadow-xs); }
-.ia-msg-user .ia-msg-content { background: linear-gradient(135deg, var(--primary), var(--primary-soft)); color: white; border-bottom-right-radius: 4px; }
-.ia-msg-content h3 { font-size: 0.88rem; font-weight: 700; margin: 12px 0 4px; color: var(--primary-dark); }
-.ia-msg-content h3:first-child { margin-top: 0; }
-.ia-msg-typing { display: flex; gap: 4px; padding: 4px 0; }
-.ia-msg-typing span { width: 7px; height: 7px; background: var(--text-muted); border-radius: 50%; animation: iaTyping 1.4s infinite; }
-.ia-msg-typing span:nth-child(2) { animation-delay: 0.2s; }
-.ia-msg-typing span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes iaTyping { 0%,60%,100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
-.ia-chat-suggestions { display: flex; gap: 6px; padding: 10px 18px; flex-wrap: wrap; background: var(--surface); border-top: 1px solid var(--border-light); }
-.ia-suggestion { background: var(--primary-light); border: 1px solid rgba(74,159,229,0.15); border-radius: 20px; padding: 5px 14px; font-size: 0.72rem; font-weight: 600; color: var(--primary-dark); cursor: pointer; font-family: var(--font); transition: all var(--transition); white-space: nowrap; }
-.ia-suggestion:hover { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(74,159,229,0.25); }
-.ia-chat-input-row { display: flex; gap: 10px; padding: 12px 18px; border-top: 1px solid var(--border-light); background: var(--surface); }
-.ia-chat-input-row .input { flex: 1; }
+.period-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:3px}
+.period-tab{background:none;border:none;padding:7px 16px;border-radius:var(--radius-xs);font-size:.76rem;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:var(--font);transition:all var(--transition);white-space:nowrap}
+.period-tab:hover{color:var(--text);background:var(--surface-alt)}
+.period-tab.active{background:var(--primary);color:#fff;box-shadow:0 2px 6px rgba(74,159,229,.3)}
+.funnel-container{display:flex;align-items:flex-end;justify-content:center;gap:0;padding:10px 0;overflow-x:auto}
+.funnel-step{text-align:center;flex:1;min-width:85px}
+.funnel-bar-wrap{display:flex;justify-content:center;margin-bottom:10px}
+.funnel-bar{width:100%;max-width:120px;border-radius:var(--radius-xs);position:relative;overflow:hidden}
+.funnel-bar::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.25) 0%,transparent 60%)}
+.funnel-value{font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.funnel-label{font-size:.66rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+.funnel-rate{font-size:.64rem;font-weight:700;margin-top:3px}
+.funnel-arrow{flex-shrink:0;display:flex;align-items:center;padding:0 2px;margin-bottom:50px}
+.funnel-arrow svg{width:16px;height:16px;color:var(--border)}
+.ia-chat-card{display:flex;flex-direction:column}
+.ia-chat-status{font-size:.68rem;font-weight:700;color:var(--success);background:var(--success-light);padding:3px 10px;border-radius:10px;display:flex;align-items:center;gap:5px}
+.ia-chat-status::before{content:'';width:6px;height:6px;background:var(--success);border-radius:50%;display:inline-block;animation:iaPulse 2s infinite}
+@keyframes iaPulse{0%,100%{opacity:1}50%{opacity:.4}}
+.ia-chat-body{display:flex;flex-direction:column;height:440px}
+.ia-chat-messages{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px;background:var(--surface-alt)}
+.ia-chat-messages::-webkit-scrollbar{width:3px}
+.ia-chat-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+.ia-msg{display:flex;gap:10px;max-width:92%;animation:fadeUp .25s ease}
+.ia-msg-bot{align-self:flex-start}
+.ia-msg-user{align-self:flex-end;flex-direction:row-reverse}
+.ia-msg-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;flex-shrink:0}
+.ia-msg-bot .ia-msg-avatar{background:linear-gradient(135deg,var(--primary),var(--primary-soft));color:#fff}
+.ia-msg-user .ia-msg-avatar{background:var(--accent);color:#fff}
+.ia-msg-content{padding:11px 16px;border-radius:14px;font-size:.82rem;line-height:1.65;word-wrap:break-word}
+.ia-msg-bot .ia-msg-content{background:var(--surface);border:1px solid var(--border-light);border-bottom-left-radius:4px;box-shadow:var(--shadow-xs)}
+.ia-msg-user .ia-msg-content{background:linear-gradient(135deg,var(--primary),var(--primary-soft));color:#fff;border-bottom-right-radius:4px}
+.ia-msg-content h3{font-size:.88rem;font-weight:700;margin:12px 0 4px;color:var(--primary-dark)}.ia-msg-content h3:first-child{margin-top:0}
+.ia-msg-typing{display:flex;gap:4px;padding:4px 0}
+.ia-msg-typing span{width:7px;height:7px;background:var(--text-muted);border-radius:50%;animation:iaTyping 1.4s infinite}
+.ia-msg-typing span:nth-child(2){animation-delay:.2s}.ia-msg-typing span:nth-child(3){animation-delay:.4s}
+@keyframes iaTyping{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+.ia-chat-suggestions{display:flex;gap:6px;padding:10px 18px;flex-wrap:wrap;background:var(--surface);border-top:1px solid var(--border-light)}
+.ia-suggestion{background:var(--primary-light);border:1px solid rgba(74,159,229,.15);border-radius:20px;padding:5px 14px;font-size:.72rem;font-weight:600;color:var(--primary-dark);cursor:pointer;font-family:var(--font);transition:all var(--transition);white-space:nowrap}
+.ia-suggestion:hover{background:var(--primary);color:#fff}
+.ia-chat-input-row{display:flex;gap:10px;padding:12px 18px;border-top:1px solid var(--border-light);background:var(--surface)}
+.ia-chat-input-row .input{flex:1}
 
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 768px) {
@@ -554,7 +546,6 @@ tr:hover td { background: var(--primary-lighter); }
 
     <!-- META ADS -->
     <div class="view" id="view-metaads">
-      <!-- Period + Campaign Selector -->
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
           <div class="period-tabs" id="periodTabs">
@@ -564,17 +555,12 @@ tr:hover td { background: var(--primary-lighter); }
             <button class="period-tab" data-preset="last_28d" onclick="changePeriod('last_28d')">28 dias</button>
             <button class="period-tab" data-preset="this_month" onclick="changePeriod('this_month')">Mês atual</button>
           </div>
-          <select id="campaignFilter" onchange="filterByCampaign()" style="min-width:220px;padding:7px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.8rem;font-family:var(--font);font-weight:500;color:var(--text);background:var(--surface)">
+          <select id="campaignFilter" onchange="filterByCampaign()" style="min-width:220px;padding:7px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.8rem;font-family:var(--font);font-weight:500;color:var(--text);background:var(--surface)">
             <option value="all">Todas as campanhas</option>
           </select>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="loadMetaAds()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
-          Atualizar
-        </button>
+        <button class="btn btn-outline btn-sm" onclick="loadMetaAds()">Atualizar</button>
       </div>
-
-      <!-- Summary metrics -->
       <div class="metrics-grid" style="grid-template-columns:repeat(auto-fit,minmax(155px,1fr))">
         <div class="metric-card"><div class="metric-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="metric-label">Investimento</div><div class="metric-value" id="meta-spend2">—</div></div>
         <div class="metric-card"><div class="metric-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="metric-label">Receita</div><div class="metric-value" id="meta-revenue2">—</div></div>
@@ -585,69 +571,34 @@ tr:hover td { background: var(--primary-lighter); }
         <div class="metric-card"><div class="metric-icon" style="background:#E8EAF6;color:#5C6BC0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="metric-label">Alcance</div><div class="metric-value" id="meta-reach2">—</div></div>
         <div class="metric-card"><div class="metric-icon" style="background:#FCE4EC;color:#E91E63"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="metric-label">CPC</div><div class="metric-value" id="meta-cpc2">—</div></div>
       </div>
-
-      <!-- Charts -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" id="chartsRow">
         <div class="card"><div class="card-header"><span class="card-title">Gasto vs Receita (diário)</span></div><div class="card-body" style="height:260px;position:relative"><canvas id="chartSpendRevenue"></canvas></div></div>
         <div class="card"><div class="card-header"><span class="card-title">ROAS Diário</span></div><div class="card-body" style="height:260px;position:relative"><canvas id="chartRoas"></canvas></div></div>
       </div>
-
-      <!-- Funnel -->
-      <div class="card" style="margin-bottom:20px">
-        <div class="card-header"><span class="card-title">Funil de Conversão</span></div>
-        <div class="card-body"><div class="funnel-container" id="funnelContainer"><div class="funnel-loading">Carregando funil...</div></div></div>
-      </div>
-
-      <!-- Campaigns table -->
-      <div class="card" style="margin-bottom:20px">
-        <div class="card-header"><span class="card-title">Campanhas — Detalhes</span><span id="metaPeriodLabel" style="font-size:0.75rem;color:var(--text-muted)">Últimos 7 dias</span></div>
-        <div class="card-body no-pad"><div class="tbl-wrap"><table>
-          <thead><tr><th>Campanha</th><th>Gasto</th><th>Impressões</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Add Cart</th><th>Compras</th><th>ROAS</th><th>CPA</th></tr></thead>
-          <tbody id="metaCampaignsTable2"><tr><td colspan="10" class="loading">Carregando...</td></tr></tbody>
-        </table></div></div>
-      </div>
-
-      <!-- IA: Report + Chat side by side -->
+      <div class="card" style="margin-bottom:20px"><div class="card-header"><span class="card-title">Funil de Conversão</span></div><div class="card-body"><div class="funnel-container" id="funnelContainer"><div style="text-align:center;padding:40px;color:var(--text-muted)">Carregando funil...</div></div></div></div>
+      <div class="card" style="margin-bottom:20px"><div class="card-header"><span class="card-title">Campanhas</span><span id="metaPeriodLabel" style="font-size:.75rem;color:var(--text-muted)">7 dias</span></div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Campanha</th><th>Gasto</th><th>Impressões</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Add Cart</th><th>Compras</th><th>ROAS</th><th>CPA</th></tr></thead><tbody id="metaCampaignsTable2"><tr><td colspan="10" class="loading">Carregando...</td></tr></tbody></table></div></div></div>
+      <!-- Ad-level (criativos) table -->
+      <div class="card" style="margin-bottom:20px"><div class="card-header"><span class="card-title">Anúncios / Criativos</span><span style="font-size:.72rem;color:var(--text-muted)">Detalhamento por anúncio individual</span></div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Anúncio</th><th>Conjunto</th><th>Campanha</th><th>Gasto</th><th>Impr.</th><th>Cliques</th><th>CTR</th><th>Add Cart</th><th>Compras</th><th>ROAS</th><th>CPA</th></tr></thead><tbody id="metaAdsTable"><tr><td colspan="11" class="loading">Carregando...</td></tr></tbody></table></div></div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" id="iaRow">
-        <div class="card">
-          <div class="card-header"><span class="card-title">Relatório IA</span>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-primary btn-sm" id="genReportBtn2" onclick="generateReport()">Gerar Relatório</button>
-              <button class="btn btn-outline btn-sm" onclick="loadReportHistory()">Histórico</button>
-            </div>
-          </div>
-          <div class="card-body" id="iaReportBody2" style="max-height:480px;overflow-y:auto"><div class="empty-state"><p>Clique em "Gerar Relatório" ou aguarde o automático diário (8h).</p></div></div>
-        </div>
-        <div class="card ia-chat-card">
-          <div class="card-header"><span class="card-title">Chat IA — Analista de Tráfego</span><span class="ia-chat-status">Online</span></div>
+        <div class="card"><div class="card-header"><span class="card-title">Relatório IA</span><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" id="genReportBtn2" onclick="generateReport()">Gerar Relatório</button><button class="btn btn-outline btn-sm" onclick="loadReportHistory()">Histórico</button></div></div><div class="card-body" id="iaReportBody2" style="max-height:480px;overflow-y:auto"><div class="empty-state"><p>Clique em "Gerar Relatório"</p></div></div></div>
+        <div class="card ia-chat-card"><div class="card-header"><span class="card-title">Chat IA — Analista de Tráfego</span><span class="ia-chat-status">Online</span></div>
           <div class="ia-chat-body">
-            <div class="ia-chat-messages" id="iaChatMessages">
-              <div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">Olá! Sou seu analista de tráfego IA (Opus 4.6). Posso analisar campanhas, sugerir otimizações, criar copies e criativos. Use os botões ou me pergunte qualquer coisa!</div></div>
-            </div>
+            <div class="ia-chat-messages" id="iaChatMessages"><div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">Olá! Sou seu analista de tráfego IA. Posso analisar campanhas, criativos, sugerir otimizações e criar copies. Use os botões ou me pergunte qualquer coisa!</div></div></div>
             <div class="ia-chat-suggestions" id="iaChatSuggestions">
-              <button class="ia-suggestion" onclick="iaAsk('Analise o desempenho geral das campanhas e me diga quais escalar e quais pausar')">📊 Análise geral</button>
-              <button class="ia-suggestion" onclick="iaAsk('Quais campanhas estão com CPA muito alto? Sugira ações')">💰 CPA alto</button>
-              <button class="ia-suggestion" onclick="iaAsk('Sugira 3 ideias de criativos para moda fitness feminina 45+')">🎨 Criativos</button>
+              <button class="ia-suggestion" onclick="iaAsk('Analise o desempenho geral e me diga quais campanhas escalar e quais pausar')">📊 Análise geral</button>
+              <button class="ia-suggestion" onclick="iaAsk('Analise os criativos/anúncios individualmente e identifique quais estão performando melhor e por quê')">🎯 Análise de criativos</button>
+              <button class="ia-suggestion" onclick="iaAsk('Sugira 3 ideias de criativos para moda fitness feminina 45+ baseado nos dados')">🎨 Ideias criativos</button>
               <button class="ia-suggestion" onclick="iaAsk('Crie 5 copies persuasivas para anúncios de moda fitness feminina 45+')">✍️ Copies</button>
               <button class="ia-suggestion" onclick="iaAsk('Analise o funil de conversão e onde estamos perdendo mais clientes')">🔍 Funil</button>
-              <button class="ia-suggestion" onclick="iaAsk('Qual o melhor horário e dia para anunciar?')">⏰ Timing</button>
+              <button class="ia-suggestion" onclick="iaAsk('Quais conjuntos de anúncios e criativos devo pausar por CPA alto?')">💰 CPA alto</button>
             </div>
-            <div class="ia-chat-input-row">
-              <input class="input" id="iaChatInput" placeholder="Pergunte sobre suas campanhas..." onkeypress="if(event.key==='Enter')iaSend()">
-              <button class="btn btn-primary" onclick="iaSend()" id="iaSendBtn">Enviar</button>
-            </div>
+            <div class="ia-chat-input-row"><input class="input" id="iaChatInput" placeholder="Pergunte sobre campanhas, criativos..." onkeypress="if(event.key==='Enter')iaSend()"><button class="btn btn-primary" onclick="iaSend()" id="iaSendBtn">Enviar</button></div>
           </div>
         </div>
       </div>
-
-      <!-- Report history -->
-      <div class="card" id="reportHistoryCard2" style="display:none">
-        <div class="card-header"><span class="card-title">Histórico de Relatórios</span></div>
-        <div class="card-body no-pad"><div class="tbl-wrap"><table>
-          <thead><tr><th>Data</th><th>Alerta Enviado</th><th>Ação</th></tr></thead>
-          <tbody id="reportHistoryTable2"></tbody>
-        </table></div></div>
-      </div>
+      <div class="card" id="reportHistoryCard2" style="display:none"><div class="card-header"><span class="card-title">Histórico de Relatórios</span></div><div class="card-body no-pad"><div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Alerta</th><th>Ação</th></tr></thead><tbody id="reportHistoryTable2"></tbody></table></div></div></div>
     </div>
 
     <!-- TEMPLATES -->
@@ -1179,241 +1130,137 @@ async function sendFromModal() {
 
 document.getElementById('sendModal').addEventListener('click', (e) => { if (e.target.classList.contains('modal-overlay')) closeModal(); });
 
-// ═══ META ADS + IA (v4.0) ═══
-let currentPreset = 'last_7d';
-let currentCampaignId = 'all';
-let metaCache = { campaigns: [], summary: {}, funnel: {} };
-let chartSpendRevenue = null;
-let chartRoas = null;
+// ═══ META ADS v4.0 ═══
+let currentPreset='last_7d', currentCampaignId='all';
+let metaCache={campaigns:[],summary:{},funnel:{},ads:[]};
+let chartSR=null, chartR=null;
+const presetLabels={today:'Hoje',last_7d:'7 dias',last_14d:'14 dias',last_28d:'28 dias',this_month:'Mês atual'};
+const presetDays={today:1,last_3d:3,last_7d:7,last_14d:14,last_28d:28,this_month:30};
 
-const presetLabels = { today:'Hoje', last_7d:'Últimos 7 dias', last_14d:'Últimos 14 dias', last_28d:'Últimos 28 dias', this_month:'Mês atual' };
-const presetDays = { today:1, last_3d:3, last_7d:7, last_14d:14, last_28d:28, this_month:30 };
+function changePeriod(p){currentPreset=p;document.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));document.querySelector(`.period-tab[data-preset="${p}"]`)?.classList.add('active');loadMetaAds();}
+function filterByCampaign(){currentCampaignId=document.getElementById('campaignFilter').value;applyFilter();loadDailyCharts();loadAds();}
 
-function changePeriod(preset) {
-  currentPreset = preset;
-  document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
-  document.querySelector(`.period-tab[data-preset="${preset}"]`)?.classList.add('active');
-  loadMetaAds();
-}
-
-function filterByCampaign() {
-  currentCampaignId = document.getElementById('campaignFilter').value;
-  applyFilter();
-  loadDailyCharts();
-}
-
-function applyFilter() {
-  let camps = metaCache.campaigns;
-  if (currentCampaignId && currentCampaignId !== 'all') {
-    camps = camps.filter(c => c.id === currentCampaignId);
-  }
-  // Recalculate summary and funnel from filtered campaigns
-  const s = { totalSpend:0, totalRevenue:0, totalPurchases:0, totalImpressions:0, totalClicks:0, totalReach:0, totalAddToCart:0, totalInitiateCheckout:0, totalViewContent:0 };
-  camps.forEach(c => {
-    s.totalSpend += c.spend; s.totalRevenue += c.purchaseValue; s.totalPurchases += c.purchases;
-    s.totalImpressions += c.impressions; s.totalClicks += c.clicks; s.totalReach += c.reach;
-    s.totalAddToCart += c.addToCart||0; s.totalInitiateCheckout += c.initiateCheckout||0; s.totalViewContent += c.viewContent||0;
-  });
-  s.roas = s.totalSpend > 0 ? Math.round((s.totalRevenue/s.totalSpend)*100)/100 : 0;
-  s.cpa = s.totalPurchases > 0 ? Math.round((s.totalSpend/s.totalPurchases)*100)/100 : 0;
-  s.ctr = s.totalImpressions > 0 ? Math.round((s.totalClicks/s.totalImpressions)*10000)/100 : 0;
-  s.cpc = s.totalClicks > 0 ? Math.round((s.totalSpend/s.totalClicks)*100)/100 : 0;
-
+function applyFilter(){
+  let camps=metaCache.campaigns;
+  if(currentCampaignId&&currentCampaignId!=='all') camps=camps.filter(c=>c.id===currentCampaignId);
+  const s={totalSpend:0,totalRevenue:0,totalPurchases:0,totalImpressions:0,totalClicks:0,totalReach:0,totalAddToCart:0,totalInitiateCheckout:0,totalViewContent:0};
+  camps.forEach(c=>{s.totalSpend+=c.spend;s.totalRevenue+=c.purchaseValue;s.totalPurchases+=c.purchases;s.totalImpressions+=c.impressions;s.totalClicks+=c.clicks;s.totalReach+=c.reach;s.totalAddToCart+=c.addToCart||0;s.totalInitiateCheckout+=c.initiateCheckout||0;s.totalViewContent+=c.viewContent||0;});
+  s.roas=s.totalSpend>0?Math.round((s.totalRevenue/s.totalSpend)*100)/100:0;
+  s.cpa=s.totalPurchases>0?Math.round((s.totalSpend/s.totalPurchases)*100)/100:0;
+  s.ctr=s.totalImpressions>0?Math.round((s.totalClicks/s.totalImpressions)*10000)/100:0;
+  s.cpc=s.totalClicks>0?Math.round((s.totalSpend/s.totalClicks)*100)/100:0;
   updateMetrics(s);
-  renderFunnel({ impressions: s.totalImpressions, clicks: s.totalClicks, viewContent: s.totalViewContent, addToCart: s.totalAddToCart, initiateCheckout: s.totalInitiateCheckout, purchases: s.totalPurchases, revenue: Math.round(s.totalRevenue*100)/100 });
+  renderFunnel({impressions:s.totalImpressions,clicks:s.totalClicks,viewContent:s.totalViewContent,addToCart:s.totalAddToCart,initiateCheckout:s.totalInitiateCheckout,purchases:s.totalPurchases,revenue:Math.round(s.totalRevenue*100)/100});
   renderCampaignsTable(camps);
 }
 
-function updateMetrics(s) {
-  document.getElementById('meta-spend2').textContent = fmtMoney(s.totalSpend);
-  document.getElementById('meta-revenue2').textContent = fmtMoney(s.totalRevenue);
-  const roasEl = document.getElementById('meta-roas2');
-  roasEl.textContent = (s.roas||0).toFixed(2) + 'x';
-  roasEl.style.color = s.roas >= 2 ? 'var(--success)' : s.roas >= 1 ? 'var(--warning)' : 'var(--danger)';
-  document.getElementById('meta-purchases2').textContent = s.totalPurchases || 0;
-  document.getElementById('meta-cpa2').textContent = s.cpa > 0 ? fmtMoney(s.cpa) : '—';
-  document.getElementById('meta-ctr2').textContent = (s.ctr||0).toFixed(2) + '%';
-  document.getElementById('meta-reach2').textContent = (s.totalReach||0).toLocaleString('pt-BR');
-  document.getElementById('meta-cpc2').textContent = s.cpc > 0 ? fmtMoney(s.cpc) : '—';
-  document.getElementById('metaPeriodLabel').textContent = presetLabels[currentPreset] || currentPreset;
+function updateMetrics(s){
+  document.getElementById('meta-spend2').textContent=fmtMoney(s.totalSpend);
+  document.getElementById('meta-revenue2').textContent=fmtMoney(s.totalRevenue);
+  const re=document.getElementById('meta-roas2');re.textContent=(s.roas||0).toFixed(2)+'x';re.style.color=s.roas>=2?'var(--success)':s.roas>=1?'var(--warning)':'var(--danger)';
+  document.getElementById('meta-purchases2').textContent=s.totalPurchases||0;
+  document.getElementById('meta-cpa2').textContent=s.cpa>0?fmtMoney(s.cpa):'—';
+  document.getElementById('meta-ctr2').textContent=(s.ctr||0).toFixed(2)+'%';
+  document.getElementById('meta-reach2').textContent=(s.totalReach||0).toLocaleString('pt-BR');
+  document.getElementById('meta-cpc2').textContent=s.cpc>0?fmtMoney(s.cpc):'—';
+  document.getElementById('metaPeriodLabel').textContent=presetLabels[currentPreset]||currentPreset;
 }
 
-function renderCampaignsTable(camps) {
-  const tb = document.getElementById('metaCampaignsTable2');
-  if (camps.length > 0) {
-    tb.innerHTML = camps.map(c => `<tr>
-      <td><strong>${c.name||'—'}</strong></td><td>R$ ${c.spend.toFixed(2)}</td>
-      <td>${c.impressions.toLocaleString('pt-BR')}</td><td>${c.clicks.toLocaleString('pt-BR')}</td>
-      <td>${c.ctr.toFixed(2)}%</td><td>R$ ${c.cpc.toFixed(2)}</td><td>${c.addToCart||0}</td>
-      <td>${c.purchases}</td>
-      <td><strong style="color:${c.roas>=2?'var(--success)':c.roas>=1?'var(--warning)':'var(--danger)'}">${c.roas.toFixed(2)}x</strong></td>
-      <td>${c.cpa>0?'R$ '+c.cpa.toFixed(2):'—'}</td>
-    </tr>`).join('');
-  } else {
-    tb.innerHTML = '<tr><td colspan="10" class="empty-state"><p>Nenhuma campanha ativa</p></td></tr>';
-  }
+function renderCampaignsTable(camps){
+  const tb=document.getElementById('metaCampaignsTable2');
+  if(camps.length>0){tb.innerHTML=camps.map(c=>`<tr><td><strong>${c.name||'—'}</strong></td><td>R$ ${c.spend.toFixed(2)}</td><td>${c.impressions.toLocaleString('pt-BR')}</td><td>${c.clicks.toLocaleString('pt-BR')}</td><td>${c.ctr.toFixed(2)}%</td><td>R$ ${c.cpc.toFixed(2)}</td><td>${c.addToCart||0}</td><td>${c.purchases}</td><td><strong style="color:${c.roas>=2?'var(--success)':c.roas>=1?'var(--warning)':'var(--danger)'}">${c.roas.toFixed(2)}x</strong></td><td>${c.cpa>0?'R$ '+c.cpa.toFixed(2):'—'}</td></tr>`).join('');}
+  else tb.innerHTML='<tr><td colspan="10" class="empty-state"><p>Nenhuma campanha</p></td></tr>';
 }
 
-async function loadMetaAds() {
-  loadMetaCampaignsPeriod();
-  loadDailyCharts();
-  loadLatestReport();
-}
+async function loadMetaAds(){loadMetaCampaignsPeriod();loadDailyCharts();loadAds();loadLatestReport();}
 
-async function loadMetaCampaignsPeriod() {
-  const res = await api('/api/meta/campaigns-period?preset=' + currentPreset);
-  if (res && res.ok) {
-    metaCache.campaigns = res.data || [];
-    metaCache.summary = res.summary || {};
-    metaCache.funnel = res.funnel || {};
-
-    // Populate campaign dropdown
-    const sel = document.getElementById('campaignFilter');
-    const prev = sel.value;
-    sel.innerHTML = '<option value="all">Todas as campanhas</option>';
-    metaCache.campaigns.forEach(c => {
-      sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-    });
-    sel.value = prev && sel.querySelector(`option[value="${prev}"]`) ? prev : 'all';
-    currentCampaignId = sel.value;
-
+async function loadMetaCampaignsPeriod(){
+  const res=await api('/api/meta/campaigns-period?preset='+currentPreset);
+  if(res&&res.ok){
+    metaCache.campaigns=res.data||[];metaCache.summary=res.summary||{};metaCache.funnel=res.funnel||{};
+    const sel=document.getElementById('campaignFilter');const prev=sel.value;
+    sel.innerHTML='<option value="all">Todas as campanhas</option>';
+    metaCache.campaigns.forEach(c=>{sel.innerHTML+=`<option value="${c.id}">${c.name}</option>`;});
+    sel.value=prev&&sel.querySelector(`option[value="${prev}"]`)?prev:'all';currentCampaignId=sel.value;
     applyFilter();
-  } else {
-    document.getElementById('metaCampaignsTable2').innerHTML = '<tr><td colspan="10" class="empty-state"><p>Erro: ' + (res?.error || 'verifique as variáveis') + '</p></td></tr>';
-  }
+  }else document.getElementById('metaCampaignsTable2').innerHTML='<tr><td colspan="10" class="empty-state"><p>Erro: '+(res?.error||'verifique variáveis')+'</p></td></tr>';
 }
 
-function renderFunnel(f) {
-  const el = document.getElementById('funnelContainer');
-  if (!f || !f.impressions) { el.innerHTML = '<div class="funnel-loading">Sem dados de funil</div>'; return; }
-  const steps = [
-    { label:'Impressões', value:f.impressions, color:'#4A9FE5' },
-    { label:'Cliques', value:f.clicks, color:'#5AAAE0' },
-    { label:'Visualização', value:f.viewContent, color:'#E8A33D' },
-    { label:'Add Carrinho', value:f.addToCart, color:'#E8B84B' },
-    { label:'Checkout', value:f.initiateCheckout, color:'#7C5CBF' },
-    { label:'Compras', value:f.purchases, color:'#3AAF76' },
-  ];
-  const maxVal = steps[0].value || 1;
-  let html = '';
-  steps.forEach((step, i) => {
-    const height = Math.max(35, (step.value / maxVal) * 120);
-    const rate = i > 0 && steps[i-1].value > 0 ? ((step.value / steps[i-1].value) * 100).toFixed(1) + '%' : '';
-    const rateColor = i > 0 ? (parseFloat(rate) > 50 ? 'var(--success)' : parseFloat(rate) > 20 ? 'var(--warning)' : 'var(--danger)') : '';
-    if (i > 0) html += '<div class="funnel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>';
-    html += `<div class="funnel-step"><div class="funnel-bar-wrap"><div class="funnel-bar" style="height:${height}px;background:${step.color}"></div></div><div class="funnel-value">${step.value>=1000?(step.value/1000).toFixed(1)+'k':step.value}</div><div class="funnel-label">${step.label}</div>${i>0?`<div class="funnel-rate" style="color:${rateColor}">↓ ${rate}</div>`:''}</div>`;
-  });
-  html += '<div class="funnel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>';
-  html += `<div class="funnel-step"><div class="funnel-bar-wrap"><div class="funnel-bar" style="height:80px;background:linear-gradient(180deg,#2D8F60,#3AAF76)"></div></div><div class="funnel-value" style="color:var(--success)">${fmtMoney(f.revenue)}</div><div class="funnel-label">Receita</div></div>`;
-  el.innerHTML = html;
+async function loadAds(){
+  let url='/api/meta/ads?preset='+currentPreset;
+  if(currentCampaignId&&currentCampaignId!=='all') url+='&campaignId='+currentCampaignId;
+  const res=await api(url);
+  const tb=document.getElementById('metaAdsTable');
+  if(res&&res.ok&&res.data&&res.data.length>0){
+    metaCache.ads=res.data;
+    tb.innerHTML=res.data.map(a=>`<tr>
+      <td><strong style="font-size:.8rem">${a.adName||'—'}</strong></td>
+      <td style="font-size:.75rem;color:var(--text-muted)">${a.adsetName||'—'}</td>
+      <td style="font-size:.75rem;color:var(--text-muted)">${a.campaignName||'—'}</td>
+      <td>R$ ${a.spend.toFixed(2)}</td><td>${a.impressions.toLocaleString('pt-BR')}</td>
+      <td>${a.clicks.toLocaleString('pt-BR')}</td><td>${a.ctr.toFixed(2)}%</td>
+      <td>${a.addToCart||0}</td><td>${a.purchases}</td>
+      <td><strong style="color:${a.roas>=2?'var(--success)':a.roas>=1?'var(--warning)':'var(--danger)'}">${a.roas.toFixed(2)}x</strong></td>
+      <td>${a.cpa>0?'R$ '+a.cpa.toFixed(2):'—'}</td>
+    </tr>`).join('');
+  }else{metaCache.ads=[];tb.innerHTML='<tr><td colspan="11" class="empty-state"><p>Nenhum anúncio</p></td></tr>';}
 }
 
-async function loadDailyCharts() {
-  const days = presetDays[currentPreset] || 7;
-  if (days <= 1) { document.getElementById('chartsRow').style.display = 'none'; return; }
-  document.getElementById('chartsRow').style.display = '';
-  let url = '/api/meta/daily?days=' + days;
-  if (currentCampaignId && currentCampaignId !== 'all') url += '&campaignId=' + currentCampaignId;
-  const res = await api(url);
-  if (!res || !res.ok || !res.data || res.data.length === 0) return;
-  const daily = res.data;
-  const labels = daily.map(d => { const dt = new Date(d.date+'T12:00:00'); return dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); });
-  const chartFont = { family: "'Outfit', sans-serif", size: 11 };
-  const gridColor = 'rgba(218,227,237,0.5)';
-  if (chartSpendRevenue) chartSpendRevenue.destroy();
-  if (chartRoas) chartRoas.destroy();
-  chartSpendRevenue = new Chart(document.getElementById('chartSpendRevenue').getContext('2d'), {
-    type: 'bar',
-    data: { labels, datasets: [
-      { label: 'Gasto', data: daily.map(d=>d.spend), backgroundColor: 'rgba(74,159,229,0.7)', borderRadius: 4, barPercentage: 0.5, categoryPercentage: 0.7 },
-      { label: 'Receita', data: daily.map(d=>d.revenue), backgroundColor: 'rgba(58,175,118,0.7)', borderRadius: 4, barPercentage: 0.5, categoryPercentage: 0.7 }
-    ]},
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'top', labels:{ font:chartFont, boxWidth:10, padding:14 }}}, scales:{ x:{ grid:{display:false}, ticks:{font:chartFont}}, y:{ grid:{color:gridColor}, ticks:{font:chartFont, callback:v=>'R$ '+v.toFixed(0)}}}}
+function renderFunnel(f){
+  const el=document.getElementById('funnelContainer');
+  if(!f||!f.impressions){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted)">Sem dados de funil</div>';return;}
+  const steps=[{l:'Impressões',v:f.impressions,c:'#4A9FE5'},{l:'Cliques',v:f.clicks,c:'#5AAAE0'},{l:'Visualização',v:f.viewContent,c:'#E8A33D'},{l:'Add Carrinho',v:f.addToCart,c:'#E8B84B'},{l:'Checkout',v:f.initiateCheckout,c:'#7C5CBF'},{l:'Compras',v:f.purchases,c:'#3AAF76'}];
+  const mx=steps[0].v||1;let h='';
+  steps.forEach((s,i)=>{const ht=Math.max(30,(s.v/mx)*120);const rt=i>0&&steps[i-1].v>0?((s.v/steps[i-1].v)*100).toFixed(1)+'%':'';const rc=i>0?(parseFloat(rt)>50?'var(--success)':parseFloat(rt)>20?'var(--warning)':'var(--danger)'):'';
+    if(i>0)h+='<div class="funnel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>';
+    h+=`<div class="funnel-step"><div class="funnel-bar-wrap"><div class="funnel-bar" style="height:${ht}px;background:${s.c}"></div></div><div class="funnel-value">${s.v>=1000?(s.v/1000).toFixed(1)+'k':s.v}</div><div class="funnel-label">${s.l}</div>${i>0?`<div class="funnel-rate" style="color:${rc}">↓ ${rt}</div>`:''}</div>`;
   });
-  chartRoas = new Chart(document.getElementById('chartRoas').getContext('2d'), {
-    type: 'line',
-    data: { labels, datasets: [{ label:'ROAS', data:daily.map(d=>d.roas), borderColor:'#7C5CBF', backgroundColor:'rgba(124,92,191,0.08)', fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#7C5CBF', pointBorderColor:'#fff', pointBorderWidth:2, borderWidth:2.5 }]},
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'top', labels:{ font:chartFont, boxWidth:10, padding:14 }}}, scales:{ x:{ grid:{display:false}, ticks:{font:chartFont}}, y:{ grid:{color:gridColor}, ticks:{font:chartFont, callback:v=>v.toFixed(1)+'x'}, suggestedMin:0 }}}
-  });
+  h+='<div class="funnel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>';
+  h+=`<div class="funnel-step"><div class="funnel-bar-wrap"><div class="funnel-bar" style="height:80px;background:linear-gradient(180deg,#2D8F60,#3AAF76)"></div></div><div class="funnel-value" style="color:var(--success)">${fmtMoney(f.revenue)}</div><div class="funnel-label">Receita</div></div>`;
+  el.innerHTML=h;
+}
+
+async function loadDailyCharts(){
+  const days=presetDays[currentPreset]||7;
+  if(days<=1){document.getElementById('chartsRow').style.display='none';return;}
+  document.getElementById('chartsRow').style.display='';
+  let url='/api/meta/daily?days='+days;if(currentCampaignId&&currentCampaignId!=='all')url+='&campaignId='+currentCampaignId;
+  const res=await api(url);if(!res||!res.ok||!res.data||!res.data.length)return;
+  const d=res.data,lb=d.map(x=>{const dt=new Date(x.date+'T12:00:00');return dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});});
+  const cf={family:"'Outfit',sans-serif",size:11},gc='rgba(218,227,237,.5)';
+  if(chartSR)chartSR.destroy();if(chartR)chartR.destroy();
+  chartSR=new Chart(document.getElementById('chartSpendRevenue').getContext('2d'),{type:'bar',data:{labels:lb,datasets:[{label:'Gasto',data:d.map(x=>x.spend),backgroundColor:'rgba(74,159,229,.7)',borderRadius:4,barPercentage:.5,categoryPercentage:.7},{label:'Receita',data:d.map(x=>x.revenue),backgroundColor:'rgba(58,175,118,.7)',borderRadius:4,barPercentage:.5,categoryPercentage:.7}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:cf,boxWidth:10,padding:14}}},scales:{x:{grid:{display:false},ticks:{font:cf}},y:{grid:{color:gc},ticks:{font:cf,callback:v=>'R$ '+v.toFixed(0)}}}}});
+  chartR=new Chart(document.getElementById('chartRoas').getContext('2d'),{type:'line',data:{labels:lb,datasets:[{label:'ROAS',data:d.map(x=>x.roas),borderColor:'#7C5CBF',backgroundColor:'rgba(124,92,191,.08)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#7C5CBF',pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:cf,boxWidth:10,padding:14}}},scales:{x:{grid:{display:false},ticks:{font:cf}},y:{grid:{color:gc},ticks:{font:cf,callback:v=>v.toFixed(1)+'x'},suggestedMin:0}}}});
 }
 
 // ═══ IA REPORT ═══
-async function loadLatestReport() {
-  const res = await api('/api/meta/reports');
-  if (res && res.ok && res.data && res.data.length > 0) showReport(res.data[0].report_text, res.data[0].report_date);
-}
-function showReport(text, date) {
-  const body = document.getElementById('iaReportBody2');
-  if (!text) { body.innerHTML = '<div class="empty-state"><p>Nenhum relatório disponível</p></div>'; return; }
-  let html = text.replace(/## (.*)/g, '<h3 style="margin:16px 0 6px;font-size:0.95rem;font-weight:700;color:var(--primary-dark)">$1</h3>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n- /g, '\n• ').replace(/\n/g, '<br>');
-  body.innerHTML = `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:10px">Relatório de ${date ? new Date(date).toLocaleDateString('pt-BR') : 'Hoje'}</div><div style="font-size:0.84rem;line-height:1.7">${html}</div>`;
-}
-async function generateReport() {
-  const btn = document.getElementById('genReportBtn2');
-  btn.disabled = true; btn.textContent = 'Gerando...';
-  document.getElementById('iaReportBody2').innerHTML = '<div class="loading">Analisando com IA Opus 4.6... pode levar até 30s.</div>';
-  // Send cached data to avoid double API call; include campaign filter
-  const payload = { campaignsData: metaCache.campaigns };
-  if (currentCampaignId && currentCampaignId !== 'all') payload.campaignId = currentCampaignId;
-  const res = await api('/api/meta/report', { method: 'POST', body: JSON.stringify(payload) });
-  btn.disabled = false; btn.textContent = 'Gerar Relatório';
-  if (res && res.ok) { showReport(res.report, res.date); toast('Relatório gerado!', 'success'); }
-  else { document.getElementById('iaReportBody2').innerHTML = '<div class="empty-state"><p>Erro: ' + (res?.error || 'tente novamente') + '</p></div>'; toast('Erro: ' + (res?.error || ''), 'error'); }
-}
-async function loadReportHistory() {
-  document.getElementById('reportHistoryCard2').style.display = '';
-  const res = await api('/api/meta/reports');
-  const tb = document.getElementById('reportHistoryTable2');
-  if (res && res.ok && res.data && res.data.length > 0) {
-    tb.innerHTML = res.data.map(r => `<tr><td>${new Date(r.report_date).toLocaleDateString('pt-BR')}</td><td>${r.alerts_sent?'<span class="badge-status badge-delivered">Sim</span>':'<span class="badge-status badge-pending">Não</span>'}</td><td><button class="btn btn-outline btn-sm" onclick="viewReport('${r.report_date}')">Ver</button></td></tr>`).join('');
-  } else tb.innerHTML = '<tr><td colspan="3" class="empty-state"><p>Nenhum relatório</p></td></tr>';
-}
-async function viewReport(date) {
-  const res = await api('/api/meta/report/' + date);
-  if (res && res.ok && res.data) { showReport(res.data.report, res.data.date); window.scrollTo({top:0,behavior:'smooth'}); }
-  else toast('Erro ao carregar relatório', 'error');
-}
+async function loadLatestReport(){const r=await api('/api/meta/reports');if(r&&r.ok&&r.data&&r.data.length>0)showReport(r.data[0].report_text,r.data[0].report_date);}
+function showReport(text,date){const b=document.getElementById('iaReportBody2');if(!text){b.innerHTML='<div class="empty-state"><p>Nenhum relatório</p></div>';return;}let h=text.replace(/## (.*)/g,'<h3 style="margin:14px 0 6px;font-size:.92rem;font-weight:700;color:var(--primary-dark)">$1</h3>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n- /g,'\n• ').replace(/\n/g,'<br>');b.innerHTML=`<div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px">Relatório de ${date?new Date(date).toLocaleDateString('pt-BR'):'Hoje'}</div><div style="font-size:.82rem;line-height:1.7">${h}</div>`;}
+async function generateReport(){const btn=document.getElementById('genReportBtn2');btn.disabled=true;btn.textContent='Gerando...';document.getElementById('iaReportBody2').innerHTML='<div class="loading">Analisando com IA... pode levar até 60s.</div>';const p={campaignsData:metaCache.campaigns};if(currentCampaignId&&currentCampaignId!=='all')p.campaignId=currentCampaignId;const r=await api('/api/meta/report',{method:'POST',body:JSON.stringify(p)});btn.disabled=false;btn.textContent='Gerar Relatório';if(r&&r.ok){showReport(r.report,r.date);toast('Relatório gerado!','success');}else{document.getElementById('iaReportBody2').innerHTML='<div class="empty-state"><p>Erro: '+(r?.error||'tente novamente')+'</p></div>';toast('Erro: '+(r?.error||''),'error');}}
+async function loadReportHistory(){document.getElementById('reportHistoryCard2').style.display='';const r=await api('/api/meta/reports');const tb=document.getElementById('reportHistoryTable2');if(r&&r.ok&&r.data&&r.data.length>0)tb.innerHTML=r.data.map(x=>`<tr><td>${new Date(x.report_date).toLocaleDateString('pt-BR')}</td><td>${x.alerts_sent?'<span class="badge-status badge-delivered">Sim</span>':'<span class="badge-status badge-pending">Não</span>'}</td><td><button class="btn btn-outline btn-sm" onclick="viewReport('${x.report_date}')">Ver</button></td></tr>`).join('');else tb.innerHTML='<tr><td colspan="3" class="empty-state"><p>Nenhum</p></td></tr>';}
+async function viewReport(d){const r=await api('/api/meta/report/'+d);if(r&&r.ok&&r.data){showReport(r.data.report,r.data.date);window.scrollTo({top:0,behavior:'smooth'});}else toast('Erro','error');}
 
 // ═══ IA CHAT ═══
-function iaAsk(question) { document.getElementById('iaChatInput').value = question; iaSend(); }
-function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-async function iaSend() {
-  const input = document.getElementById('iaChatInput');
-  const text = input?.value?.trim();
-  if (!text) return;
-  input.value = '';
-  const msgs = document.getElementById('iaChatMessages');
-  msgs.innerHTML += `<div class="ia-msg ia-msg-user"><div class="ia-msg-avatar">Eu</div><div class="ia-msg-content">${escHtml(text)}</div></div>`;
-  msgs.innerHTML += `<div class="ia-msg ia-msg-bot" id="iaTyping"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content"><div class="ia-msg-typing"><span></span><span></span><span></span></div></div></div>`;
-  msgs.scrollTop = msgs.scrollHeight;
-  document.getElementById('iaChatSuggestions').style.display = 'none';
-  const btn = document.getElementById('iaSendBtn');
-  btn.disabled = true; btn.textContent = 'Pensando...';
-
-  // Filter campaigns data if a specific campaign is selected
-  let campsToSend = metaCache.campaigns;
-  let summaryToSend = metaCache.summary;
-  let funnelToSend = metaCache.funnel;
-  if (currentCampaignId && currentCampaignId !== 'all') {
-    campsToSend = metaCache.campaigns.filter(c => c.id === currentCampaignId);
-  }
-
-  const res = await api('/api/meta/chat', { method: 'POST', body: JSON.stringify({ message: text, campaignsData: campsToSend, summaryData: summaryToSend, funnelData: funnelToSend }) });
-  btn.disabled = false; btn.textContent = 'Enviar';
-  document.getElementById('iaTyping')?.remove();
-
-  let reply = 'Desculpe, ocorreu um erro. Tente novamente.';
-  if (res && res.ok && res.response) reply = res.response;
-  else if (res && res.error) reply = 'Erro: ' + res.error;
-
-  let htmlReply = reply.replace(/## (.*)/g,'<h3>$1</h3>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^- (.+)$/gm,'<li>$1</li>').replace(/\n/g,'<br>');
-  htmlReply = htmlReply.replace(/<\/li><br><li>/g,'</li><li>');
-  // Wrap consecutive <li> in <ul>
-  htmlReply = htmlReply.replace(/((?:<li>.*?<\/li>)+)/g, '<ul>$1</ul>');
-
-  msgs.innerHTML += `<div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">${htmlReply}</div></div>`;
-  msgs.scrollTop = msgs.scrollHeight;
+function iaAsk(q){document.getElementById('iaChatInput').value=q;iaSend();}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+async function iaSend(){
+  const input=document.getElementById('iaChatInput');const text=input?.value?.trim();if(!text)return;input.value='';
+  const msgs=document.getElementById('iaChatMessages');
+  msgs.innerHTML+=`<div class="ia-msg ia-msg-user"><div class="ia-msg-avatar">Eu</div><div class="ia-msg-content">${escHtml(text)}</div></div>`;
+  msgs.innerHTML+=`<div class="ia-msg ia-msg-bot" id="iaTyping"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content"><div class="ia-msg-typing"><span></span><span></span><span></span></div></div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+  document.getElementById('iaChatSuggestions').style.display='none';
+  const btn=document.getElementById('iaSendBtn');btn.disabled=true;btn.textContent='Pensando...';
+  let campsToSend=metaCache.campaigns;if(currentCampaignId&&currentCampaignId!=='all')campsToSend=metaCache.campaigns.filter(c=>c.id===currentCampaignId);
+  const r=await api('/api/meta/chat',{method:'POST',body:JSON.stringify({message:text,campaignsData:campsToSend,summaryData:metaCache.summary,funnelData:metaCache.funnel,adsData:metaCache.ads})});
+  btn.disabled=false;btn.textContent='Enviar';document.getElementById('iaTyping')?.remove();
+  let reply='Desculpe, ocorreu um erro. Tente novamente.';
+  if(r&&r.ok&&r.response)reply=r.response;else if(r&&r.error)reply='Erro: '+r.error;
+  let hr=reply.replace(/## (.*)/g,'<h3>$1</h3>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^- (.+)$/gm,'<li>$1</li>').replace(/\n/g,'<br>');
+  hr=hr.replace(/<\/li><br><li>/g,'</li><li>').replace(/((?:<li>.*?<\/li>)+)/g,'<ul>$1</ul>');
+  const modelTag=r&&r.model?` <span style="font-size:.6rem;opacity:.5">(${r.model})</span>`:'';
+  msgs.innerHTML+=`<div class="ia-msg ia-msg-bot"><div class="ia-msg-avatar">IA</div><div class="ia-msg-content">${hr}${modelTag}</div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
 }
 
 // ═══ TEMPLATE CREATION MODAL ═══
