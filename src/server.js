@@ -1828,6 +1828,27 @@ app.get("/api/meta/real-revenue", async function(req, res) {
   }
 });
 
+// Debug: see raw Yampi statuses
+app.get("/api/meta/real-revenue-debug", async function(req, res) {
+  try {
+    var data = await yampiGet("/orders", { limit: "30", orderBy: "created_at", sortedBy: "desc" });
+    var orders = (data.data || []).map(function(o) {
+      var s = "";
+      if (o.status && o.status.data) s = o.status.data.alias || o.status.data.name || "";
+      else if (o.status_alias) s = o.status_alias;
+      return {
+        id: o.id,
+        number: o.number,
+        status_raw: s,
+        status_obj: o.status ? (o.status.data ? { alias: o.status.data.alias, name: o.status.data.name } : o.status) : null,
+        value_total: o.value_total,
+        created_at: (o.created_at && o.created_at.date) || o.created_at
+      };
+    });
+    res.json({ ok: true, count: orders.length, orders: orders });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 // ===================== START SERVER =====================
 // IMPORTANTE: escutar na porta PRIMEIRO pra healthcheck do Railway passar
 // Depois inicializar o banco em background
