@@ -597,13 +597,8 @@ cron.schedule("*/10 * * * *", async function() {
 cron.schedule("*/15 * * * *", async function() {
   console.log("[AUTO-PIX] " + new Date().toISOString() + " Verificando PIX/boleto...");
   try {
-    // Buscar pedidos recentes (últimos 4 dias)
-    var fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - 4);
-    var orders = await fetchOrders({
-      "q[created_at][from]": fromDate.toISOString().slice(0, 10),
-      limit: "50"
-    });
+    // Buscar pedidos recentes (sem filtro de data — já vem ordenado por created_at desc)
+    var orders = await fetchOrders({ limit: "50" });
 
     var sent = 0, skipped = 0, failed = 0;
 
