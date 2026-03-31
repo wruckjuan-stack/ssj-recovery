@@ -206,7 +206,45 @@ input::placeholder, textarea::placeholder { color: var(--text3) }
 .section-label span { white-space: nowrap }
 .section-label:after { content: ''; flex: 1; height: 1px; background: var(--border) }
 
-@media (max-width: 860px) { .grid2 { grid-template-columns: 1fr } .header { padding: 12px 16px } .wrap { padding: 16px 12px 40px } }
+/* ===== INBOX ===== */
+.inbox-layout { display: grid; grid-template-columns: 340px 1fr; gap: 0; height: calc(100vh - 180px); min-height: 500px; background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden }
+.inbox-sidebar { border-right: 1px solid var(--border); overflow-y: auto; background: var(--white) }
+.inbox-sidebar-header { padding: 16px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg) }
+.convo-item { padding: 14px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .15s; display: flex; gap: 12px; align-items: center }
+.convo-item:hover { background: var(--bg) }
+.convo-item.active { background: var(--pink-soft); border-left: 3px solid var(--pink) }
+.convo-avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), #FF6090); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: #fff; flex-shrink: 0 }
+.convo-info { flex: 1; min-width: 0 }
+.convo-name { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.convo-last { font-size: 12px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px }
+.convo-meta { text-align: right; flex-shrink: 0 }
+.convo-time { font-size: 10px; color: var(--text3) }
+.convo-unread { background: var(--pink); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-top: 4px; display: inline-block }
+.inbox-chat { display: flex; flex-direction: column; background: #F0F2F5 }
+.inbox-chat-header { padding: 14px 20px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px }
+.inbox-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 6px }
+.msg-row { display: flex; max-width: 75% }
+.msg-row.out { margin-left: auto }
+.msg-row.in { margin-right: auto }
+.msg-bubble { padding: 8px 12px; font-size: 13px; line-height: 1.5; border-radius: 10px; word-break: break-word; position: relative }
+.msg-bubble.out { background: #DCF8C6; color: #303030; border-radius: 10px 10px 0 10px }
+.msg-bubble.in { background: var(--white); color: var(--text); border-radius: 10px 10px 10px 0; box-shadow: 0 1px 2px rgba(0,0,0,.06) }
+.msg-time { font-size: 9px; color: var(--text3); margin-top: 3px; text-align: right }
+.msg-template { font-size: 10px; color: var(--text3); font-style: italic; margin-bottom: 2px }
+.inbox-composer { padding: 12px 16px; background: var(--white); border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: center }
+.inbox-composer input { flex: 1; border-radius: 24px; padding: 10px 18px; border: 1.5px solid var(--border); font-size: 13px }
+.inbox-composer input:focus { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(233,30,99,.1) }
+.inbox-composer button { width: 42px; height: 42px; border-radius: 50%; border: none; background: linear-gradient(135deg, #E91E63, #FF6090); color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(233,30,99,.3); transition: transform .15s }
+.inbox-composer button:hover { transform: scale(1.05) }
+.inbox-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text3); font-size: 14px; flex-direction: column; gap: 8px }
+
+@media (max-width: 860px) {
+  .grid2 { grid-template-columns: 1fr }
+  .header { padding: 12px 16px }
+  .wrap { padding: 16px 12px 40px }
+  .inbox-layout { grid-template-columns: 1fr; height: auto }
+  .inbox-sidebar { max-height: 300px }
+}
 </style>
 </head>
 <body>
@@ -228,6 +266,7 @@ input::placeholder, textarea::placeholder { color: var(--text3) }
 <div class="wrap">
   <div class="tabs">
     <button class="tab active" onclick="showTab('dash',this)">📊 Dashboard</button>
+    <button class="tab" onclick="showTab('inbox',this)">💬 Inbox <span id="inbox-badge-tab" style="background:var(--red);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px;display:none">0</span></button>
     <button class="tab" onclick="showTab('carts',this)">🛒 Carrinhos</button>
     <button class="tab" onclick="showTab('pix',this)">💳 PIX/Boleto</button>
     <button class="tab" onclick="showTab('recompra',this)">🔄 Recompra</button>
@@ -241,6 +280,43 @@ input::placeholder, textarea::placeholder { color: var(--text3) }
     <div class="stats" id="stats-grid"></div>
     <div class="card"><div class="card-title">📊 Performance por template</div><div style="overflow-x:auto"><table id="tpl-table"><thead><tr><th>Template</th><th>Enviadas</th><th>Entregues</th><th>Lidas</th><th>Falhas</th><th>Taxa leitura</th></tr></thead><tbody></tbody></table></div></div>
     <div class="card"><div class="card-title">ℹ️ Status do sistema</div><div id="sys-status" style="font-size:13px;color:var(--text2);line-height:2.2"></div></div>
+  </div>
+
+  <!-- INBOX -->
+  <div id="tab-inbox" class="hidden">
+    <div class="inbox-layout">
+      <div class="inbox-sidebar">
+        <div class="inbox-sidebar-header">
+          <div style="font-weight:700;font-size:14px;color:var(--text)">💬 Conversas</div>
+          <button class="btn btn-ghost" style="padding:6px 12px;font-size:11px;border-radius:20px" onclick="loadConversations()">🔄</button>
+        </div>
+        <div id="convo-list"><div class="center" style="padding:40px 16px;font-size:13px">Nenhuma conversa ainda.<br>Quando um cliente responder, aparecera aqui.</div></div>
+      </div>
+      <div class="inbox-chat" id="inbox-chat">
+        <div class="inbox-empty" id="inbox-empty">
+          <div style="font-size:40px;margin-bottom:8px">💬</div>
+          <div style="font-weight:600;color:var(--text2)">Selecione uma conversa</div>
+          <div style="font-size:12px">Quando clientes responderem suas mensagens, as conversas aparecerao aqui.</div>
+        </div>
+        <div id="inbox-active" class="hidden" style="display:flex;flex-direction:column;height:100%">
+          <div class="inbox-chat-header">
+            <div class="convo-avatar" id="chat-avatar">?</div>
+            <div>
+              <div id="chat-name" style="font-weight:700;font-size:14px;color:var(--text)">—</div>
+              <div id="chat-phone" style="font-size:11px;color:var(--text3);font-family:monospace">—</div>
+            </div>
+          </div>
+          <div class="inbox-messages" id="chat-messages"></div>
+          <div class="inbox-composer">
+            <input type="text" id="chat-input" placeholder="Digite sua mensagem..." onkeydown="if(event.key==='Enter')sendChatMessage()">
+            <button onclick="sendChatMessage()">➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--text3);text-align:center">
+      ⚠️ Voce so pode enviar mensagens livres para clientes que responderam nas ultimas 24h (janela do WhatsApp). Fora disso, use templates aprovados.
+    </div>
   </div>
 
   <!-- CARRINHOS -->
@@ -617,11 +693,106 @@ function sugCard(s){return '<div class="tpl-card"><div style="display:flex;justi
 
 function onTplTypeChange(){var t=document.getElementById('new-tpl-type').value;var h=document.getElementById('tpl-vars-help');if(t==='carrinho')h.textContent='Use {{1}} para nome, {{2}} para link do carrinho, {{3}} para cupom.';else if(t==='pix')h.textContent='Use {{1}} para nome, {{2}} para link de pagamento.';else h.textContent='Use {{1}} para nome, {{2}} para cupom.'}
 
-function useSuggested(name){var s=SUGGESTED.find(function(x){return x.name===name});if(!s)return;document.getElementById('new-tpl-name').value=s.name;document.getElementById('new-tpl-body').value=s.body;document.getElementById('new-tpl-footer').value='SSJ Moda Fitness';document.getElementById('new-tpl-type').value=s.cat;onTplTypeChange();document.getElementById('create-tpl-result').innerHTML='<div class="alert alert-info">Template preenchido! Revise o texto e clique em "Enviar para aprovacao".</div>';showTab('templates',document.querySelectorAll('.tab')[4])}
+function useSuggested(name){var s=SUGGESTED.find(function(x){return x.name===name});if(!s)return;document.getElementById('new-tpl-name').value=s.name;document.getElementById('new-tpl-body').value=s.body;document.getElementById('new-tpl-footer').value='SSJ Moda Fitness';document.getElementById('new-tpl-type').value=s.cat;onTplTypeChange();document.getElementById('create-tpl-result').innerHTML='<div class="alert alert-info">Template preenchido! Revise o texto e clique em "Enviar para aprovacao".</div>';showTab('templates',document.querySelectorAll('.tab')[5])}
+
+// ===== INBOX =====
+var activeChat=null;
+
+async function loadConversations(){
+  var r=await api('/api/inbox/conversations');
+  if(!r||!r.ok)return;
+  var convos=r.data||[];
+  // Update tab badge
+  var badge=document.getElementById('inbox-badge-tab');
+  if(r.totalUnread>0){badge.textContent=r.totalUnread;badge.style.display='inline'}else{badge.style.display='none'}
+  var el=document.getElementById('convo-list');
+  if(!convos.length){el.innerHTML='<div class="center" style="padding:40px 16px;font-size:13px">Nenhuma conversa ainda.<br>Quando um cliente responder, aparecera aqui.</div>';return}
+  var html='';
+  convos.forEach(function(c){
+    var isActive=activeChat===c.phone;
+    var initial=(c.name||'?').charAt(0).toUpperCase();
+    var timeStr=c.lastMessageAt?new Date(c.lastMessageAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
+    var dirIcon=c.lastDirection==='in'?'':'✓ ';
+    html+='<div class="convo-item'+(isActive?' active':'')+'" onclick="openChat(\''+c.phone+'\')">';
+    html+='<div class="convo-avatar">'+initial+'</div>';
+    html+='<div class="convo-info"><div class="convo-name">'+c.name+'</div><div class="convo-last">'+dirIcon+c.lastMessage+'</div></div>';
+    html+='<div class="convo-meta"><div class="convo-time">'+timeStr+'</div>';
+    if(c.unread>0)html+='<div class="convo-unread">'+c.unread+'</div>';
+    html+='</div></div>';
+  });
+  el.innerHTML=html;
+}
+
+async function openChat(phone){
+  activeChat=phone;
+  // Mark as read
+  await fetch('/api/inbox/read/'+phone,{method:'POST'});
+  // Load conversation
+  var r=await api('/api/inbox/conversation/'+phone);
+  if(!r||!r.ok)return;
+  var convo=r.data;
+  // Show chat area
+  document.getElementById('inbox-empty').classList.add('hidden');
+  var active=document.getElementById('inbox-active');
+  active.classList.remove('hidden');
+  active.style.display='flex';
+  // Set header
+  var initial=(convo.name||'?').charAt(0).toUpperCase();
+  document.getElementById('chat-avatar').textContent=initial;
+  document.getElementById('chat-name').textContent=convo.name||phone;
+  document.getElementById('chat-phone').textContent='+'+phone;
+  // Render messages
+  var el=document.getElementById('chat-messages');
+  var html='';
+  (convo.messages||[]).forEach(function(m){
+    var timeStr=new Date(m.timestamp).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    html+='<div class="msg-row '+m.direction+'">';
+    html+='<div class="msg-bubble '+m.direction+'">';
+    if(m.template)html+='<div class="msg-template">📋 '+m.template+'</div>';
+    html+='<div>'+escapeHtml(m.text)+'</div>';
+    html+='<div class="msg-time">'+timeStr;
+    if(m.direction==='out'&&m.status){var icons={sent:'✓',delivered:'✓✓',read:'<span style="color:#53BDEB">✓✓</span>',failed:'<span style="color:var(--red)">✕</span>'};html+=' '+(icons[m.status]||'')}
+    html+='</div></div></div>';
+  });
+  if(!html)html='<div class="center" style="font-size:13px">Nenhuma mensagem nesta conversa ainda.</div>';
+  el.innerHTML=html;
+  // Scroll to bottom
+  el.scrollTop=el.scrollHeight;
+  // Refresh sidebar
+  loadConversations();
+  // Focus input
+  document.getElementById('chat-input').focus();
+}
+
+function escapeHtml(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML}
+
+async function sendChatMessage(){
+  var input=document.getElementById('chat-input');
+  var text=input.value.trim();
+  if(!text||!activeChat)return;
+  input.value='';
+  // Optimistically add to UI
+  var el=document.getElementById('chat-messages');
+  var timeStr=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  el.innerHTML+='<div class="msg-row out"><div class="msg-bubble out"><div>'+escapeHtml(text)+'</div><div class="msg-time">'+timeStr+' ✓</div></div></div>';
+  el.scrollTop=el.scrollHeight;
+  // Send via API
+  try{
+    var r=await fetch('/api/inbox/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:activeChat,text:text})});
+    var data=await r.json();
+    if(!data.ok)alert('Erro ao enviar: '+(data.error||'falha'));
+  }catch(e){alert('Erro de conexao')}
+}
+
+// Poll for new messages
+setInterval(function(){
+  loadConversations();
+  if(activeChat)openChat(activeChat);
+},8000);
 
 // ===== INIT =====
 document.getElementById('tpl-select').addEventListener('change',updatePreview);
-refresh();loadCarts();renderSuggested();
+refresh();loadCarts();renderSuggested();loadConversations();
 setInterval(refresh,30000);setInterval(loadCarts,60000);
 </script>
 </body>
