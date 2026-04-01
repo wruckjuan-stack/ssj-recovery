@@ -1780,6 +1780,7 @@ app.post("/api/meta/scorecard", async function(req, res) {
 app.get("/api/meta/real-revenue", async function(req, res) {
   try {
     var days = parseInt(req.query.days) || 7;
+    days = days + 1; // Meta "last_7d" includes 7 full days, add buffer
     var cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     var cutoffTs = cutoff.getTime();
