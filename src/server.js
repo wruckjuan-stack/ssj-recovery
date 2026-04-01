@@ -1784,9 +1784,18 @@ app.get("/api/meta/real-revenue", async function(req, res) {
     cutoff.setDate(cutoff.getDate() - days);
     var cutoffTs = cutoff.getTime();
 
-    // Fetch orders - single call, high limit (pagination was breaking)
-    var data = await yampiGet("/orders", { limit: "200", orderBy: "created_at", sortedBy: "desc" });
-    var allRaw = data.data || [];
+    // Fetch orders with pagination (Yampi max limit is ~50)
+    var allRaw = [];
+    for (var pg = 1; pg <= 6; pg++) {
+      var data = await yampiGet("/orders", { limit: "50", page: String(pg), orderBy: "created_at", sortedBy: "desc" });
+      var batch = data.data || [];
+      allRaw = allRaw.concat(batch);
+      if (batch.length < 50) break;
+      // Stop if oldest order is beyond our date range
+      var oldest = batch[batch.length - 1];
+      var oldestDate = (oldest.created_at && oldest.created_at.date) || oldest.created_at || "";
+      if (oldestDate && new Date(oldestDate).getTime() < cutoffTs) break;
+    }
 
     // Filter by date locally
     var recentOrders = allRaw.filter(function(o) {
