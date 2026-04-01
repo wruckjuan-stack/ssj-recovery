@@ -1784,17 +1784,9 @@ app.get("/api/meta/real-revenue", async function(req, res) {
     cutoff.setDate(cutoff.getDate() - days);
     var cutoffTs = cutoff.getTime();
 
-    // Fetch more orders without date filter (date filter causes Yampi 500)
-    // Use yampiGet directly to avoid include=customer overhead
-    var allRaw = [];
-    for (var pg = 1; pg <= 4; pg++) {
-      try {
-        var data = await yampiGet("/orders", { limit: "50", page: String(pg), orderBy: "created_at", sortedBy: "desc" });
-        var batch = data.data || [];
-        allRaw = allRaw.concat(batch);
-        if (batch.length < 50) break;
-      } catch (e) { break; }
-    }
+    // Fetch orders - single call, high limit (pagination was breaking)
+    var data = await yampiGet("/orders", { limit: "200", orderBy: "created_at", sortedBy: "desc" });
+    var allRaw = data.data || [];
 
     // Filter by date locally
     var recentOrders = allRaw.filter(function(o) {
