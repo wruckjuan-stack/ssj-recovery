@@ -1803,7 +1803,7 @@ app.get("/api/meta/real-revenue", async function(req, res) {
       return new Date(created).getTime() >= cutoffTs;
     });
 
-    var paidStatuses = ["paid", "invoiced", "shipped", "delivered", "complete", "completed", "pago", "enviado", "entregue"];
+    var paidStatuses = ["paid", "invoiced", "shipped", "delivered", "complete", "completed", "pago", "enviado", "entregue", "on_carriage", "em_transporte", "handling", "em_manuseio"];
     var paidOrders = recentOrders.filter(function(o) {
       var s = "";
       if (o.status && o.status.data) s = (o.status.data.alias || o.status.data.name || "").toLowerCase();
