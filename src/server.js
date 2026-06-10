@@ -2057,6 +2057,29 @@ app.get("/api/broadcast/inbox", async function(req, res) {
   } catch (e) { res.json({ ok: true, data: [] }); }
 });
 
+// DEBUG TEMP: caçar o campo de rastreio de um pedido enviado
+app.get("/api/debug/rastreio", async function(req, res) {
+  try {
+    var data = await yampiGet("/orders", {
+      include: "customer,transactions,shipments,items,tracking,spreadsheet",
+      limit: "50", orderBy: "created_at", sortedBy: "desc"
+    });
+    var alvo = (data.data || []).find(function(o) {
+      var s = o.status && o.status.data ? o.status.data.alias : "";
+      return s === "on_carriage" || s === "delivered";
+    });
+    if (!alvo) return res.json({ ok: false, msg: "Nenhum pedido enviado/entregue nos ultimos 50" });
+    // mostra só as chaves de topo + qualquer coisa que pareça rastreio
+    var chaves = Object.keys(alvo);
+    var suspeitos = {};
+    JSON.stringify(alvo, function(k, v) {
+      if (/track|rastre|codigo|code|shipment|envio|correio/i.test(k)) suspeitos[k] = v;
+      return v;
+    });
+    res.json({ ok: true, numero: alvo.number, chavesDoTopo: chaves, camposSuspeitos: suspeitos, pedidoCompleto: alvo });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
 // ===================== START SERVER =====================
 // IMPORTANTE: escutar na porta PRIMEIRO pra healthcheck do Railway passar
 // Depois inicializar o banco em background
