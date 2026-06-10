@@ -885,7 +885,7 @@ function showView(name) {
   document.getElementById('topbarTitle').textContent = viewTitles[name] || name;
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('mobileOverlay').classList.remove('show');
-  const loaders = { dashboard:loadDashboard, carrinhos:loadCarts, pix:loadPix, recompra:loadRecompra, inbox:loadInbox, historico:loadHistory, templates:loadTemplates, integracoes:loadIntegrations, metaads:loadMetaAds };
+  const loaders = { dashboard:loadDashboard, carrinhos:loadCarts, pix:loadPix, recompra:loadRecompra, inbox:loadInbox, historico:loadHistory, templates:loadTemplates, integracoes:loadIntegrations, metaads:loadMetaAds, automacao:loadAutomacoes };
   if (loaders[name]) loaders[name]();
 }
 
@@ -1156,11 +1156,31 @@ async function loadIntegrations() {
   }
 }
 
-function toggleCron(el) {
-  el.classList.toggle('on');
+// mapeia o id da chave -> nome no backend
+const AUTOMACAO_CHAVE = { togCart: 'carrinho', togPix: 'pix', togRecompra: 'recompra' };
+
+async function loadAutomacoes() {
+  const r = await api('/api/automacoes');
+  const estado = (r && r.estado) ? r.estado : { carrinho: true, pix: true, recompra: true };
+  Object.keys(AUTOMACAO_CHAVE).forEach(function(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (estado[AUTOMACAO_CHAVE[id]]) el.classList.add('on'); else el.classList.remove('on');
+  });
+}
+
+async function toggleCron(el) {
+  const chave = AUTOMACAO_CHAVE[el.id];
+  const willActivate = !el.classList.contains('on');
+  el.classList.toggle('on'); // feedback imediato
   const label = el.closest('.toggle-row')?.querySelector('.toggle-label')?.textContent || '';
-  const active = el.classList.contains('on');
-  toast(`${label}: ${active ? 'Ativada' : 'Desativada'}`, active ? 'success' : 'info');
+  const r = await api('/api/automacoes', { method: 'POST', body: JSON.stringify({ chave: chave, ligada: willActivate }) });
+  if (r && r.ok) {
+    toast(`${label}: ${willActivate ? 'Ativada' : 'Desativada'}`, willActivate ? 'success' : 'info');
+  } else {
+    el.classList.toggle('on'); // reverte se falhou
+    toast('Erro ao salvar — tente de novo', 'error');
+  }
 }
 
 // ═══ MODAL DE ENVIO ═══
