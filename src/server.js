@@ -603,6 +603,7 @@ async function addIncomingMsg(phone, name, text, waMessageId, msgType) {
 
 cron.schedule("*/10 * * * *", async function() {
   console.log("[AUTO-CARRINHO] " + new Date().toISOString() + " Verificando carrinhos...");
+  if (!(await automacaoLigada("carrinho"))) { console.log("[AUTO-CARRINHO] Desligada, pulando."); return; }
   try {
     var carts = await fetchCarts();
     var sent = 0, skipped = 0, failed = 0;
@@ -639,6 +640,7 @@ cron.schedule("*/10 * * * *", async function() {
 
 cron.schedule("*/15 * * * *", async function() {
   console.log("[AUTO-PIX] " + new Date().toISOString() + " Verificando PIX/boleto...");
+  if (!(await automacaoLigada("pix"))) { console.log("[AUTO-PIX] Desligada, pulando."); return; }
   try {
     // Buscar pedidos recentes (sem filtro de data — já vem ordenado por created_at desc)
     var orders = await fetchOrders({ limit: "50" });
@@ -720,6 +722,7 @@ cron.schedule("*/15 * * * *", async function() {
 
 cron.schedule("0 10 * * *", async function() {
   console.log("[AUTO-RECOMPRA] " + new Date().toISOString() + " Verificando campanhas de recompra...");
+  if (!(await automacaoLigada("recompra"))) { console.log("[AUTO-RECOMPRA] Desligada, pulando."); return; }
   if (!recompraConfig.enabled) {
     console.log("[AUTO-RECOMPRA] Desabilitado nas configuracoes.");
     recompraCronLog.unshift({ ts: new Date().toISOString(), disabled: true });
@@ -2057,29 +2060,6 @@ app.get("/api/broadcast/inbox", async function(req, res) {
   } catch (e) { res.json({ ok: true, data: [] }); }
 });
 
-// DEBUG TEMP: caçar o campo de rastreio de um pedido enviado
-app.get("/api/debug/rastreio", async function(req, res) {
-  try {
-    var data = await yampiGet("/orders", {
-      include: "customer,transactions,shipments,items,tracking,spreadsheet",
-      limit: "50", orderBy: "created_at", sortedBy: "desc"
-    });
-    var alvo = (data.data || []).find(function(o) {
-      var s = o.status && o.status.data ? o.status.data.alias : "";
-      return s === "on_carriage" || s === "delivered";
-    });
-    if (!alvo) return res.json({ ok: false, msg: "Nenhum pedido enviado/entregue nos ultimos 50" });
-    // mostra só as chaves de topo + qualquer coisa que pareça rastreio
-    var chaves = Object.keys(alvo);
-    var suspeitos = {};
-    JSON.stringify(alvo, function(k, v) {
-      if (/track|rastre|codigo|code|shipment|envio|correio/i.test(k)) suspeitos[k] = v;
-      return v;
-    });
-    res.json({ ok: true, numero: alvo.number, chavesDoTopo: chaves, camposSuspeitos: suspeitos, pedidoCompleto: alvo });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
 /* ============================================================
    SSJ CRM — MENSAGENS DE STATUS DO PEDIDO
    (Pagamento aprovado / Enviado + rastreio / Entregue + convite)
@@ -2325,249 +2305,98 @@ app.get("/api/status-pedido/history", async function(req, res) {
   } catch (e) { res.json({ ok: true, data: [] }); }
 });
 
-/* ============================================================
-   SSJ CRM — MENSAGENS DE STATUS DO PEDIDO
-   (Pagamento aprovado / Enviado + rastreio / Entregue + convite)
-   ------------------------------------------------------------
-   COMO USAR:
-   Cole TODO este bloco no server.js, logo ANTES da linha:
-       // ===================== START SERVER =====================
+// ============================================================
+// SSJ CRM — CONTROLE REAL DAS AUTOMACOES (liga/desliga)
+// ------------------------------------------------------------
+// Faz as chaves de Carrinho / PIX / Recompra:
+//   - SALVAREM o estado no banco (sobrevive ao F5)
+//   - serem RESPEITADAS pelos crons (desligado = nao dispara)
+//
+// COMO USAR (2 passos):
+//
+// PASSO 1: Cole TODO este bloco no server.js, logo ANTES da linha
+//     // ===================== START SERVER =====================
+//
+// PASSO 2: Nos 3 crons que ja existem no seu server.js, adicione
+// UMA linha no comecinho de cada um (logo apos a primeira linha
+// de console.log da function). Veja onde e o que adicionar:
+//
+// --- CARRINHO ---  (o cron que verifica a cada 10 min)
+// Procure a linha:  console.log("[AUTO-CARRINHO] " + ...);
+// Logo ABAIXO dela, adicione:
+//     if (!(await automacaoLigada("carrinho"))) { console.log("[AUTO-CARRINHO] Desligada, pulando."); return; }
+//
+// --- PIX ---  (o cron que verifica a cada 15 min)
+// Procure a linha:  console.log("[AUTO-PIX] " + ...);
+// Logo ABAIXO dela, adicione:
+//     if (!(await automacaoLigada("pix"))) { console.log("[AUTO-PIX] Desligada, pulando."); return; }
+//
+// --- RECOMPRA ---  (o cron diario das 10h)
+// Procure a linha:  console.log("[AUTO-RECOMPRA] " + ...);
+// Logo ABAIXO dela, adicione:
+//     if (!(await automacaoLigada("recompra"))) { console.log("[AUTO-RECOMPRA] Desligada, pulando."); return; }
+//
+// (No recompra ja existe um "if (!recompraConfig.enabled)" parecido.
+//  Pode deixar os dois, nao tem problema.)
+// ============================================================
 
-   Ele se auto-instala (cria a própria tabela). Não altera nada
-   do que já existe. Usa pool, CFG, cron, fetch, yampiGet,
-   fetchOrders, sendBroadcastWA, getOrCreateConvo — que já estão
-   no seu server.js.
-
-   IMPORTANTE — "MARCO ZERO":
-   Na primeira vez que roda, ele grava a data/hora de ativação.
-   A partir daí, SÓ pedidos criados DEPOIS desse marco são
-   contabilizados. Pedido antigo nunca recebe nada.
-
-   TEMPLATES que precisam estar APROVADOS no Meta (categoria
-   Utilidade), com estes nomes exatos:
-     - status_pago        (1 variável: {{1}} = nome)
-     - status_enviado     (2 variáveis: {{1}} = nome, {{2}} = link rastreio)
-     - status_entregue    (1 variável: {{1}} = nome)
-   ============================================================ */
-
-// --- cria a tabela de controle (roda uma vez, sozinho) ---
-(async function initStatusPedido() {
+// --- cria a tabela de estado (roda uma vez, sozinho) ---
+(async function initAutomacoes() {
   try {
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS status_pedido_sent (
-        id SERIAL PRIMARY KEY,
-        order_id TEXT NOT NULL,
-        etapa TEXT NOT NULL,
-        phone TEXT,
-        contact_name TEXT,
-        wa_message_id TEXT,
-        status TEXT DEFAULT 'sent',
-        sent_at TIMESTAMPTZ DEFAULT NOW(),
-        UNIQUE(order_id, etapa)
+      CREATE TABLE IF NOT EXISTS automacoes_estado (
+        chave TEXT PRIMARY KEY,
+        ligada BOOLEAN DEFAULT true,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
       );
-      CREATE INDEX IF NOT EXISTS idx_status_pedido_order ON status_pedido_sent(order_id);
-
-      CREATE TABLE IF NOT EXISTS status_pedido_config (
-        id INT PRIMARY KEY DEFAULT 1,
-        ativo BOOLEAN DEFAULT false,
-        marco_zero TIMESTAMPTZ
-      );
-      INSERT INTO status_pedido_config (id, ativo) VALUES (1, false)
-        ON CONFLICT (id) DO NOTHING;
+      INSERT INTO automacoes_estado (chave, ligada) VALUES
+        ('carrinho', true), ('pix', true), ('recompra', true)
+      ON CONFLICT (chave) DO NOTHING;
     `);
-    console.log("[STATUS-PEDIDO] Tabelas prontas");
+    console.log("[AUTOMACOES] Tabela de estado pronta");
   } catch (e) {
-    console.error("[STATUS-PEDIDO] Erro ao criar tabelas:", e.message);
+    console.error("[AUTOMACOES] Erro ao criar tabela:", e.message);
   }
 })();
 
-// nomes EXATOS dos templates aprovados no Meta
-var STATUS_TEMPLATES = {
-  pago:     "status_pago",      // {{1}} nome
-  enviado:  "status_enviado",   // {{1}} nome, {{2}} link rastreio
-  entregue: "status_entregue"   // {{1}} nome
-};
-
-// já enviou essa etapa pra esse pedido?
-async function statusJaEnviado(orderId, etapa) {
+// --- helper usado pelos crons: a automacao esta ligada? ---
+async function automacaoLigada(chave) {
   try {
-    var r = await pool.query("SELECT 1 FROM status_pedido_sent WHERE order_id=$1 AND etapa=$2", [String(orderId), etapa]);
-    return r.rowCount > 0;
-  } catch (e) { return true; } // em erro, melhor pular (não reenviar)
-}
-
-async function registraStatusEnviado(orderId, etapa, phone, nome, msgId, st) {
-  try {
-    await pool.query(
-      `INSERT INTO status_pedido_sent (order_id, etapa, phone, contact_name, wa_message_id, status)
-       VALUES ($1,$2,$3,$4,$5,$6)
-       ON CONFLICT (order_id, etapa) DO UPDATE SET status=$6, wa_message_id=COALESCE($5, status_pedido_sent.wa_message_id)`,
-      [String(orderId), etapa, phone, nome, msgId, st]
-    );
-  } catch (e) { console.error("[STATUS-PEDIDO] registra erro:", e.message); }
-}
-
-// envia um template de status (reaproveita sendBroadcastWA do módulo de broadcast)
-// params: array de strings que vão em {{1}}, {{2}}, ...
-async function enviaStatusWA(phone, templateName, params, lang) {
-  var components = [];
-  if (params && params.length > 0) {
-    components.push({ type: "body", parameters: params.map(function(p) { return { type: "text", text: String(p) }; }) });
-  }
-  var payload = {
-    messaging_product: "whatsapp",
-    to: phone,
-    type: "template",
-    template: { name: templateName, language: { code: lang || "pt_BR" }, components: components }
-  };
-  var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId + "/messages", {
-    method: "POST",
-    headers: { Authorization: "Bearer " + CFG.waToken, "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  var data = await r.json();
-  if (!r.ok) {
-    var err = new Error((data.error && data.error.message) || ("WA " + r.status));
-    err.waCode = data.error && data.error.code;
-    throw err;
-  }
-  return (data.messages && data.messages[0] && data.messages[0].id) || null;
-}
-
-// busca os dados crus dos pedidos recentes (precisa de track_code/track_url/delivered)
-async function fetchOrdersRaw() {
-  var data = await yampiGet("/orders", { include: "customer", limit: "50", orderBy: "created_at", sortedBy: "desc" });
-  return data.data || [];
-}
-
-// CRON: a cada 15 min, checa mudanças de status dos pedidos NOVOS (pós marco-zero)
-cron.schedule("*/15 * * * *", async function() {
-  try {
-    var cfgR = await pool.query("SELECT * FROM status_pedido_config WHERE id=1");
-    var conf = cfgR.rows[0] || {};
-    if (!conf.ativo) return; // desligado
-    if (!conf.marco_zero) return; // sem marco definido ainda
-    var marcoTs = new Date(conf.marco_zero).getTime();
-
-    var orders = await fetchOrdersRaw();
-    var pago = 0, enviado = 0, entregue = 0;
-
-    for (var i = 0; i < orders.length; i++) {
-      var o = orders[i];
-
-      // só pedidos criados DEPOIS do marco zero
-      var created = (o.created_at && o.created_at.date) || o.created_at || null;
-      if (!created) continue;
-      if (new Date(created).getTime() < marcoTs) continue;
-
-      // dados básicos
-      var cust = o.customer && o.customer.data ? o.customer.data : {};
-      var firstName = cust.first_name || (cust.name || "").split(" ")[0] || "tudo bem";
-      var phoneObj = cust.phone || {};
-      var phone = phoneObj.full_number || "";
-      if (phone) phone = String(phone).replace(/\D/g, "");
-      if (phone && phone.length <= 11) phone = "55" + phone;
-      if (!phone || phone.length < 12) continue;
-
-      var statusAlias = (o.status && o.status.data ? o.status.data.alias : (o.status_alias || "")).toLowerCase();
-      var isDelivered = o.delivered === true;
-
-      // ENTREGUE (prioridade máxima — campo booleano delivered)
-      if (isDelivered) {
-        if (!(await statusJaEnviado(o.id, "entregue"))) {
-          try {
-            var mE = await enviaStatusWA(phone, STATUS_TEMPLATES.entregue, [firstName]);
-            await registraStatusEnviado(o.id, "entregue", phone, cust.name || firstName, mE, "sent");
-            await getOrCreateConvo(phone, cust.name || firstName);
-            entregue++;
-            await new Promise(function(r){ setTimeout(r, 350); });
-          } catch (e) { console.error("[STATUS-ENTREGUE] " + o.id + ": " + e.message); }
-        }
-      }
-
-      // ENVIADO (on_carriage) — manda com o track_url
-      if (statusAlias === "on_carriage") {
-        if (!(await statusJaEnviado(o.id, "enviado"))) {
-          var trackUrl = o.track_url || (o.track_code ? ("Código: " + o.track_code) : "");
-          if (trackUrl) {
-            try {
-              var mEnv = await enviaStatusWA(phone, STATUS_TEMPLATES.enviado, [firstName, trackUrl]);
-              await registraStatusEnviado(o.id, "enviado", phone, cust.name || firstName, mEnv, "sent");
-              await getOrCreateConvo(phone, cust.name || firstName);
-              enviado++;
-              await new Promise(function(r){ setTimeout(r, 350); });
-            } catch (e) { console.error("[STATUS-ENVIADO] " + o.id + ": " + e.message); }
-          }
-        }
-      }
-
-      // PAGO (paid)
-      if (statusAlias === "paid") {
-        if (!(await statusJaEnviado(o.id, "pago"))) {
-          try {
-            var mP = await enviaStatusWA(phone, STATUS_TEMPLATES.pago, [firstName]);
-            await registraStatusEnviado(o.id, "pago", phone, cust.name || firstName, mP, "sent");
-            await getOrCreateConvo(phone, cust.name || firstName);
-            pago++;
-            await new Promise(function(r){ setTimeout(r, 350); });
-          } catch (e) { console.error("[STATUS-PAGO] " + o.id + ": " + e.message); }
-        }
-      }
-    }
-
-    if (pago || enviado || entregue) {
-      console.log("[STATUS-PEDIDO] pago=" + pago + " enviado=" + enviado + " entregue=" + entregue);
-    }
+    var r = await pool.query("SELECT ligada FROM automacoes_estado WHERE chave=$1", [chave]);
+    if (r.rowCount === 0) return true; // se nao existe registro, assume ligada
+    return r.rows[0].ligada === true;
   } catch (e) {
-    console.error("[STATUS-PEDIDO-CRON] Erro:", e.message);
+    return true; // em erro de banco, NAO derruba a automacao (seguranca: mantem vendendo)
   }
+}
+
+// ===================== ROTAS: AUTOMACOES =====================
+
+// Le o estado das 3 chaves (a tela chama isso ao carregar / F5)
+app.get("/api/automacoes", async function(req, res) {
+  try {
+    var r = await pool.query("SELECT chave, ligada FROM automacoes_estado");
+    var estado = { carrinho: true, pix: true, recompra: true };
+    r.rows.forEach(function(row) { estado[row.chave] = row.ligada === true; });
+    res.json({ ok: true, estado: estado });
+  } catch (e) { res.json({ ok: true, estado: { carrinho: true, pix: true, recompra: true } }); }
 });
 
-// ===================== ROTAS: STATUS DO PEDIDO =====================
-
-// Liga/desliga. Ao LIGAR, grava o marco zero (agora) se ainda não tiver.
-app.post("/api/status-pedido/toggle", async function(req, res) {
+// Liga/desliga uma chave e SALVA
+app.post("/api/automacoes", async function(req, res) {
   try {
-    var ativar = !!req.body.ativo;
-    var resetMarco = req.body.resetMarco === true; // opcional: redefinir o marco pra agora
-    if (ativar) {
-      var cur = await pool.query("SELECT marco_zero FROM status_pedido_config WHERE id=1");
-      var temMarco = cur.rows[0] && cur.rows[0].marco_zero;
-      if (!temMarco || resetMarco) {
-        await pool.query("UPDATE status_pedido_config SET ativo=true, marco_zero=NOW() WHERE id=1");
-      } else {
-        await pool.query("UPDATE status_pedido_config SET ativo=true WHERE id=1");
-      }
-    } else {
-      await pool.query("UPDATE status_pedido_config SET ativo=false WHERE id=1");
+    var chave = req.body.chave;
+    var ligada = !!req.body.ligada;
+    if (["carrinho", "pix", "recompra"].indexOf(chave) === -1) {
+      return res.status(400).json({ ok: false, error: "chave invalida" });
     }
-    var r = await pool.query("SELECT ativo, marco_zero FROM status_pedido_config WHERE id=1");
-    res.json({ ok: true, ativo: r.rows[0].ativo, marcoZero: r.rows[0].marco_zero });
+    await pool.query(
+      `INSERT INTO automacoes_estado (chave, ligada, updated_at) VALUES ($1, $2, NOW())
+       ON CONFLICT (chave) DO UPDATE SET ligada=$2, updated_at=NOW()`,
+      [chave, ligada]
+    );
+    res.json({ ok: true, chave: chave, ligada: ligada });
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
-});
-
-// Status atual + contadores
-app.get("/api/status-pedido/info", async function(req, res) {
-  try {
-    var cfg = await pool.query("SELECT ativo, marco_zero FROM status_pedido_config WHERE id=1");
-    var c = cfg.rows[0] || {};
-    var counts = await pool.query("SELECT etapa, COUNT(*) n FROM status_pedido_sent GROUP BY etapa");
-    var byEtapa = { pago: 0, enviado: 0, entregue: 0 };
-    counts.rows.forEach(function(row) { byEtapa[row.etapa] = parseInt(row.n); });
-    res.json({ ok: true, ativo: !!c.ativo, marcoZero: c.marco_zero, enviados: byEtapa });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-// Histórico dos avisos de status enviados
-app.get("/api/status-pedido/history", async function(req, res) {
-  try {
-    var r = await pool.query("SELECT * FROM status_pedido_sent ORDER BY sent_at DESC LIMIT 100");
-    res.json({ ok: true, data: r.rows.map(function(row) {
-      return { id: row.id, orderId: row.order_id, etapa: row.etapa, phone: row.phone,
-               contact: row.contact_name, status: row.status,
-               sentAt: row.sent_at ? new Date(row.sent_at).toISOString() : "" };
-    }) });
-  } catch (e) { res.json({ ok: true, data: [] }); }
 });
 
 // ===================== START SERVER =====================
