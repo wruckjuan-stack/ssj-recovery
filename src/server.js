@@ -2325,6 +2325,251 @@ app.get("/api/status-pedido/history", async function(req, res) {
   } catch (e) { res.json({ ok: true, data: [] }); }
 });
 
+/* ============================================================
+   SSJ CRM — MENSAGENS DE STATUS DO PEDIDO
+   (Pagamento aprovado / Enviado + rastreio / Entregue + convite)
+   ------------------------------------------------------------
+   COMO USAR:
+   Cole TODO este bloco no server.js, logo ANTES da linha:
+       // ===================== START SERVER =====================
+
+   Ele se auto-instala (cria a própria tabela). Não altera nada
+   do que já existe. Usa pool, CFG, cron, fetch, yampiGet,
+   fetchOrders, sendBroadcastWA, getOrCreateConvo — que já estão
+   no seu server.js.
+
+   IMPORTANTE — "MARCO ZERO":
+   Na primeira vez que roda, ele grava a data/hora de ativação.
+   A partir daí, SÓ pedidos criados DEPOIS desse marco são
+   contabilizados. Pedido antigo nunca recebe nada.
+
+   TEMPLATES que precisam estar APROVADOS no Meta (categoria
+   Utilidade), com estes nomes exatos:
+     - status_pago        (1 variável: {{1}} = nome)
+     - status_enviado     (2 variáveis: {{1}} = nome, {{2}} = link rastreio)
+     - status_entregue    (1 variável: {{1}} = nome)
+   ============================================================ */
+
+// --- cria a tabela de controle (roda uma vez, sozinho) ---
+(async function initStatusPedido() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS status_pedido_sent (
+        id SERIAL PRIMARY KEY,
+        order_id TEXT NOT NULL,
+        etapa TEXT NOT NULL,
+        phone TEXT,
+        contact_name TEXT,
+        wa_message_id TEXT,
+        status TEXT DEFAULT 'sent',
+        sent_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(order_id, etapa)
+      );
+      CREATE INDEX IF NOT EXISTS idx_status_pedido_order ON status_pedido_sent(order_id);
+
+      CREATE TABLE IF NOT EXISTS status_pedido_config (
+        id INT PRIMARY KEY DEFAULT 1,
+        ativo BOOLEAN DEFAULT false,
+        marco_zero TIMESTAMPTZ
+      );
+      INSERT INTO status_pedido_config (id, ativo) VALUES (1, false)
+        ON CONFLICT (id) DO NOTHING;
+    `);
+    console.log("[STATUS-PEDIDO] Tabelas prontas");
+  } catch (e) {
+    console.error("[STATUS-PEDIDO] Erro ao criar tabelas:", e.message);
+  }
+})();
+
+// nomes EXATOS dos templates aprovados no Meta
+var STATUS_TEMPLATES = {
+  pago:     "status_pago",      // {{1}} nome
+  enviado:  "status_enviado",   // {{1}} nome, {{2}} link rastreio
+  entregue: "status_entregue"   // {{1}} nome
+};
+
+// já enviou essa etapa pra esse pedido?
+async function statusJaEnviado(orderId, etapa) {
+  try {
+    var r = await pool.query("SELECT 1 FROM status_pedido_sent WHERE order_id=$1 AND etapa=$2", [String(orderId), etapa]);
+    return r.rowCount > 0;
+  } catch (e) { return true; } // em erro, melhor pular (não reenviar)
+}
+
+async function registraStatusEnviado(orderId, etapa, phone, nome, msgId, st) {
+  try {
+    await pool.query(
+      `INSERT INTO status_pedido_sent (order_id, etapa, phone, contact_name, wa_message_id, status)
+       VALUES ($1,$2,$3,$4,$5,$6)
+       ON CONFLICT (order_id, etapa) DO UPDATE SET status=$6, wa_message_id=COALESCE($5, status_pedido_sent.wa_message_id)`,
+      [String(orderId), etapa, phone, nome, msgId, st]
+    );
+  } catch (e) { console.error("[STATUS-PEDIDO] registra erro:", e.message); }
+}
+
+// envia um template de status (reaproveita sendBroadcastWA do módulo de broadcast)
+// params: array de strings que vão em {{1}}, {{2}}, ...
+async function enviaStatusWA(phone, templateName, params, lang) {
+  var components = [];
+  if (params && params.length > 0) {
+    components.push({ type: "body", parameters: params.map(function(p) { return { type: "text", text: String(p) }; }) });
+  }
+  var payload = {
+    messaging_product: "whatsapp",
+    to: phone,
+    type: "template",
+    template: { name: templateName, language: { code: lang || "pt_BR" }, components: components }
+  };
+  var r = await fetch("https://graph.facebook.com/" + CFG.waVersion + "/" + CFG.waPhoneId + "/messages", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + CFG.waToken, "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  var data = await r.json();
+  if (!r.ok) {
+    var err = new Error((data.error && data.error.message) || ("WA " + r.status));
+    err.waCode = data.error && data.error.code;
+    throw err;
+  }
+  return (data.messages && data.messages[0] && data.messages[0].id) || null;
+}
+
+// busca os dados crus dos pedidos recentes (precisa de track_code/track_url/delivered)
+async function fetchOrdersRaw() {
+  var data = await yampiGet("/orders", { include: "customer", limit: "50", orderBy: "created_at", sortedBy: "desc" });
+  return data.data || [];
+}
+
+// CRON: a cada 15 min, checa mudanças de status dos pedidos NOVOS (pós marco-zero)
+cron.schedule("*/15 * * * *", async function() {
+  try {
+    var cfgR = await pool.query("SELECT * FROM status_pedido_config WHERE id=1");
+    var conf = cfgR.rows[0] || {};
+    if (!conf.ativo) return; // desligado
+    if (!conf.marco_zero) return; // sem marco definido ainda
+    var marcoTs = new Date(conf.marco_zero).getTime();
+
+    var orders = await fetchOrdersRaw();
+    var pago = 0, enviado = 0, entregue = 0;
+
+    for (var i = 0; i < orders.length; i++) {
+      var o = orders[i];
+
+      // só pedidos criados DEPOIS do marco zero
+      var created = (o.created_at && o.created_at.date) || o.created_at || null;
+      if (!created) continue;
+      if (new Date(created).getTime() < marcoTs) continue;
+
+      // dados básicos
+      var cust = o.customer && o.customer.data ? o.customer.data : {};
+      var firstName = cust.first_name || (cust.name || "").split(" ")[0] || "tudo bem";
+      var phoneObj = cust.phone || {};
+      var phone = phoneObj.full_number || "";
+      if (phone) phone = String(phone).replace(/\D/g, "");
+      if (phone && phone.length <= 11) phone = "55" + phone;
+      if (!phone || phone.length < 12) continue;
+
+      var statusAlias = (o.status && o.status.data ? o.status.data.alias : (o.status_alias || "")).toLowerCase();
+      var isDelivered = o.delivered === true;
+
+      // ENTREGUE (prioridade máxima — campo booleano delivered)
+      if (isDelivered) {
+        if (!(await statusJaEnviado(o.id, "entregue"))) {
+          try {
+            var mE = await enviaStatusWA(phone, STATUS_TEMPLATES.entregue, [firstName]);
+            await registraStatusEnviado(o.id, "entregue", phone, cust.name || firstName, mE, "sent");
+            await getOrCreateConvo(phone, cust.name || firstName);
+            entregue++;
+            await new Promise(function(r){ setTimeout(r, 350); });
+          } catch (e) { console.error("[STATUS-ENTREGUE] " + o.id + ": " + e.message); }
+        }
+      }
+
+      // ENVIADO (on_carriage) — manda com o track_url
+      if (statusAlias === "on_carriage") {
+        if (!(await statusJaEnviado(o.id, "enviado"))) {
+          var trackUrl = o.track_url || (o.track_code ? ("Código: " + o.track_code) : "");
+          if (trackUrl) {
+            try {
+              var mEnv = await enviaStatusWA(phone, STATUS_TEMPLATES.enviado, [firstName, trackUrl]);
+              await registraStatusEnviado(o.id, "enviado", phone, cust.name || firstName, mEnv, "sent");
+              await getOrCreateConvo(phone, cust.name || firstName);
+              enviado++;
+              await new Promise(function(r){ setTimeout(r, 350); });
+            } catch (e) { console.error("[STATUS-ENVIADO] " + o.id + ": " + e.message); }
+          }
+        }
+      }
+
+      // PAGO (paid)
+      if (statusAlias === "paid") {
+        if (!(await statusJaEnviado(o.id, "pago"))) {
+          try {
+            var mP = await enviaStatusWA(phone, STATUS_TEMPLATES.pago, [firstName]);
+            await registraStatusEnviado(o.id, "pago", phone, cust.name || firstName, mP, "sent");
+            await getOrCreateConvo(phone, cust.name || firstName);
+            pago++;
+            await new Promise(function(r){ setTimeout(r, 350); });
+          } catch (e) { console.error("[STATUS-PAGO] " + o.id + ": " + e.message); }
+        }
+      }
+    }
+
+    if (pago || enviado || entregue) {
+      console.log("[STATUS-PEDIDO] pago=" + pago + " enviado=" + enviado + " entregue=" + entregue);
+    }
+  } catch (e) {
+    console.error("[STATUS-PEDIDO-CRON] Erro:", e.message);
+  }
+});
+
+// ===================== ROTAS: STATUS DO PEDIDO =====================
+
+// Liga/desliga. Ao LIGAR, grava o marco zero (agora) se ainda não tiver.
+app.post("/api/status-pedido/toggle", async function(req, res) {
+  try {
+    var ativar = !!req.body.ativo;
+    var resetMarco = req.body.resetMarco === true; // opcional: redefinir o marco pra agora
+    if (ativar) {
+      var cur = await pool.query("SELECT marco_zero FROM status_pedido_config WHERE id=1");
+      var temMarco = cur.rows[0] && cur.rows[0].marco_zero;
+      if (!temMarco || resetMarco) {
+        await pool.query("UPDATE status_pedido_config SET ativo=true, marco_zero=NOW() WHERE id=1");
+      } else {
+        await pool.query("UPDATE status_pedido_config SET ativo=true WHERE id=1");
+      }
+    } else {
+      await pool.query("UPDATE status_pedido_config SET ativo=false WHERE id=1");
+    }
+    var r = await pool.query("SELECT ativo, marco_zero FROM status_pedido_config WHERE id=1");
+    res.json({ ok: true, ativo: r.rows[0].ativo, marcoZero: r.rows[0].marco_zero });
+  } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Status atual + contadores
+app.get("/api/status-pedido/info", async function(req, res) {
+  try {
+    var cfg = await pool.query("SELECT ativo, marco_zero FROM status_pedido_config WHERE id=1");
+    var c = cfg.rows[0] || {};
+    var counts = await pool.query("SELECT etapa, COUNT(*) n FROM status_pedido_sent GROUP BY etapa");
+    var byEtapa = { pago: 0, enviado: 0, entregue: 0 };
+    counts.rows.forEach(function(row) { byEtapa[row.etapa] = parseInt(row.n); });
+    res.json({ ok: true, ativo: !!c.ativo, marcoZero: c.marco_zero, enviados: byEtapa });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// Histórico dos avisos de status enviados
+app.get("/api/status-pedido/history", async function(req, res) {
+  try {
+    var r = await pool.query("SELECT * FROM status_pedido_sent ORDER BY sent_at DESC LIMIT 100");
+    res.json({ ok: true, data: r.rows.map(function(row) {
+      return { id: row.id, orderId: row.order_id, etapa: row.etapa, phone: row.phone,
+               contact: row.contact_name, status: row.status,
+               sentAt: row.sent_at ? new Date(row.sent_at).toISOString() : "" };
+    }) });
+  } catch (e) { res.json({ ok: true, data: [] }); }
+});
+
 // ===================== START SERVER =====================
 // IMPORTANTE: escutar na porta PRIMEIRO pra healthcheck do Railway passar
 // Depois inicializar o banco em background
