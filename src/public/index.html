@@ -385,6 +385,10 @@ tr:hover td { background: var(--primary-lighter); }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 11-5.8-1.6"/></svg>
         Convite VIP
       </div>
+      <div class="nav-item" data-view="statuspedido" onclick="showView('statuspedido');loadStatusPedido()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M21 14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h5"/></svg>
+        Status do Pedido
+      </div>
     </div>
     <div class="nav-group">
       <div class="nav-group-label">Recuperação</div>
@@ -601,6 +605,54 @@ tr:hover td { background: var(--primary-lighter); }
           <div class="inbox-list" id="conviteInboxList"><div class="loading">Carregando...</div></div>
           <div class="inbox-chat" id="conviteInboxChat"><div class="inbox-empty">Selecione uma conversa</div></div>
         </div>
+      </div>
+    </div>
+
+    <!-- STATUS DO PEDIDO -->
+    <div class="view" id="view-statuspedido">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Mensagens de Status do Pedido</span><button class="btn btn-outline btn-sm" onclick="loadStatusPedido()">Atualizar</button></div>
+        <div class="card-body">
+          <p style="font-size:.84rem;color:var(--text-secondary);margin-bottom:16px">Avisa a cliente automaticamente quando o pedido fica <strong>pago</strong>, é <strong>enviado</strong> (com rastreio) e é <strong>entregue</strong> (com convite pro grupo VIP). Verifica os pedidos a cada 15 minutos.</p>
+
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Sistema ligado</div>
+              <div class="toggle-desc" id="statusMarcoDesc">Ao ligar, só conta pedidos criados a partir daquele momento. Pedido antigo nunca recebe nada.</div>
+            </div>
+            <button class="toggle-switch" id="statusToggle" onclick="toggleStatusPedido()"></button>
+          </div>
+
+          <div id="statusMarcoBox" style="display:none;margin-top:12px;font-size:.8rem;color:var(--text-secondary);background:var(--primary-light);padding:10px 14px;border-radius:var(--radius-sm)"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Avisos enviados</span></div>
+        <div class="card-body">
+          <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr)">
+            <div class="metric-card" style="text-align:center">
+              <div class="metric-label">💳 Pagamento</div>
+              <div class="metric-value" id="stCount-pago" style="color:var(--success)">—</div>
+            </div>
+            <div class="metric-card" style="text-align:center">
+              <div class="metric-label">📦 Enviado</div>
+              <div class="metric-value" id="stCount-enviado" style="color:var(--primary)">—</div>
+            </div>
+            <div class="metric-card" style="text-align:center">
+              <div class="metric-label">🎉 Entregue</div>
+              <div class="metric-value" id="stCount-entregue" style="color:var(--accent)">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Últimos avisos</span></div>
+        <div class="card-body no-pad"><div class="tbl-wrap"><table>
+          <thead><tr><th>Pedido</th><th>Etapa</th><th>Cliente</th><th>Telefone</th><th>Data</th></tr></thead>
+          <tbody id="statusHistTable"><tr><td colspan="5" class="loading">Carregando...</td></tr></tbody>
+        </table></div></div>
       </div>
     </div>
 
@@ -1457,6 +1509,61 @@ async function sendConviteChat() {
   var res = await api('/api/inbox/send', { method: 'POST', body: JSON.stringify({ phone: conviteConvPhone, text: text }) });
   if (res && res.ok) toast('Enviado', 'success');
   else toast('Erro ao enviar: ' + (res && res.error || ''), 'error');
+}
+
+// ===== STATUS DO PEDIDO =====
+function fmtMarco(d) {
+  if (!d) return '';
+  var dt = new Date(d);
+  return dt.toLocaleDateString('pt-BR') + ' às ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+async function loadStatusPedido() {
+  document.getElementById('topbarTitle').textContent = 'Status do Pedido';
+  var r = await api('/api/status-pedido/info');
+  if (r && r.ok) {
+    var tog = document.getElementById('statusToggle');
+    if (r.ativo) tog.classList.add('on'); else tog.classList.remove('on');
+    var box = document.getElementById('statusMarcoBox');
+    if (r.marcoZero) {
+      box.style.display = '';
+      box.innerHTML = '⏱️ Contando pedidos a partir de <strong>' + fmtMarco(r.marcoZero) + '</strong>' + (r.ativo ? '' : ' (sistema pausado)');
+    } else {
+      box.style.display = 'none';
+    }
+    var e = r.enviados || {};
+    document.getElementById('stCount-pago').textContent = e.pago || 0;
+    document.getElementById('stCount-enviado').textContent = e.enviado || 0;
+    document.getElementById('stCount-entregue').textContent = e.entregue || 0;
+  }
+  loadStatusHist();
+}
+
+async function toggleStatusPedido() {
+  var tog = document.getElementById('statusToggle');
+  var willActivate = !tog.classList.contains('on');
+  if (willActivate && !confirm('Ligar o sistema agora? A partir deste momento, todo pedido novo vai receber os avisos de status. Pedidos antigos não recebem nada.')) return;
+  var r = await api('/api/status-pedido/toggle', { method: 'POST', body: JSON.stringify({ ativo: willActivate }) });
+  if (r && r.ok) {
+    toast(willActivate ? 'Sistema LIGADO — avisos ativos' : 'Sistema pausado', willActivate ? 'success' : 'info');
+    loadStatusPedido();
+  } else {
+    toast('Erro: ' + (r && r.error || ''), 'error');
+  }
+}
+
+async function loadStatusHist() {
+  var r = await api('/api/status-pedido/history');
+  var tb = document.getElementById('statusHistTable');
+  var data = (r && r.data) ? r.data : [];
+  var labels = { pago: '💳 Pago', enviado: '📦 Enviado', entregue: '🎉 Entregue' };
+  if (data.length > 0) {
+    tb.innerHTML = data.map(function(h) {
+      return '<tr><td>#' + (h.orderId || '—') + '</td><td>' + (labels[h.etapa] || h.etapa) + '</td><td>' + (h.contact || '—') + '</td><td>' + fmtPhone(h.phone) + '</td><td>' + fmtDate(h.sentAt) + '</td></tr>';
+    }).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="5" class="empty-state"><p>Nenhum aviso enviado ainda</p></td></tr>';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => { loadDashboard(); loadUnread(); setInterval(loadUnread, 30000); });
