@@ -2162,8 +2162,10 @@ async function enviaStatusWA(phone, templateName, params, lang) {
   });
   var data = await r.json();
   if (!r.ok) {
+    var detalhe = JSON.stringify(data.error || data);
     var err = new Error((data.error && data.error.message) || ("WA " + r.status));
     err.waCode = data.error && data.error.code;
+    err.fullError = detalhe;
     throw err;
   }
   return (data.messages && data.messages[0] && data.messages[0].id) || null;
@@ -2225,7 +2227,7 @@ cron.schedule("*/3 * * * *", async function() {
             await getOrCreateConvo(phone, cust.name || firstName);
             entregue++;
             await new Promise(function(r){ setTimeout(r, 350); });
-          } catch (e) { console.error("[STATUS-ENTREGUE] " + o.id + ": " + e.message); }
+          } catch (e) { console.error("[STATUS-ENTREGUE] " + o.id + ": " + e.message + " | DETALHE: " + (e.fullError||"")); }
         }
       }
 
@@ -2240,7 +2242,7 @@ cron.schedule("*/3 * * * *", async function() {
               await getOrCreateConvo(phone, cust.name || firstName);
               enviado++;
               await new Promise(function(r){ setTimeout(r, 350); });
-            } catch (e) { console.error("[STATUS-ENVIADO] " + o.id + ": " + e.message); }
+            } catch (e) { console.error("[STATUS-ENVIADO] " + o.id + ": " + e.message + " | DETALHE: " + (e.fullError||"")); }
           }
         }
       }
@@ -2254,7 +2256,7 @@ cron.schedule("*/3 * * * *", async function() {
             await getOrCreateConvo(phone, cust.name || firstName);
             pago++;
             await new Promise(function(r){ setTimeout(r, 350); });
-          } catch (e) { console.error("[STATUS-PAGO] " + o.id + ": " + e.message); }
+          } catch (e) { console.error("[STATUS-PAGO] " + o.id + ": " + e.message + " | DETALHE: " + (e.fullError||"")); }
         }
       }
     }
