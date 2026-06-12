@@ -2175,8 +2175,8 @@ async function fetchOrdersRaw() {
   return data.data || [];
 }
 
-// CRON: a cada 15 min, checa mudanças de status dos pedidos NOVOS (pós marco-zero)
-cron.schedule("*/15 * * * *", async function() {
+// CRON: a cada 3 min, checa mudanças de status dos pedidos NOVOS (pós marco-zero)
+cron.schedule("*/3 * * * *", async function() {
   try {
     var cfgR = await pool.query("SELECT * FROM status_pedido_config WHERE id=1");
     var conf = cfgR.rows[0] || {};
@@ -2191,9 +2191,18 @@ cron.schedule("*/15 * * * *", async function() {
       var o = orders[i];
 
       // só pedidos criados DEPOIS do marco zero
-      var created = (o.created_at && o.created_at.date) || o.created_at || null;
-      if (!created) continue;
-      if (new Date(created).getTime() < marcoTs) continue;
+      var createdRaw = (o.created_at && o.created_at.date) || o.created_at || null;
+      if (!createdRaw) continue;
+      // IMPORTANTE: o Yampi manda a data em horário de São Paulo (UTC-3) SEM o fuso.
+      // O servidor roda em UTC, então sem isso o pedido fica 3h atrasado e parece "antes do marco".
+      var createdMs;
+      if (typeof createdRaw === "string") {
+        createdMs = new Date(createdRaw.replace(" ", "T") + "-03:00").getTime();
+      } else {
+        createdMs = new Date(createdRaw).getTime();
+      }
+      if (isNaN(createdMs)) continue;
+      if (createdMs < marcoTs) continue;
 
       // dados básicos
       var cust = o.customer && o.customer.data ? o.customer.data : {};
