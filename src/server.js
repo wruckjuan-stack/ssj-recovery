@@ -2120,7 +2120,7 @@ app.get("/api/broadcast/inbox", async function(req, res) {
 var STATUS_TEMPLATES = {
   pago:     "status_pago",      // {{1}} nome
   enviado:  "status_enviado",   // {{1}} nome, {{2}} link rastreio
-  entregue: "status_entregue"   // {{1}} nome
+  entregue: "status_entregue_2"   // {{1}} nome (link corrigido com HrNeu)
 };
 
 // já enviou essa etapa pra esse pedido?
